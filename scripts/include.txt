@@ -1,0 +1,4 @@
+.env
+scripts/init-letsencrypt.sh
+containers/nginx/config/servers/*
+containers/nginx/config/ssl.conf

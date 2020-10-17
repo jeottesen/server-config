@@ -1,0 +1,5 @@
+#exclude other containers except for the nginx configuration
+!containers
+containers/*
+!containers/nginx
+

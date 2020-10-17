@@ -1,0 +1,40 @@
+version: "3.8"
+
+secrets:
+    token:
+        file: token.txt
+
+services:
+    nginx:
+        image: nginx
+        container_name: nginx
+        restart: unless-stopped
+        ports:
+            - '80:80'
+            - '443:443'
+        volumes:
+            - '~/docker/containers/nginx/html:/etc/nginx/html'
+            - '~/docker/containers/nginx/config:/etc/nginx'
+            - '~/docker/containers/certbot/conf:/etc/letsencrypt'
+            - '~/docker/containers/certbot/www:/var/www/certbot'
+        command: "/bin/sh -c 'while :; do sleep 6h & wait $${!}; nginx -s reload; done & nginx -g \"daemon off;\"'"
+        networks:
+            - proxies
+
+    certbot:
+        image: certbot/certbot
+        container_name: certbot
+        volumes:
+            - '~/docker/containers/certbot/conf:/etc/letsencrypt'
+            - '~/docker/containers/certbot/www:/var/www/certbot'
+        entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
+        networks:
+            - isolated
+
+networks:
+    proxies:
+        # Containers part of the reverse proxy system
+        driver: bridge
+    isolated:
+        # Containers not part of the reverse proxy system
+        driver: bridge
