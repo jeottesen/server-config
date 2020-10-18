@@ -5,6 +5,23 @@ secrets:
         file: token.txt
 
 services:
+
+    plex:
+        image: linuxserver/plex
+        container_name: plex
+        restart: unless-stopped
+        environment:
+            - PUID=${PUID}
+            - PGID=${PGID}
+            - TZ=${TZ}
+            - VERSION=latest
+        volumes:
+            - '~/docker/containers/plex/config:/config'
+            - '/media/Media:/data'
+            - '~/docker/containers/plex/transcode:/transcode'
+        network_mode: host
+        
+
     nginx:
         image: nginx
         container_name: nginx
@@ -21,6 +38,62 @@ services:
         networks:
             - proxies
 
+    muximux:
+        image: linuxserver/muximux
+        container_name: muximux
+        restart: unless-stopped
+        environment:
+            - PUID=${PUID}
+            - PGID=${PGID}
+            - TZ=${TZ}
+        volumes:
+            - '~/docker/containers/muximux:/config'
+        networks:
+            - proxies
+
+    tautulli:
+        image: linuxserver/tautulli
+        container_name: tautulli
+        restart: unless-stopped
+        environment:
+                - PUID=${PUID}
+                - PGID=${PGID}
+                - TZ=${TZ}
+        volumes:
+            - '~/docker/containers/tautulli:/config'
+            - '~/docker/containers/plex/config/Library/Application Support/Plex Media Server/Logs/:/logs'
+        networks:
+            - proxies
+
+    beets:
+        image: linuxserver/beets
+        container_name: beets
+        restart: unless-stopped
+        environment:
+            - PUID=${PUID}
+            - PGID=${PGID}
+            - TZ=${TZ}
+        volumes:
+            - '~/docker/containers/beets:/config'
+            - '/media/Media/Music:/music'
+        networks:
+            - isolated
+
+    duckdns:
+        image: linuxserver/duckdns
+        container_name: duckdns
+        environment:
+            - PUID=${PUID}
+            - PGID=${PGID}
+            - TZ=${TZ}
+            - SUBDOMAINS=${SUBDOMAINS}
+            - FILE__TOKEN=/run/secrets/token
+        restart: unless-stopped
+        secrets:
+            - token
+        networks:
+            - isolated
+
     certbot:
         image: certbot/certbot
         container_name: certbot
@@ -28,6 +101,19 @@ services:
             - '~/docker/containers/certbot/conf:/etc/letsencrypt'
             - '~/docker/containers/certbot/www:/var/www/certbot'
         entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
+        networks:
+            - isolated
+
+    openvpn:
+        image: kylemanna/openvpn
+        container_name: openvpn
+        restart: always
+        volumes:
+            - '~/docker/containers/openvpn:/etc/openvpn'
+        ports:
+            - '1194:1194/udp'
+        cap_add:
+            - NET_ADMIN
         networks:
             - isolated
 

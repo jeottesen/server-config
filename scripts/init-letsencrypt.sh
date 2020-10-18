@@ -6,7 +6,7 @@ if ! [ -x "$(command -v docker-compose)" ]; then
 fi
 
 
-domains=(my_server)
+domains=(home.my_server)
 rsa_key_size=4096
 data_path="/home/$USER/docker/containers/certbot"
 email="" # Adding a valid address is strongly recommended

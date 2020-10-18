@@ -3,3 +3,5 @@
 containers/*
 !containers/nginx
 
+token.txt
+
