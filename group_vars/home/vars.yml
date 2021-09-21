@@ -1,0 +1,3 @@
+ansible_user: jeremy
+ssh_user: jeremy
+ssh_server_password_login: false

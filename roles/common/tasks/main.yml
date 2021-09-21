@@ -1,0 +1,8 @@
+- name: Add ssh key to authorized keys on host
+  authorized_key:
+    user: "{{ ssh_user }}"
+    key: "{{ ssh_identity_key }}"
+  when: ssh_identity_key is defined and ssh_user is defined
+
+- include: debian.yml
+  when: ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu'

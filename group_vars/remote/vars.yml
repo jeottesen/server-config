@@ -1,0 +1,4 @@
+ansible_user: jotaro
+ssh_user: jotaro
+ssh_server_password_login: true
+sshd_authenticationmethods: publickey password

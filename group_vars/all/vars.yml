@@ -1,0 +1,2 @@
+ssh_identity_key: "{{ vault_ssh_identity_key }}"
+sftp_enabled: true
