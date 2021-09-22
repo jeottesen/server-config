@@ -1,3 +1,8 @@
 ansible_user: jeremy
 ssh_user: jeremy
-ssh_server_password_login: false
+
+sudo_users:
+  - { user: jeremy, group: jeremy }
+
+
+      

@@ -1,0 +1,6 @@
+--- 
+
+- name: Setup Mediaserver
+  hosts: mediaserver
+  roles:
+    - mergerfs 

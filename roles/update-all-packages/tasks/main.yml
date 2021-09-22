@@ -1,0 +1,65 @@
+- name: Update all packages on RedHat based systems
+  block:
+    - name: Update all installed packages using yum
+      yum:
+        name: '*'
+        state: latest
+        update_cache: yes
+        update_only: yes
+      register: yum_update_status
+
+    - name: Remove packages not needed anymore
+      yum:
+        autoremove: yes
+    
+    - name: ensure yum-utils are installed
+      package: 
+        name: yum-utils
+        state: present
+
+    - name: Check if a reboot is needed
+      command: needs-restarting -r
+      register: reboot_required
+      ignore_errors: yes
+
+    - name: Reboot Server if Necessary
+      reboot:
+        msg: "Reboot initiated by Ansible for kernel updates"
+        connect_timeout: 5
+        reboot_timeout: 300
+        pre_reboot_delay: 0
+        post_reboot_delay: 30
+        test_command: uptime
+      when: reboot_required.rc == 1
+  when: ansible_facts['os_family'] == "RedHat"
+  ignore_errors: yes
+  become: yes
+    
+- name: Update all packages on Debian based systems
+  block: 
+    - name: Update apt repo and cache
+      apt: update_cache=yes force_apt_get=yes cache_valid_time=3600
+    
+    - name: Upgrade all packages 
+      apt: upgrade=dist force_apt_get=yes
+
+    - name: Remove packages not needed anymore
+      apt:
+        autoremove: yes
+
+    - name: Check if a reboot is needed
+      register: reboot_required_file
+      stat: path=/var/run/reboot-required get_md5=no
+
+    - name: Reboot the box if kernel updated
+      reboot:
+        msg: "Reboot initiated by Ansible for kernel updates"
+        connect_timeout: 5
+        reboot_timeout: 300
+        pre_reboot_delay: 0
+        post_reboot_delay: 30
+        test_command: uptime
+      when: reboot_required_file.stat.exists
+  when: ansible_facts['os_family'] == "Debian"
+  become: yes
+  ignore_errors: yes

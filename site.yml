@@ -1,8 +1,0 @@
----
-- hosts: all
-  become: yes
-  collections:
-    - devsec.hardening
-  roles:
-    - common
-    - ssh_hardening

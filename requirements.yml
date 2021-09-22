@@ -1,0 +1,6 @@
+---
+collections: 
+  - name: devsec.hardening
+
+roles:
+  - name: grog.package

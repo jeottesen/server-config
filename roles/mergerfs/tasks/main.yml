@@ -1,0 +1,13 @@
+- name: Mount hard drives
+  mount:
+    src: "{{ item.src }}"
+    path: "{{ item.path }}"
+    fstype: "{{ item.fstype }}"
+    opts: "{{ item.opts }}"
+    passno: "{{ item.passno }}"
+    state: mounted
+  loop: "{{ fstab_disks }}"
+  become: yes
+  when: item.src is defined and
+        item.path is defined and
+        item.fstype is defined

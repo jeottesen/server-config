@@ -1,3 +1,0 @@
----
-sudo_users:
-  - { userid: jeremy, group: jeremy }

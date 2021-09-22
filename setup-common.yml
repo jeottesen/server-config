@@ -1,0 +1,31 @@
+---
+
+- name: Setup sudo for debian systems
+  hosts: all
+  roles:
+    - debian-sudo
+
+- name: Add ssh keys for user
+  hosts: all
+  roles:
+    - add-ssh-keys
+  
+- name: Harden SSH on all systems
+  hosts: all
+  become: yes
+  collections:
+    - devsec.hardening
+  roles:
+    - ssh_hardening
+  
+- name: Update all packages
+  hosts: all
+  become: yes
+  roles:
+    - update-all-packages
+    - grog.package
+
+
+
+
+

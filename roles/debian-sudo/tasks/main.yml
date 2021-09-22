@@ -6,34 +6,23 @@
 
   - name: Assure sudo users created
     user: 
-      name: "{{ item.userid }}" 
+      name: "{{ item.user }}" 
       groups: "{{ item.group }}" 
       state: present 
       append: yes
-    with_items: "{{ sudo_users }}"
-
-  - name: Assure groups created for all users
-    group:
-      name: "{{ item.group }}"
-      state: present
-    with_items: "{{ sudo_users }}"
+    loop: "{{ sudo_users }}"
 
   - name: Assure sudo users created and sudo capable
     user: 
-      name: "{{ item.userid }}"
+      name: "{{ item.user }}"
       groups: sudo 
       append: yes
-    with_items: "{{ sudo_users }}"
+    loop: "{{ sudo_users }}"
+
   # become root to install and setup sudo
   become: yes
   become_method: su
   become_user: root
-
-- name: update repository index (Debian)
-  tags: always
-  apt:
-    update_cache: yes
-  changed_when: false
-  become: yes
+  when: ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu'
 
     
