@@ -9,7 +9,7 @@
   hosts: all
   roles:
     - add-ssh-keys
-  
+
 - name: Harden SSH on all systems
   hosts: all
   become: yes
@@ -17,15 +17,10 @@
     - devsec.hardening
   roles:
     - ssh_hardening
-  
+
 - name: Update all packages
   hosts: all
   become: yes
   roles:
     - update-all-packages
     - grog.package
-
-
-
-
-

@@ -20,7 +20,7 @@ services:
             - '/media/Media:/data'
             - '~/docker/containers/plex/transcode:/transcode'
         network_mode: host
-        
+
 
     nginx:
         image: nginx

@@ -3,6 +3,3 @@ ssh_user: jeremy
 
 sudo_users:
   - { user: jeremy, group: jeremy }
-
-
-      

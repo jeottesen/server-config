@@ -1,5 +1,5 @@
 ---
-collections: 
+collections:
   - name: devsec.hardening
 
 roles:
