@@ -1,0 +1,96 @@
+# {{ ansible_managed }}
+
+version: "3.8"
+
+services:
+
+  plex:
+    image: linuxserver/plex
+    container_name: plex
+    restart: unless-stopped
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+      - VERSION=latest
+    volumes:
+      - '{{ container_data_path }}/plex/config:/config'
+      - '{{ plex_data_path }}:/data'
+      - '{{ container_data_path }}/plex/transcode:/transcode'
+    network_mode: host
+
+
+  nginx:
+    image: nginx
+    container_name: nginx
+    restart: unless-stopped
+    ports:
+      - '80:80'
+      - '443:443'
+    volumes:
+      - '{{ container_data_path }}/nginx/html:/etc/nginx/html'
+      - '{{ container_data_path }}/nginx/config:/etc/nginx'
+      - '{{ container_data_path }}/certbot/conf:/etc/letsencrypt'
+      - '{{ container_data_path }}/certbot/www:/var/www/certbot'
+    command: "/bin/sh -c 'while :; do sleep 6h & wait $${!}; nginx -s reload; done & nginx -g \"daemon off;\"'"
+    networks:
+      - proxies
+
+  muximux:
+    image: linuxserver/muximux
+    container_name: muximux
+    restart: unless-stopped
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+    volumes:
+      - '{{ container_data_path }}/muximux:/config'
+    networks:
+      - proxies
+
+  tautulli:
+    image: linuxserver/tautulli
+    container_name: tautulli
+    restart: unless-stopped
+    environment:
+        - PUID=${PUID}
+        - PGID=${PGID}
+        - TZ=${TZ}
+    volumes:
+      - '{{ container_data_path }}/tautulli:/config'
+      - '{{ container_data_path }}/plex/config/Library/Application Support/Plex Media Server/Logs/:/logs'
+    networks:
+      - proxies
+
+  beets:
+    image: linuxserver/beets
+    container_name: beets
+    restart: unless-stopped
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+    volumes:
+      - '{{ container_data_path }}/beets:/config'
+      - '/media/Media/Music:/music'
+    networks:
+      - isolated
+
+  certbot:
+    image: certbot/certbot
+    container_name: certbot
+    volumes:
+      - '{{ container_data_path }}/certbot/conf:/etc/letsencrypt'
+      - '{{ container_data_path }}/certbot/www:/var/www/certbot'
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
+    networks:
+      - isolated
+
+networks:
+  proxies:
+    # Containers part of the reverse proxy system
+    driver: bridge
+  isolated:
+    # Containers not part of the reverse proxy system
+    driver: bridge

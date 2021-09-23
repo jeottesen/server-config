@@ -1,5 +1,9 @@
-ansible_user: jeremy
-ssh_user: jeremy
+admin_user: jeremy
+ansible_user: "{{ admin_user }}"
+ssh_user: "{{ admin_user }}"
 
 sudo_users:
-  - { user: jeremy, group: jeremy }
+  - { user: "{{ admin_user }}", group: "{{ admin_user }}" }
+
+docker_users:
+  - "{{ admin_user }}"

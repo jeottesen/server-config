@@ -23,4 +23,3 @@
   become: yes
   roles:
     - update-all-packages
-    - grog.package

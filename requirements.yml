@@ -1,6 +1,10 @@
 ---
 collections:
   - name: devsec.hardening
+  - name: community.docker
 
 roles:
   - name: grog.package
+  - name: geerlingguy.docker
+  # Manually added so I could modify
+  # - name: ironicbadger.ansible_role_snapraid

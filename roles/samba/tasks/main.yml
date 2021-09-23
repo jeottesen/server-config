@@ -1,0 +1,21 @@
+---
+# Copyright (C) 2014-2019 Maciej Delmanowski <drybjed@gmail.com>
+# Copyright (C) 2015-2019 DebOps <https://debops.org/>
+# SPDX-License-Identifier: GPL-3.0-only
+# Modified to remove unecessary tasks
+
+- name: Install Samba packages
+  package:
+    name: '{{ q("flattened", samba__base_packages) }}'
+    state: 'present'
+  register: samba__register_packages
+  until: samba__register_packages is succeeded
+
+- name: Configure Samba
+  template:
+    src: 'smb.conf.j2'
+    dest: '/etc/samba/smb.conf'
+    owner: 'root'
+    group: 'root'
+    mode: '0644'
+  notify: [ 'Check samba config' ]

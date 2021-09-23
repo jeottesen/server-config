@@ -1,4 +1,8 @@
-ansible_user: jotaro
-ssh_user: jotaro
+admin_user: jotaro
+
+ansible_user: "{{ admin_user }}"
+
+# ssh hardening
+ssh_user: "{{ admin_user }}"
 ssh_server_password_login: true
 sshd_authenticationmethods: publickey password

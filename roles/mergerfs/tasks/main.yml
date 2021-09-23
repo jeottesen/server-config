@@ -4,7 +4,7 @@
     path: "{{ item.path }}"
     fstype: "{{ item.fstype }}"
     opts: "{{ item.opts }}"
-    passno: "{{ item.passno }}"
+    passno: "{{ item.passno | default('0') }}"
     state: mounted
   loop: "{{ fstab_disks }}"
   become: yes
