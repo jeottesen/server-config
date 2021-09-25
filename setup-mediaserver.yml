@@ -5,9 +5,9 @@
   become: yes
   roles:
     - grog.package
-    # - mergerfs
-    # - snapraid
-    # - geerlingguy.docker
-    # - samba
+    - mergerfs
+    - snapraid
+    - geerlingguy.docker
+    - samba
     - name: mediaserver-docker-compose
       become: no

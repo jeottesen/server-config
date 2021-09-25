@@ -4,7 +4,7 @@ snapraid_install: true
 snapraid_runner: true
 
 snapraid_apt_package_name: snapraid
-snapraid_bin_path: /usr/local/bin/snapraid
+snapraid_bin_path: /usr/bin/snapraid
 snapraid_force_install: false
 
 snapraid_runner_healthcheck_io_uuid: ""
@@ -14,7 +14,7 @@ snapraid_runner_email_address: ""
 snapraid_runner_gmail_pass: ""
 snapraid_runner_email_address_from: "{{ snapraid_runner_email_address }}"
 snapraid_runner_email_address_to: "{{ snapraid_runner_email_address }}"
-snapraid_runner_email_sendon: "error"
+snapraid_runner_email_sendon: "success,error"
 
 snapraid_runner_smtp_host: smtp.gmail.com
 snapraid_runner_smtp_port: 465
@@ -38,6 +38,7 @@ snapraid_scrub_percent: 22
 snapraid_scrub_age: 8
 snapraid_runner_touch: true
 snapraid_runner_delete_threshold: 250
+snapraid_runner_short: true
 
 snapraid_runner_cron_jobs:
   - { job: '{{ snapraid_runner_command }}', name: 'snapraid_runner', weekday: '*', hour: '01' }

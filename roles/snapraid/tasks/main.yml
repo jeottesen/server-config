@@ -1,5 +1,10 @@
 ---
 
+- name: Install snapraid
+  package:
+    name: snapraid
+    state: present
+
 - name: configure snapraid
   include_tasks: configure.yml
 

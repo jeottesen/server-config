@@ -21,6 +21,7 @@ samba__default_global:
   unix_password_sync: 'no'
   obey_pam_restrictions: 'yes'
   invalid_users: 'root bin daemon adm sync shutdown halt mail news uucp proxy www-data backup sshd'
+  valid users: nobody
   map_to_guest: 'bad user'
   guest_account: 'nobody'
 

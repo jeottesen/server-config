@@ -1,3 +1,8 @@
+- name: Install mergerfs
+  package:
+    name: mergerfs
+    state: present
+
 - name: Mount hard drives
   mount:
     src: "{{ item.src }}"

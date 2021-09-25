@@ -45,4 +45,5 @@ snapraid_config_excludes:
 
 snapraid_runner_email_address: "{{ admin_email_address }}"
 snapraid_runner_gmail_pass: "{{ admin_email_password }}"
-snapraid_runner_email_sendon: "error"
+#snapraid_runner_email_sendon: "error"
+snapraid_runner_short: false
