@@ -2,6 +2,7 @@
 collections:
   - name: devsec.hardening
   - name: community.docker
+  - name: community.general
 
 roles:
   - name: grog.package

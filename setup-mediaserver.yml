@@ -11,3 +11,4 @@
     - samba
     - name: mediaserver-docker-compose
       become: no
+    - name: mediaserver-folders

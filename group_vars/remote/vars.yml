@@ -1,8 +1,9 @@
-admin_user: jotaro
+primary_user: jotaro
+primary_group: jotaro
 
-ansible_user: "{{ admin_user }}"
+ansible_user: "{{ primary_user }}"
 
 # ssh hardening
-ssh_user: "{{ admin_user }}"
+ssh_user: "{{ primary_user }}"
 ssh_server_password_login: true
 sshd_authenticationmethods: publickey password
