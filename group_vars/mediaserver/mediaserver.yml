@@ -3,3 +3,4 @@ package_list:
   - "{{ required_packages }}" # stored in group_vars/all/vars.yml
   - name: git
   - name: nfs-kernel-server
+  - name: iptables-persistent

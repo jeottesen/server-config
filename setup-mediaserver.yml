@@ -4,11 +4,33 @@
   hosts: mediaserver
   become: yes
   roles:
-    - grog.package
-    - mergerfs
-    - snapraid
-    - geerlingguy.docker
-    - samba
+    - name: grog.package
+      tags:
+        always
+        initialize
+        packages
+    - name: mergerfs
+      tags:
+        initialize
+        mergerfs
+    - name: snapraid
+      tags:
+        initialize
+        snapraid
+    - name: iptables
+      tags:
+        iptables
+    - name: geerlingguy.docker
+      tags:
+        initialize
+        docker
+    - name: samba
+      tags:
+        samba
     - name: mediaserver-docker-compose
       become: no
+      tags:
+        docker-compose
     - name: mediaserver-folders
+      tags:
+        folders
