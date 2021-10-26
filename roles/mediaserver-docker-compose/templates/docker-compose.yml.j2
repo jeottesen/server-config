@@ -4,6 +4,54 @@ version: "3.8"
 
 services:
 
+  vpn:
+    image: dperson/openvpn-client
+    container_name: vpn
+    # cap_add, security_opt, and volume required for the image to function
+    cap_add:
+      - net_admin
+    environment:
+      - TZ=${TZ}
+    command: -d
+    # if using '-d' or 'DNS' you can't enable the `read_only: true` option
+    read_only: false
+    tmpfs:
+      - /run
+      - /tmp
+    restart: unless-stopped
+    security_opt:
+      - label:disable
+    stdin_open: true
+    tty: true
+    volumes:
+      - /dev/net:/dev/net:z
+      - {{ container_data_path }}/vpn:/vpn
+    # Put .ovpn configuration file in the /vpn directory (in "volumes:" above or
+    # launch using the command line arguments, IE pick one:
+    #  - ./vpn:/vpn
+    # command: 'server;user;password[;port]'
+    ports:
+      - 6881:6881
+      - 6881:6881/udp
+    networks:
+      - proxies
+
+  qbittorrent:
+    image: lscr.io/linuxserver/qbittorrent
+    container_name: qbittorrent
+    restart: unless-stopped
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+      - WEBUI_PORT=8080
+    volumes:
+      - {{ container_data_path }}/qbittorrent:/config
+      - {{ plex_data_path }}:/data
+    network_mode: "service:vpn"
+    depends_on:
+      - vpn
+
   plex:
     image: linuxserver/plex
     container_name: plex
@@ -86,6 +134,20 @@ services:
     entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
     networks:
       - isolated
+
+  sonarr:
+    image: lscr.io/linuxserver/sonarr
+    container_name: sonarr
+    restart: unless-stopped
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+    volumes:
+      - '{{ container_data_path }}/sonarr:/config'
+      - '{{ plex_data_path }}:/data'
+    networks:
+      - proxies
 
 networks:
   proxies:

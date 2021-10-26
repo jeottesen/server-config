@@ -6,31 +6,21 @@
   roles:
     - name: grog.package
       tags:
-        always
-        initialize
-        packages
+        - always
+        - packages
     - name: mergerfs
       tags:
-        initialize
-        mergerfs
+        - mergerfs
     - name: snapraid
-      tags:
-        initialize
-        snapraid
+      tags: snapraid
     - name: iptables
-      tags:
-        iptables
+      tags: iptables
     - name: geerlingguy.docker
-      tags:
-        initialize
-        docker
+      tags: docker
     - name: samba
-      tags:
-        samba
+      tags: samba
     - name: mediaserver-docker-compose
       become: no
-      tags:
-        docker-compose
+      tags: docker-compose
     - name: mediaserver-folders
-      tags:
-        folders
+      tags: folders
