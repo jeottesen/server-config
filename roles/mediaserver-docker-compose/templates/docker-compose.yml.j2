@@ -52,6 +52,20 @@ services:
     depends_on:
       - vpn
 
+  jackett:
+    image: lscr.io/linuxserver/jackett
+    container_name: jackett
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+      - AUTO_UPDATE=true #optional
+    volumes:
+      - {{ container_data_path }}/jackett:/config
+    restart: unless-stopped
+    networks:
+      - proxies
+
   plex:
     image: linuxserver/plex
     container_name: plex
@@ -135,16 +149,30 @@ services:
     networks:
       - isolated
 
-  sonarr:
+  anime-sonarr:
     image: lscr.io/linuxserver/sonarr
-    container_name: sonarr
+    container_name: anime-sonarr
     restart: unless-stopped
     environment:
       - PUID=${PUID}
       - PGID=${PGID}
       - TZ=${TZ}
     volumes:
-      - '{{ container_data_path }}/sonarr:/config'
+      - '{{ container_data_path }}/anime-sonarr:/config'
+      - '{{ plex_data_path }}:/data'
+    networks:
+      - proxies
+
+  tv-sonarr:
+    image: lscr.io/linuxserver/sonarr
+    container_name: tv-sonarr
+    restart: unless-stopped
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+    volumes:
+      - '{{ container_data_path }}/tv-sonarr:/config'
       - '{{ plex_data_path }}:/data'
     networks:
       - proxies
