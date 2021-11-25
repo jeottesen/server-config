@@ -135,7 +135,7 @@ services:
       - TZ=${TZ}
     volumes:
       - '{{ container_data_path }}/beets:/config'
-      - '/media/Media/Music:/music'
+      - '{{ container_data_path }}/Music:/music'
     networks:
       - isolated
 
