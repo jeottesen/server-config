@@ -2,6 +2,7 @@ required_packages:
   - name: vim
   - name: pip # required for docker management
   - name: rsync
+  - name: smartmontools
 
 # ssh hardening
 ssh_identity_key: "{{ vault_ssh_identity_key }}"

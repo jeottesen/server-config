@@ -24,3 +24,16 @@
       tags: docker-compose
     - name: mediaserver-folders
       tags: folders
+
+- name: Configure mediaserver
+  hosts: mediaserver
+  become: yes
+  roles:
+    - name: cron-backup
+      vars:
+        backup_cron_name: "docker-backup"
+        backup_name_prepend: "docker"
+        backup_destination: "{{ media_data_path }}/.config/backups"
+        backup_source: "$HOME/docker"
+        backup_max_age_days: '7'
+      tags: cron

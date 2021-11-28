@@ -13,7 +13,8 @@ fstab_disks:
   - { src: /dev/disk/by-id/ata-TOSHIBA_DT01ACA300_54GYH94GS-part1, path: "{{ disk_mount_parent }}/{{ disk_mount_folder }}3", fstype: xfs, opts: defaults, passno: 2 }
   - { src: /dev/disk/by-id/ata-WDC_WD80EFAX-68KNBN0_VAJANS1L-part1, path: "{{ disk_mount_parent }}/{{ disk_mount_folder }}4", fstype: btrfs, opts: defaults, passno: 2 }
   - { src: /dev/disk/by-id/ata-WDC_WD60EFRX-68L0BN1_WD-WX11DA7701KY-part1, path: "{{ disk_mount_parent }}/{{ disk_mount_folder }}5", fstype: btrfs, opts: defaults, passno: 2 }
-  - { src: /dev/disk/by-id/ata-TOSHIBA_HDWR180_71K0A01SFBLG-part1, path: "{{ disk_mount_parent }}/{{ disk_mount_folder }}6", fstype: xfs, opts: defaults, passno: 2 }
+  - { src: /dev/disk/by-id/ata-TOSHIBA_HDWR180_71K0A01SFBLG-part1, path: "{{ disk_mount_parent }}/bad{{ disk_mount_folder }}6", fstype: xfs, opts: defaults, passno: 2 }
+  - { src: /dev/disk/by-id/ata-ST8000DM004-2CX188_ZR11A34D-part1, path: "{{ disk_mount_parent }}/{{ disk_mount_folder }}6", fstype: xfs, opts: defaults, passno: 2 }
   - { src: /dev/disk/by-id/ata-WDC_WD80EFAX-68KNBN0_VAJAKAUL-part1, path: "{{ disk_mount_parent }}/parity1", fstype: btrfs, opts: defaults, passno: 2 }
   - { src: /dev/disk/by-id/ata-WDC_WD80EFAX-68KNBN0_VAJAJMKL-part1, path: "{{ disk_mount_parent }}/parity2", fstype: btrfs, opts: defaults, passno: 2 }
   - { src: "{{ disk_mount_parent }}/{{ disk_mount_folder }}*", path: "{{ media_data_path }}", fstype: fuse.mergerfs, opts: "defaults,allow_other,direct_io,use_ino,moveonenospc=true,minfreespace=20G,fsname=Media"}
