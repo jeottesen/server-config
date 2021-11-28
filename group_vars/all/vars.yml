@@ -8,5 +8,9 @@ required_packages:
 ssh_identity_key: "{{ vault_ssh_identity_key }}"
 sftp_enabled: true
 
-admin_email_address: jotaro0010@gmail.com
+email_user: "jotaro0010"
+admin_email_address: "{{ email_user }}@gmail.com"
 admin_email_password: "{{ vault_admin_email_password }}"
+
+
+email_password_url_encoded: "{{ vault_email_password_url_encoded }}"

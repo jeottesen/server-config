@@ -1,6 +1,6 @@
 ---
 backup_cron_name: "daily-backup"
-backup_cron_job: "tar -cvzpf {{ backup_destination }}/{{ backup_name_prepend }}-$(date {{ backup_date_format }}).tar.gz {{ backup_source }}"
+backup_cron_job: 'tar -cvzpf "{{ backup_destination }}/{{ backup_name_prepend }}-$(date {{ backup_date_format }}).tar.gz" "{{ backup_source }}"'
 backup_cron_weekday: '*'
 backup_cron_hour: '00'
 backup_cron_minute: '00'

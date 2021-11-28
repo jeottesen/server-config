@@ -1,0 +1,36 @@
+---
+
+- name: Install mailx on Debian based OS
+  package:
+    name: "s-nail"
+    state: present
+  when: ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu'
+
+- name: Set symlink for mail binary
+  file:
+    src: "/usr/bin/s-nail"
+    path: "/bin/mail"
+    state: link
+  when: ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu'
+
+- name: Install mailx on RedHat based OS
+  package:
+    name: "mailx"
+    state: present
+  when: ansible_facts['os_family'] == "RedHat"
+
+- name: Setup mail configuration for root
+  template:
+    src: mail.rc.j2
+    dest: "/root/.mailrc"
+    owner: root
+    group: root
+    mode: 0600
+
+- name: "Setup mail configuration for user: {{ primary_user }}"
+  template:
+    src: mail.rc.j2
+    dest: "/home/{{ primary_user }}/.mailrc"
+    owner: jeremy
+    group: jeremy
+    mode: 0600

@@ -24,6 +24,8 @@
       tags: docker-compose
     - name: mediaserver-folders
       tags: folders
+    - name: email-setup
+      tags: email
 
 - name: Configure mediaserver
   hosts: mediaserver
@@ -34,6 +36,17 @@
         backup_cron_name: "docker-backup"
         backup_name_prepend: "docker"
         backup_destination: "{{ media_data_path }}/.config/backups"
-        backup_source: "$HOME/docker"
+        backup_source: "/home/{{ primary_user }}/docker"
         backup_max_age_days: '7'
+      tags: cron
+  tasks:
+    - name: Snapraid SMART emails
+      cron:
+        name: snapraid scrub
+        job: "snapraid smart | mail --subject='Snapraid SMART' {{ email_user }}+$HOSTNAME@gmail.com"
+        user: root
+        weekday: "*"
+        minute: "00"
+        hour: "00"
+        dom: "*"
       tags: cron
