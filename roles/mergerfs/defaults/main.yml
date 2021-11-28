@@ -1,0 +1,2 @@
+#{ src: /dev/disk/by-id/ata-disk-part1, path: "/disks/disk1", fstype: btrfs, opts: defaults, passno: 0 }
+fstab_disks: [{ src: , path: , fstype: , opts: defaults , passno: 0}]

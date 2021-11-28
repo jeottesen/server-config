@@ -1,0 +1,26 @@
+---
+- name: Install and configure sudo for Debian
+  block:
+  - name: Assure sudo installed
+    apt: pkg="sudo" state=present
+
+  - name: Assure sudo users created
+    user:
+      name: "{{ item.user }}"
+      groups: "{{ item.group }}"
+      state: present
+      append: yes
+    loop: "{{ sudo_users }}"
+
+  - name: Assure sudo users created and sudo capable
+    user:
+      name: "{{ item.user }}"
+      groups: sudo
+      append: yes
+    loop: "{{ sudo_users }}"
+
+  # become root to install and setup sudo
+  become: yes
+  become_method: su
+  become_user: root
+  when: ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu'

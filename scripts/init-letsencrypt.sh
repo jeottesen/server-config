@@ -45,9 +45,9 @@ echo "### Starting nginx ..."
 docker-compose up --force-recreate -d nginx
 echo
 
-if [ $staging == "2" ]; then 
+if [ $staging == "2" ]; then
   echo "Testing with dummy scripts. Now exiting."
-  exit 0 
+  exit 0
 fi
 
 echo "### Deleting dummy certificate for $domains ..."

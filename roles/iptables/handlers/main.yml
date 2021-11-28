@@ -1,0 +1,8 @@
+- name: Save iptables config
+  include_tasks: save-debian.yml
+
+- name: Restart docker service
+  service:
+    name: 'docker'
+    state: 'restarted'
+  ignore_errors: yes

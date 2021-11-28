@@ -1,0 +1,9 @@
+
+- name: Get iptables_save output
+  shell: iptables-save
+  register: iptables_save_output
+- name: copy the output to a local file
+  copy:
+    content: "{{ iptables_save_output.stdout }}"
+    mode: 0644
+    dest: "/etc/iptables/rules.v4"

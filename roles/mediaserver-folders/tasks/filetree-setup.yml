@@ -1,0 +1,18 @@
+- name: "Create directories inside {{ disk_folder.path }} based on template folder"
+  file:
+    path: "{{ disk_folder.path }}/{{ new_folder.path }}"
+    state: directory
+    mode: u=rwX,g=rwX,o=rwX
+  with_filetree: "{{ template_folder }}"
+  loop_control:
+    loop_var: new_folder
+  when: new_folder.state == "directory"
+
+- name: Set permissions and owner for all files
+  become: yes
+  file:
+    path: "{{ disk_folder.path }}"
+    owner: "{{ primary_user }}"
+    group: "{{ primary_group }}"
+    mode: u=rwX,g=rwX,o=rwX
+    recurse: yes

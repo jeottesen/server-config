@@ -1,0 +1,40 @@
+---
+
+- name: install docker pip modules
+  pip:
+    name: docker-compose
+    state: present
+
+- name: create folder for vpn container
+  file:
+    path: "{{ container_data_path }}/vpn/"
+    owner: "{{ primary_user }}"
+    group: "{{ primary_group }}"
+    mode: '0755'
+    state: "directory"
+
+- name: add ovpn file for vpn container
+  copy:
+    src: files/vault/vpn.ovpn
+    dest: "{{ container_data_path }}/vpn/vpn.ovpn"
+    owner: "{{ primary_user }}"
+    group: "{{ primary_group }}"
+    mode: '0644'
+
+- name: Create docker-compose.yml file
+  template:
+    src: docker-compose.yml.j2
+    dest: "{{ docker_compose_path }}/docker-compose.yml"
+    mode: 0644
+
+- name: Create docker-compose env file
+  template:
+    src: .env.j2
+    dest: "{{ docker_compose_path }}/.env"
+    mode: 0644
+
+- name: Pull and start docker-compose configuration
+  community.docker.docker_compose:
+    project_src: "{{ docker_compose_path }}"
+    pull: yes
+    state: present

@@ -3,5 +3,7 @@
 containers/*
 !containers/nginx
 
-token.txt
+# Ansible
+.vault-password
 
+token.txt

@@ -1,0 +1,17 @@
+---
+
+- name: Install snapraid
+  package:
+    name: snapraid
+    state: present
+
+- name: configure snapraid
+  include_tasks: configure.yml
+
+- name: install and configure snapraid-runner
+  include_tasks: snapraid-runner.yml
+  when: snapraid_runner
+
+- name: schedule snapraid
+  include_tasks: cron.yml
+  when: not snapraid_runner
