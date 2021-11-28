@@ -1,9 +1,34 @@
-# mediaserver-docker-compose
+# mediaserver-config
 The mediaserver configuration that I use on my home server. Runs plex, beets, and more then serves these applications through an nginx reverse proxy server.
 
+It is in the process of being converted to an ansible configuration. It ia an attempt to follow the infrastructure as code ideology.
+
+## TODO
+- Convert Nginx config to role or reconfigure with traefik v2.
+- Get letsencrypt working again with my domain name.
+- Add Authelia to external network for remote access.
+- Playbook to restore docker container files in case of rebuild.
+- Setup FoundryVTT and supporting tools for video chat.
+- Add ACL configuration to server folders.
+- Better user setup for samba share.
+- NFS share for data folder.
+- Look into configuring hom pfsense router with ansible.
+- Look into configuring ESXI with Ansible.
+- Setup smarthome server with ansible
+
+## Done
+- Complete setup from a fresh debian install
+- Setup firewall with iptables
+- Manage docker-compose file with templates
+- Mergerfs fstab configuration of all drives
+- Stable samba configuration.
+- Quickly setup new drive folder structure
+- Snapraid setup and configuration
+- Nightly backup of docker folder with 7 day cleanup
+
+## Nginx LetsEncrpyt Setup:
 Easily add subdomain proxies and subpath proxies. Get ssl up and running through letsencrpyt and certbot.
 
-Setup:
 1. Install docker and docker-compose.
 2. Add your email to [scripts/init-letsencrypt.sh](scripts/init-letsencrypt.sh) file and set the staging to 2
 [scripts/init-letsencrypt.sh](scripts/init-letsencrypt.sh) Line 12
