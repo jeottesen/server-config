@@ -40,10 +40,17 @@
         backup_max_age_days: '7'
       tags: cron
   tasks:
+
+    - name: Add the /usr/bin and /usr/sbin folders to the cron PATH needed for smartctl
+      cron:
+        name: PATH
+        env: yes
+        job: /usr/bin:/bin:/usr/bin:/usr/sbin
+      tags: cron
     - name: Snapraid SMART emails
       cron:
         name: snapraid scrub
-        job: "snapraid smart | mail --subject='Snapraid SMART' {{ email_user }}+$HOSTNAME@gmail.com"
+        job: "snapraid smart | mail --subject='Snapraid SMART' {{ email_user }}+{{ ansible_hostname }}@gmail.com"
         user: root
         weekday: "*"
         minute: "00"

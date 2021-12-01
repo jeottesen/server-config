@@ -3,17 +3,19 @@ snapraid_install: false
 snapraid_runner: true
 
 snapraid_data_disks:
-  - path: "{{ disk_mount_parent }}/disk1"
+  - path: "{{ disk_mount_parent }}/{{ disk_mount_folder }}1"
     content: true
-  - path: "{{ disk_mount_parent }}/disk2"
+  - path: "{{ disk_mount_parent }}/{{ disk_mount_folder }}2"
     content: true
-  - path: "{{ disk_mount_parent }}/disk3"
+  - path: "{{ disk_mount_parent }}/{{ disk_mount_folder }}3"
     content: true
-  - path: "{{ disk_mount_parent }}/disk4"
+  - path: "{{ disk_mount_parent }}/{{ disk_mount_folder }}4"
     content: true
-  - path: "{{ disk_mount_parent }}/disk5"
+  - path: "{{ disk_mount_parent }}/{{ disk_mount_folder }}5"
     content: true
-  - path: "{{ disk_mount_parent }}/disk6"
+  - path: "{{ disk_mount_parent }}/{{ disk_mount_folder }}6"
+    content: true
+  - path: "{{ disk_mount_parent }}/{{ disk_mount_folder }}7"
     content: true
 
 snapraid_parity_disks:
