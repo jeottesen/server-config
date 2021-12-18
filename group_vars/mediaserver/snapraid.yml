@@ -17,7 +17,8 @@ snapraid_data_disks:
     content: true
   - path: "{{ disk_mount_parent }}/{{ disk_mount_folder }}7"
     content: true
-
+  - path: "{{ disk_mount_parent }}/{{ disk_mount_folder }}8"
+    content: true
 snapraid_parity_disks:
   - path: "{{ disk_mount_parent }}/parity1"
     content: false

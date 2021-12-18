@@ -1,5 +1,5 @@
 ---
-plex_data_path: /data
+media_data_path: /data
 
 docker_compose_path: ~/docker
 container_data_path: "{{ docker_compose_path }}/containers"

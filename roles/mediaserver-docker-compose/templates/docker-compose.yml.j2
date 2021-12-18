@@ -70,7 +70,7 @@ services:
       - WEBUI_PORT=8080
     volumes:
       - {{ container_data_path }}/qbittorrent:/config
-      - {{ plex_data_path }}:/data
+      - {{ media_data_path }}:/data
     network_mode: "service:vpn"
     depends_on:
       - vpn
@@ -100,7 +100,7 @@ services:
       - VERSION=latest
     volumes:
       - '{{ container_data_path }}/plex/config:/config'
-      - '{{ plex_data_path }}:/data'
+      - '{{ media_data_path }}:/data'
       - '{{ container_data_path }}/plex/transcode:/transcode'
     network_mode: host
 
@@ -158,7 +158,7 @@ services:
       - TZ=${TZ}
     volumes:
       - '{{ container_data_path }}/beets:/config'
-      - '{{ container_data_path }}/Music:/music'
+      - '{{ media_data_path }}/Music:/music'
     networks:
       - isolated
 
@@ -182,7 +182,7 @@ services:
       - TZ=${TZ}
     volumes:
       - '{{ container_data_path }}/anime-sonarr:/config'
-      - '{{ plex_data_path }}:/data'
+      - '{{ media_data_path }}:/data'
     networks:
       - proxies
 
@@ -196,7 +196,21 @@ services:
       - TZ=${TZ}
     volumes:
       - '{{ container_data_path }}/tv-sonarr:/config'
-      - '{{ plex_data_path }}:/data'
+      - '{{ media_data_path }}:/data'
+    networks:
+      - proxies
+
+  radarr:
+    image: lscr.io/linuxserver/radarr
+    container_name: radarr
+    restart: unless-stopped
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+    volumes:
+      - '{{ container_data_path }}/radarr:/config'
+      - '{{ media_data_path }}:/data'
     networks:
       - proxies
 
