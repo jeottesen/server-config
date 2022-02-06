@@ -2,7 +2,127 @@
 
 version: "3.8"
 
+networks:
+  proxies:
+    # Containers part of the reverse proxy system
+    driver: bridge
+  isolated:
+    # Containers not part of the reverse proxy system
+    driver: bridge
+
+secrets:
+    route53_access_key:
+      external: true
+    route53_secret_access_key:
+      external: true
+    route53_zone_id:
+      external: true
+
 services:
+
+  traefik:
+    container_name: traefik
+    image: traefik:2.5 # brie v2.5.x livarot v2.4.x # picodon v2.3.x
+    restart: always
+    command: # CLI arguments
+      - --global.checkNewVersion=true
+      - --global.sendAnonymousUsage=true
+      - --entryPoints.http.address=:80
+      - --entryPoints.https.address=:443
+      # Allow these IPs to set the X-Forwarded-* headers - Cloudflare IPs: https://www.cloudflare.com/ips/
+      # - --entrypoints.https.forwardedHeaders.trustedIPs=173.245.48.0/20,103.21.244.0/22,103.22.200.0/22,103.31.4.0/22,141.101.64.0/18,108.162.192.0/18,190.93.240.0/20,188.114.96.0/20,197.234.240.0/22,198.41.128.0/17,162.158.0.0/15,104.16.0.0/13,104.24.0.0/14,172.64.0.0/13,131.0.72.0/22
+      - --entryPoints.traefik.address=:8080
+      # - --entryPoints.ping.address=:8081
+      - --api=true
+      - --api.insecure=true
+      - --api.dashboard=true
+      #- --ping=true
+      #- --pilot.token=$TRAEFIK_PILOT_TOKEN
+      # - --serversTransport.insecureSkipVerify=true
+      - --log=true
+      - --log.level=WARN # (Default: error) DEBUG, INFO, WARN, ERROR, FATAL, PANIC
+      - --accessLog=true
+      - --accessLog.filePath=/traefik.log
+      - --accessLog.bufferingSize=100 # Configuring a buffer of 100 lines
+      - --accessLog.filters.statusCodes=400-499
+      - --providers.docker=true
+      # - --providers.docker.endpoint=unix:///var/run/docker.sock # Use Docker Socket Proxy instead for improved security
+      - --providers.docker.endpoint=tcp://socket-proxy:2375
+      # Automatically set Host rule for services
+      # - --providers.docker.defaultrule=Host(`{{ index .Labels "com.docker.compose.service" }}.$DOMAINNAME`)
+      - --providers.docker.exposedByDefault=false
+      # - --entrypoints.https.http.middlewares=chain-oauth@file
+      - --entrypoints.https.http.tls.options=tls-opts@file
+      # Add dns-cloudflare as default certresolver for all services. Also enables TLS and no need to specify on individual services
+      - --entrypoints.https.http.tls.certresolver=route53
+      # - --entrypoints.https.http.tls.domains[0].main=$DOMAINNAME
+      # - --entrypoints.https.http.tls.domains[0].sans=*.$DOMAINNAME
+      - --providers.docker.network=proxies
+      - --providers.docker.swarmMode=false
+      - --providers.file.directory=/rules # Load dynamic configuration from one or more .toml or .yml files in a directory
+      # - --providers.file.filename=/path/to/file # Load dynamic configuration from a file
+      - --providers.file.watch=true # Only works on top level files in the rules folder
+      # - --certificatesResolvers.route53.acme.caServer=https://acme-staging-v02.api.letsencrypt.org/directory # LetsEncrypt Staging Server - uncomment when testing
+      - --certificatesResolvers.route53.acme.email="{{ admin_email_address }}"
+      - --certificatesResolvers.route53.acme.storage=/acme.json
+      - --certificatesResolvers.route53.acme.dnsChallenge.provider=route53
+      - --certificatesResolvers.route53.acme.dnsChallenge.delayBeforeCheck=90 # To delay DNS check and reduce LE hitrate
+    networks:
+      proxies
+    security_opt:
+      - no-new-privileges:true
+    #healthcheck:
+    #  test: ["CMD", "traefik", "healthcheck", "--ping"]
+    #  interval: 5s
+    #  retries: 3
+    ports:
+      - target: 80
+        published: 80
+        protocol: tcp
+        mode: host
+      - target: 443
+        published: 443
+        protocol: tcp
+        mode: host
+      # - target: 8080
+      #   published: 8080
+      #   protocol: tcp
+      #   mode: host
+    volumes:
+      - $DOCKERDIR/appdata/traefik2/rules:/rules # file provider directory
+      - $DOCKERDIR/appdata/traefik2/acme/acme.json:/acme.json # cert location - you must touch this file and change permissions to 600
+      - $DOCKERDIR/appdata/traefik2/traefik.log:/traefik.log # for fail2ban - make sure to touch file before starting container
+    environment:
+      - AWS_ACCESS_KEY_ID=$route53_access_key
+      - AWS_SECRET_ACCESS_KEY=$route53_secret_access_key
+      - AWS_REGION={{ route53_region }}
+      - AWS_HOSTED_ZONE_ID=$route53_zone_id
+    secrets:
+      - route53_access_key
+      - route53_secret_access_key
+      - route53_zone_id
+    labels:
+      #- "autoheal=true"
+      - "traefik.enable=true"
+      # HTTP-to-HTTPS Redirect
+      - "traefik.http.routers.http-catchall.entrypoints=http"
+      - "traefik.http.routers.http-catchall.rule=HostRegexp(`{host:.+}`)"
+      - "traefik.http.routers.http-catchall.middlewares=redirect-to-https"
+      - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
+      # HTTP Routers
+      - "traefik.http.routers.traefik-rtr.entrypoints=https"
+      - "traefik.http.routers.traefik-rtr.rule=Host(`traefik.$DOMAINNAME0`)"
+      ## Services - API
+      - "traefik.http.routers.traefik-rtr.service=api@internal"
+      ## Healthcheck/ping
+      #- "traefik.http.routers.ping.rule=Host(`traefik.$DOMAINNAME0`) && Path(`/ping`)"
+      #- "traefik.http.routers.ping.tls=true"
+      #- "traefik.http.routers.ping.service=ping@internal"
+      ## Middlewares
+      - "traefik.http.routers.traefik-rtr.middlewares=chain-oauth@file"
+
+
+
 
   unifi-controller:
     image: lscr.io/linuxserver/unifi-controller
@@ -18,7 +138,7 @@ services:
     ports:
       - 3478:3478/udp
       - 10001:10001/udp
-      - 8080:8080
+      # - 8080:8080
       - 8443:8443
       - 1900:1900/udp #optional
       - 8843:8843 #optional
@@ -67,6 +187,8 @@ services:
     image: lscr.io/linuxserver/qbittorrent
     container_name: qbittorrent
     restart: unless-stopped
+    ports:
+       - '6881:6881'
     environment:
       - PUID=${PUID}
       - PGID=${PGID}
@@ -115,23 +237,23 @@ services:
       - no-new-privileges:true
 
 
-  nginx:
-    image: nginx
-    container_name: nginx
-    restart: unless-stopped
-    ports:
-      - '80:80'
-      - '443:443'
-    volumes:
-      - '{{ container_data_path }}/nginx/html:/etc/nginx/html'
-      - '{{ container_data_path }}/nginx/config:/etc/nginx'
-      - '{{ container_data_path }}/certbot/conf:/etc/letsencrypt'
-      - '{{ container_data_path }}/certbot/www:/var/www/certbot'
-    command: "/bin/sh -c 'while :; do sleep 6h & wait $${!}; nginx -s reload; done & nginx -g \"daemon off;\"'"
-    networks:
-      - proxies
-    security_opt:
-      - no-new-privileges:true
+  # nginx:
+  #   image: nginx
+  #   container_name: nginx
+  #   restart: unless-stopped
+  #   ports:
+  #     - '80:80'
+  #     - '443:443'
+  #   volumes:
+  #     - '{{ container_data_path }}/nginx/html:/etc/nginx/html'
+  #     - '{{ container_data_path }}/nginx/config:/etc/nginx'
+  #     - '{{ container_data_path }}/certbot/conf:/etc/letsencrypt'
+  #     - '{{ container_data_path }}/certbot/www:/var/www/certbot'
+  #   command: "/bin/sh -c 'while :; do sleep 6h & wait $${!}; nginx -s reload; done & nginx -g \"daemon off;\"'"
+  #   networks:
+  #     - proxies
+  #   security_opt:
+  #     - no-new-privileges:true
 
   muximux:
     image: linuxserver/muximux
@@ -239,12 +361,3 @@ services:
       - proxies
     security_opt:
       - no-new-privileges:true
-
-
-networks:
-  proxies:
-    # Containers part of the reverse proxy system
-    driver: bridge
-  isolated:
-    # Containers not part of the reverse proxy system
-    driver: bridge

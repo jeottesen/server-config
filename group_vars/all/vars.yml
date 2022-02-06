@@ -14,3 +14,8 @@ admin_email_password: "{{ vault_admin_email_password }}"
 
 
 email_password_url_encoded: "{{ vault_email_password_url_encoded }}"
+
+route53_access_key: "{{ vault_route53_access_key_id }}"
+route53_secret_access_key: "{{ vault_route53_secret_access_key }}"
+route53_region: us-west-1
+route53_zone_id: "{{ vault_route53_zone_id }}"

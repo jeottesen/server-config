@@ -4,6 +4,12 @@ media_data_path: /data
 docker_compose_path: ~/docker
 container_data_path: "{{ docker_compose_path }}/containers"
 
+traefik_directory: "{{ container_data_path }}/traefik"
+
 compose_puid: 1000
 compose_guid: 1000
 compose_tz: America/Denver
+
+route53__access_key: ""
+route53_secret_access_key: ""
+route53_zone_id: ""

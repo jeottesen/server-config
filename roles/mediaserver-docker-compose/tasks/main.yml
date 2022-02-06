@@ -1,5 +1,7 @@
 ---
 
+- include: traefik.yml
+
 - name: install docker pip modules
   pip:
     name: docker-compose

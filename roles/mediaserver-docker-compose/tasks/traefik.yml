@@ -1,0 +1,38 @@
+---
+- name: Create trafick dirs
+  file:
+    path: "{{ traefik_directory }}/acme"
+    owner: "{{ primary_user }}"
+    group: "{{ primary_group }}"
+    mode: '0755'
+    state: "directory"
+
+- name: Ensure acme config
+  file:
+    path: "{{ traefik_directory }}/acme/acme.json"
+    state: touch
+    mode: '0600'
+
+- name: Ensure acme config
+  file:
+    path: "{{ traefik_directory }}/traefik.log"
+    state: touch
+    mode: '0755'
+
+- name: Set route53_access_key secret
+  docker_secret:
+    name: route53_access_key
+    data: "{{ route53_access_key }}"
+    state: present
+
+- name: Set route53_secret_access_key secret
+  docker_secret:
+    name: route53_secret_access_key
+    data: "{{ route53_secret_access_key }}"
+    state: present
+
+- name: Set route53_zone_id secret
+  docker_secret:
+    name: route53_zone_id
+    data: "{{ route53_zone_id }}"
+    state: present
