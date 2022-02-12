@@ -13,26 +13,8 @@
     state: touch
     mode: '0600'
 
-- name: Ensure acme config
+- name: Ensure traefik log
   file:
     path: "{{ traefik_directory }}/traefik.log"
     state: touch
     mode: '0755'
-
-- name: Set route53_access_key secret
-  docker_secret:
-    name: route53_access_key
-    data: "{{ route53_access_key }}"
-    state: present
-
-- name: Set route53_secret_access_key secret
-  docker_secret:
-    name: route53_secret_access_key
-    data: "{{ route53_secret_access_key }}"
-    state: present
-
-- name: Set route53_zone_id secret
-  docker_secret:
-    name: route53_zone_id
-    data: "{{ route53_zone_id }}"
-    state: present

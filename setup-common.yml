@@ -17,6 +17,8 @@
     - devsec.hardening
   roles:
     - ssh_hardening
+  vars:
+    ssh_allow_tcp_forwarding: "yes"
 
 - name: Update all packages
   hosts: all
