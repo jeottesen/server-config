@@ -14,6 +14,6 @@ fstab_disks:
   - { src: /dev/disk/by-id/ata-ST8000DM004-2CX188_ZR11A34D-part1, path: "{{ disk_mount_parent }}/{{ disk_mount_folder }}6", fstype: xfs, opts: "defaults", passno: 2 }
   - { src: /dev/disk/by-id/ata-ST8000DM004-2CX188_ZR11GTNF-part1, path: "{{ disk_mount_parent }}/{{ disk_mount_folder }}7", fstype: xfs, opts: "defaults", passno: 2 }
   - { src: /dev/disk/by-id/ata-TOSHIBA_HDWR180_X180A0R0FBLG-part1, path: "{{ disk_mount_parent }}/{{ disk_mount_folder }}8", fstype: xfs, opts: "defaults", passno: 2 }
-  - { src: /dev/disk/by-id/ata-WDC_WD80EFAX-68KNBN0_VAJAKAUL-part1, path: "{{ disk_mount_parent }}/parity1", fstype: btrfs, opts: defa"ults, passno: 2 }
+  - { src: /dev/disk/by-id/ata-WDC_WD80EFAX-68KNBN0_VAJAKAUL-part1, path: "{{ disk_mount_parent }}/parity1", fstype: btrfs, opts: "defaults", passno: 2 }
   - { src: /dev/disk/by-id/ata-WDC_WD80EFAX-68KNBN0_VAJAJMKL-part1, path: "{{ disk_mount_parent }}/parity2", fstype: btrfs, opts: "defaults", passno: 2 }
-  - { src: "{{ disk_mount_parent }}/{{ disk_mount_folder }}*", path: "{{ media_data_path }}", fstype: fuse.mergerfs, opts: "defaults,allow_other,direct_io,use_ino,moveonenospc=true,minfreespace=20G,fsname=Media"}
+  - { src: "{{ disk_mount_parent }}/{{ disk_mount_folder }}*", path: "{{ media_data_path }}", fstype: fuse.mergerfs, opts: "defaults,allow_other,use_ino,cache.files=partial,dropcacheonclose=true,category.create=mfs,moveonenospc=true,minfreespace=20G,fsname=Media"}
