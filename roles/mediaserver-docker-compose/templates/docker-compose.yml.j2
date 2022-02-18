@@ -2,6 +2,15 @@
 
 version: "3.8"
 
+networks:
+  proxies:
+    # Containers part of the reverse proxy system
+    driver: bridge
+  isolated:
+    # Containers not part of the reverse proxy system
+    driver: bridge
+
+
 services:
 
   unifi-controller:
@@ -240,11 +249,22 @@ services:
     security_opt:
       - no-new-privileges:true
 
-
-networks:
-  proxies:
-    # Containers part of the reverse proxy system
-    driver: bridge
-  isolated:
-    # Containers not part of the reverse proxy system
-    driver: bridge
+  crafty-web:
+    image: shawly/crafty-web
+    container_name: crafty
+    environment:
+      TZ: "${TZ}"
+      USER_ID: ${PUID}
+      GROUP_ID: ${PGID}
+      INSTALL_JAVA8: "false"
+      INSTALL_JAVA11: "false"
+      INSTALL_JAVA17: "true"
+    ports:
+      - "25565-25570:25565-25570/tcp"
+      - "25565-25570:25565-25570/udp"
+      - "8000:8000"
+    volumes:
+      - "{{ container_data_path }}/crafty/servers:/minecraft_servers:rw"
+      - "{{ container_data_path }}/crafty/database:/crafty_db:rw"
+      - "{{ container_data_path }}/crafty/backups:/crafty_web/backups:rw"
+      - "{{ container_data_path }}/crafty/minecraft:/var/opt/minecraft"
