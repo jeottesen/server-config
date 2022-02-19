@@ -7,14 +7,32 @@
     mode: '0755'
     state: "directory"
 
-- name: Ensure acme config
+- name: Ensure 'traefik/acme/acme.json' exists
   file:
     path: "{{ traefik_directory }}/acme/acme.json"
     state: touch
     mode: '0600'
 
-- name: Ensure traefik log
+- name: Ensure 'traefik/traefik.log' exists
   file:
     path: "{{ traefik_directory }}/traefik.log"
     state: touch
     mode: '0755'
+
+- name: Create 'traefik/rules/middlewares.yml' file
+  template:
+    src: traefik/rules/middlewares.yml.j2
+    dest: "{{ traefik_directory }}/rules/middlewares.yml"
+    mode: 0644
+
+- name: Create 'traefik/tls-opts.yml' file
+  template:
+    src: traefik/rules/tls-opts.yml.j2
+    dest: "{{ traefik_directory }}/rules/tls-opts.yml"
+    mode: 0644
+
+- name: Create 'traefik/rules/middleware-chains.yml' file
+  template:
+    src: traefik/rules/middleware-chains.yml.j2
+    dest: "{{ traefik_directory }}/rules/middleware-chains.yml"
+    mode: 0644

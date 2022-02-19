@@ -1,27 +1,14 @@
 ---
 
+- include: secrets.yml
+- include: vpn.yml
 - include: traefik.yml
+- include: authelia.yml
 
 - name: install docker pip modules
   pip:
     name: docker-compose
     state: present
-
-- name: create folder for vpn container
-  file:
-    path: "{{ container_data_path }}/vpn/"
-    owner: "{{ primary_user }}"
-    group: "{{ primary_group }}"
-    mode: '0755'
-    state: "directory"
-
-- name: add ovpn file for vpn container
-  copy:
-    src: files/vault/vpn.ovpn
-    dest: "{{ container_data_path }}/vpn/vpn.ovpn"
-    owner: "{{ primary_user }}"
-    group: "{{ primary_group }}"
-    mode: '0644'
 
 - name: Create docker-compose.yml file
   template:

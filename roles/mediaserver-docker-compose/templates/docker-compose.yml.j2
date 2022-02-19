@@ -47,6 +47,23 @@ x-common-keys-apps: &common-keys-apps
   # profiles:
   # - apps
 
+secrets:
+  htpasswd:
+    file: $DOCKER_DIR/secrets/htpasswd
+  {# authelia_jwt_secret:
+    file: $DOCKER_CONTAINER_DIR/secrets/authelia_jwt_secret
+  authelia_session_secret:
+    file: $DOCKER_CONTAINER_DIR/secrets/authelia_session_secret
+  authelia_storage_mysql_password:
+    file: $DOCKER_CONTAINER_DIR/secrets/authelia_storage_mysql_password
+  authelia_notifier_smtp_password:
+    file: $DOCKER_CONTAINER_DIR/secrets/authelia_notifier_smtp_password
+  authelia_duo_api_secret_key:
+    file: $DOCKER_CONTAINER_DIR/secrets/authelia_duo_api_secret_key
+  authelia_storage_encryption_key:
+    file: $DOCKER_CONTAINER_DIR/secrets/authelia_storage_encryption_key #}
+
+
 services:
 
 ########################### Core Services
@@ -66,7 +83,7 @@ services:
       - --entryPoints.traefik.address=:8080
       # - --entryPoints.ping.address=:8081
       - --api=true
-      - --api.insecure=true
+      - --api.insecure=false
       - --api.dashboard=true
       #- --ping=true
       #- --pilot.token=$TRAEFIK_PILOT_TOKEN
@@ -84,16 +101,16 @@ services:
       - --providers.docker.exposedByDefault=false
       # - --entrypoints.https.http.middlewares=chain-oauth@file
       - --entrypoints.https.http.tls.options=tls-opts@file
-      # Add dns-cloudflare as default certresolver for all services. Also enables TLS and no need to specify on individual services
+      # Add route53 as default certresolver for all services. Also enables TLS and no need to specify on individual services
       - --entrypoints.https.http.tls.certresolver=route53
-      # - --entrypoints.https.http.tls.domains[0].main=$DOMAINNAME
-      # - --entrypoints.https.http.tls.domains[0].sans=*.$DOMAINNAME
+      # - --entrypoints.https.http.tls.domains[0].main=$DOMAINNAME0
+      # - --entrypoints.https.http.tls.domains[0].sans=*.$DOMAINNAME0
       - --providers.docker.network=docker_proxies
       - --providers.docker.swarmMode=false
       - --providers.file.directory=/rules # Load dynamic configuration from one or more .toml or .yml files in a directory
       # - --providers.file.filename=/path/to/file # Load dynamic configuration from a file
       - --providers.file.watch=true # Only works on top level files in the rules folder
-      - --certificatesResolvers.route53.acme.caServer=https://acme-staging-v02.api.letsencrypt.org/directory # LetsEncrypt Staging Server - uncomment when testing
+      #- --certificatesResolvers.route53.acme.caServer=https://acme-staging-v02.api.letsencrypt.org/directory # LetsEncrypt Staging Server - uncomment when testing
       - --certificatesResolvers.route53.acme.email={{ admin_email_address }}
       - --certificatesResolvers.route53.acme.storage=/acme.json
       - --certificatesResolvers.route53.acme.dnsChallenge.provider=route53
@@ -116,10 +133,12 @@ services:
         published: 443
         protocol: tcp
         mode: host
-      - target: 8080
-        published: 8080
-        protocol: tcp
-        mode: host
+      # - target: 8080
+      #  published: 8080
+      #  protocol: tcp
+      #  mode: host
+    secrets:
+       - htpasswd
     volumes:
       - {{ traefik_directory }}/rules:/rules # file provider directory
       - {{ traefik_directory }}/acme/acme.json:/acme.json # cert location - you must touch this file and change permissions to 600
@@ -139,15 +158,15 @@ services:
       - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
       # HTTP Routers
       - "traefik.http.routers.traefik-rtr.entrypoints=https"
-      - "traefik.http.routers.traefik-rtr.rule=Host(`traefik.$DOMAINNAME`)"
+      - "traefik.http.routers.traefik-rtr.rule=Host(`traefik.$DOMAINNAME0`)"
       ## Services - API
       - "traefik.http.routers.traefik-rtr.service=api@internal"
       ## Healthcheck/ping
-      #- "traefik.http.routers.ping.rule=Host(`traefik.$DOMAINNAME`) && Path(`/ping`)"
+      #- "traefik.http.routers.ping.rule=Host(`traefik.$DOMAINNAME0`) && Path(`/ping`)"
       #- "traefik.http.routers.ping.tls=true"
       #- "traefik.http.routers.ping.service=ping@internal"
       ## Middlewares
-      #- "traefik.http.routers.traefik-rtr.middlewares=chain-oauth@file"
+      - "traefik.http.routers.traefik-rtr.middlewares=chain-basic-auth@file"
 
     # Docker Socket Proxy - Security Enchanced Proxy for Docker Socket
   socket-proxy:
@@ -199,7 +218,70 @@ services:
       - VOLUMES=1 # Portainer
 
 
+  {# # Authelia (Lite) - Self-Hosted Single Sign-On and Two-Factor Authentication
+  authelia:
+    container_name: authelia
+    # Check this before upgrading: https://github.com/authelia/authelia/blob/master/BREAKING.md
+    image: authelia/authelia:latest
+    restart: always
+    networks:
+      - proxies
+      - default
+    # ports:
+    #   - "9091:9091"
+    volumes:
+      - $DOCKER_CONTAINER_DIR/authelia:/config
+    environment:
+      <<: *default-tz-puid-pgid
+      AUTHELIA_JWT_SECRET_FILE: /run/secrets/authelia_jwt_secret
+      AUTHELIA_SESSION_SECRET_FILE: /run/secrets/authelia_session_secret
+      AUTHELIA_STORAGE_MYSQL_PASSWORD_FILE: /run/secrets/authelia_storage_mysql_password
+      AUTHELIA_NOTIFIER_SMTP_PASSWORD_FILE: /run/secrets/authelia_notifier_smtp_password
+      AUTHELIA_DUO_API_SECRET_KEY_FILE: /run/secrets/authelia_duo_api_secret_key
+      #AUTHELIA_STORAGE_ENCRYPTION_KEY_FILE: /run/secrets/authelia_storage_encryption_key
+    secrets:
+      - authelia_jwt_secret
+      - authelia_session_secret
+      - authelia_storage_mysql_password
+      - authelia_notifier_smtp_password
+      - authelia_duo_api_secret_key
+      #- authelia_storage_encryption_key
+    labels:
+      - "traefik.enable=true"
+      ## HTTP Routers
+      - "traefik.http.routers.authelia-rtr.entrypoints=https"
+      - "traefik.http.routers.authelia-rtr.rule=Host(`authelia.$DOMAINNAME0`)"
+      - "traefik.http.routers.authelia-rtr.tls=true"
+      ## Middlewares
+      - "traefik.http.routers.authelia-rtr.middlewares=chain-authelia@file"
+      ## HTTP Services
+      - "traefik.http.routers.authelia-rtr.service=authelia-svc"
+      - "traefik.http.services.authelia-svc.loadbalancer.server.port=9091" #}
 
+
+  # Organizr - Unified Frontend
+  organizr:
+    <<: *common-keys-core
+    container_name: organizr
+    image: organizrtools/organizr-v2:latest
+#    ports:
+#      - "$ORGANIZR_PORT:80"
+    volumes:
+      - $DOCKER_CONTAINER_DIR/organizr:/config
+    environment:
+      <<: *default-tz-puid-pgid
+      fpm: "true" #true or false | using true will provide better performance
+      branch: v2-master #v2-master or #v2-develop
+    labels:
+      - "traefik.enable=true"
+      ## HTTP Routers
+      - "traefik.http.routers.organizr-rtr.entrypoints=https"
+      - "traefik.http.routers.organizr-rtr.rule=Host(`$DOMAINNAME0`,`www.$DOMAINNAME0`)"
+      ## Middlewares
+      - "traefik.http.routers.organizr-rtr.middlewares=chain-basic-auth@file"
+      ## HTTP Services
+      - "traefik.http.routers.organizr-rtr.service=organizr-svc"
+      - "traefik.http.services.organizr-svc.loadbalancer.server.port=80"
 
   unifi-controller:
     image: lscr.io/linuxserver/unifi-controller
@@ -211,7 +293,7 @@ services:
       - MEM_LIMIT=1024M #optional
       - MEM_STARTUP=1024M #optional
     volumes:
-      - {{ container_data_path }}/unifi:/config
+      - $DOCKER_CONTAINER_DIR/unifi:/config
     ports:
       - 3478:3478/udp
       - 10001:10001/udp
@@ -247,7 +329,7 @@ services:
     tty: true
     volumes:
       - /dev/net:/dev/net:z
-      - {{ container_data_path }}/vpn:/vpn
+      - $DOCKER_CONTAINER_DIR/vpn:/vpn
     # Put .ovpn configuration file in the /vpn directory (in "volumes:" above or
     # launch using the command line arguments, IE pick one:
     #  - ./vpn:/vpn
@@ -270,7 +352,7 @@ services:
       - TZ=${TZ}
       - WEBUI_PORT=8080
     volumes:
-      - {{ container_data_path }}/qbittorrent:/config
+      - $DOCKER_CONTAINER_DIR/qbittorrent:/config
       - {{ media_data_path }}:/data
     network_mode: "service:vpn"
     depends_on:
@@ -287,7 +369,7 @@ services:
       - TZ=${TZ}
       - AUTO_UPDATE=true #optional
     volumes:
-      - {{ container_data_path }}/jackett:/config
+      - $DOCKER_CONTAINER_DIR/jackett:/config
     restart: unless-stopped
     networks:
       - proxies
@@ -304,9 +386,9 @@ services:
       - TZ=${TZ}
       - VERSION=latest
     volumes:
-      - '{{ container_data_path }}/plex/config:/config'
+      - '$DOCKER_CONTAINER_DIR/plex/config:/config'
       - '{{ media_data_path }}:/data'
-      - '{{ container_data_path }}/plex/transcode:/transcode'
+      - '$DOCKER_CONTAINER_DIR/plex/transcode:/transcode'
     network_mode: host
     security_opt:
       - no-new-privileges:true
@@ -320,11 +402,11 @@ services:
   #     - '80:80'
   #     - '443:443'
   #   volumes:
-  #     - '{{ container_data_path }}/nginx/html:/etc/nginx/html'
-  #     - '{{ container_data_path }}/nginx/config:/etc/nginx'
-  #     - '{{ container_data_path }}/certbot/conf:/etc/letsencrypt'
-  #     - '{{ container_data_path }}/certbot/www:/var/www/certbot'
-  #   command: "/bin/sh -c 'while :; do sleep 6h & wait $${!}; nginx -s reload; done & nginx -g \"daemon off;\"'"
+  #     - '$DOCKER_CONTAINER_DIR/nginx/html:/etc/nginx/html'
+  #     - '$DOCKER_CONTAINER_DIR/nginx/config:/etc/nginx'
+  #     - '$DOCKER_CONTAINER_DIR/certbot/conf:/etc/letsencrypt'
+  #     - '$DOCKER_CONTAINER_DIR/certbot/www:/var/www/certbot'
+  #   command: "/bin/sh -c 'while :; do sleep 6h & wait ${!}; nginx -s reload; done & nginx -g \"daemon off;\"'"
   #   networks:
   #     - proxies
   #   security_opt:
@@ -339,7 +421,7 @@ services:
       - PGID=${PGID}
       - TZ=${TZ}
     volumes:
-      - '{{ container_data_path }}/muximux:/config'
+      - '$DOCKER_CONTAINER_DIR/muximux:/config'
     networks:
       - proxies
     security_opt:
@@ -354,8 +436,8 @@ services:
         - PGID=${PGID}
         - TZ=${TZ}
     volumes:
-      - '{{ container_data_path }}/tautulli:/config'
-      - '{{ container_data_path }}/plex/config/Library/Application Support/Plex Media Server/Logs/:/logs'
+      - '$DOCKER_CONTAINER_DIR/tautulli:/config'
+      - '$DOCKER_CONTAINER_DIR/plex/config/Library/Application Support/Plex Media Server/Logs/:/logs'
     networks:
       - proxies
     security_opt:
@@ -370,24 +452,24 @@ services:
       - PGID=${PGID}
       - TZ=${TZ}
     volumes:
-      - '{{ container_data_path }}/beets:/config'
+      - '$DOCKER_CONTAINER_DIR/beets:/config'
       - '{{ media_data_path }}/Music:/music'
     networks:
       - isolated
     security_opt:
       - no-new-privileges:true
 
-  certbot:
+  {# certbot:
     image: certbot/certbot
     container_name: certbot
     volumes:
-      - '{{ container_data_path }}/certbot/conf:/etc/letsencrypt'
-      - '{{ container_data_path }}/certbot/www:/var/www/certbot'
-    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
+      - '$DOCKER_CONTAINER_DIR/certbot/conf:/etc/letsencrypt'
+      - '$DOCKER_CONTAINER_DIR/certbot/www:/var/www/certbot'
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait ${!}; done;'"
     networks:
       - isolated
     security_opt:
-      - no-new-privileges:true
+      - no-new-privileges:true #}
 
   anime-sonarr:
     image: lscr.io/linuxserver/sonarr
@@ -398,7 +480,7 @@ services:
       - PGID=${PGID}
       - TZ=${TZ}
     volumes:
-      - '{{ container_data_path }}/anime-sonarr:/config'
+      - '$DOCKER_CONTAINER_DIR/anime-sonarr:/config'
       - '{{ media_data_path }}:/data'
     networks:
       - proxies
@@ -414,7 +496,7 @@ services:
       - PGID=${PGID}
       - TZ=${TZ}
     volumes:
-      - '{{ container_data_path }}/tv-sonarr:/config'
+      - '$DOCKER_CONTAINER_DIR/tv-sonarr:/config'
       - '{{ media_data_path }}:/data'
     networks:
       - proxies
@@ -430,7 +512,7 @@ services:
       - PGID=${PGID}
       - TZ=${TZ}
     volumes:
-      - '{{ container_data_path }}/radarr:/config'
+      - '$DOCKER_CONTAINER_DIR/radarr:/config'
       - '{{ media_data_path }}:/data'
     networks:
       - proxies
@@ -452,7 +534,7 @@ services:
       - "25565-25570:25565-25570/udp"
       - "8000:8000"
     volumes:
-      - "{{ container_data_path }}/crafty/servers:/minecraft_servers:rw"
-      - "{{ container_data_path }}/crafty/database:/crafty_db:rw"
-      - "{{ container_data_path }}/crafty/backups:/crafty_web/backups:rw"
-      - "{{ container_data_path }}/crafty/minecraft:/var/opt/minecraft"
+      - "$DOCKER_CONTAINER_DIR/crafty/servers:/minecraft_servers:rw"
+      - "$DOCKER_CONTAINER_DIR/crafty/database:/crafty_db:rw"
+      - "$DOCKER_CONTAINER_DIR/crafty/backups:/crafty_web/backups:rw"
+      - "$DOCKER_CONTAINER_DIR/crafty/minecraft:/var/opt/minecraft"

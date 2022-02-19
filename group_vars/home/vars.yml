@@ -1,5 +1,6 @@
 primary_user: jeremy
 primary_group: jeremy
+primary_user_htpass: "{{vault_home_primary_user_htpass }}"
 ansible_user: "{{ primary_user }}"
 ssh_user: "{{ primary_user }}"
 
