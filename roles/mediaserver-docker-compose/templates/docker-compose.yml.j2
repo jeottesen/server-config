@@ -110,11 +110,13 @@ services:
     image: linuxserver/plex
     container_name: plex
     restart: unless-stopped
+    runtime: nvidia
     environment:
       - PUID=${PUID}
       - PGID=${PGID}
       - TZ=${TZ}
       - VERSION=latest
+      - NVIDIA_VISIBLE_DEVICES=ALL
     volumes:
       - '{{ container_data_path }}/plex/config:/config'
       - '{{ media_data_path }}:/data'
@@ -122,7 +124,6 @@ services:
     network_mode: host
     security_opt:
       - no-new-privileges:true
-
 
   nginx:
     image: nginx
@@ -189,7 +190,7 @@ services:
     security_opt:
       - no-new-privileges:true
 
-  certbot:
+  {# certbot:
     image: certbot/certbot
     container_name: certbot
     volumes:
@@ -199,7 +200,7 @@ services:
     networks:
       - isolated
     security_opt:
-      - no-new-privileges:true
+      - no-new-privileges:true #}
 
   anime-sonarr:
     image: lscr.io/linuxserver/sonarr
