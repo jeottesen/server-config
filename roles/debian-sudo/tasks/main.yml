@@ -20,6 +20,9 @@
       groups: sudo
       append: yes
     loop: "{{ sudo_users }}"
+    notify: Reset open ssh sessions
+
+
 
   # become root to install and setup sudo
   become: yes

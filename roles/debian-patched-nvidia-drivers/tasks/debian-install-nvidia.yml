@@ -1,0 +1,25 @@
+---
+- name: Install linux-headers-generic and software-properties-common
+  apt:
+    update_cache: yes
+    pkg:
+    - linux-headers-generic
+    - software-properties-common
+    state: present
+
+- name: Add contrib and non-free repositories into sources list
+  ansible.builtin.apt_repository:
+    repo: deb http://deb.debian.org/debian/ bullseye main contrib non-free
+    state: present
+
+- name: Install nvidia-driver and firmware-misc-nonfree
+  apt:
+    update_cache: yes
+    install_recommends: no
+    pkg:
+    - nvidia-driver
+    - firmware-misc-nonfree
+    - nvidia-cuda-dev
+    - nvidia-cuda-toolkit
+    state: present
+  notify: Reboot after kernel changes
