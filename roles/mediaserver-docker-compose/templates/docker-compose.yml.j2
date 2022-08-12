@@ -257,8 +257,8 @@ services:
       TZ: "${TZ}"
       USER_ID: ${PUID}
       GROUP_ID: ${PGID}
-      INSTALL_JAVA8: "false"
-      INSTALL_JAVA11: "false"
+      INSTALL_JAVA8: "true"
+      INSTALL_JAVA11: "true"
       INSTALL_JAVA17: "true"
     ports:
       - "25565-25570:25565-25570/tcp"
@@ -269,3 +269,18 @@ services:
       - "{{ container_data_path }}/crafty/database:/crafty_db:rw"
       - "{{ container_data_path }}/crafty/backups:/crafty_web/backups:rw"
       - "{{ container_data_path }}/crafty/minecraft:/var/opt/minecraft"
+
+  dst-server:
+    image: jamesits/dst-server:latest
+    container_name: dst-server
+    profiles:
+      - donotstart
+    environment:
+      TZ: "${TZ}"
+      USER_ID: ${PUID}
+      GROUP_ID: ${PGID}
+    ports:
+      - "10999-11000:10999-11000/udp"
+      - "12346-12347:12346-12347/udp"
+    volumes:
+      - "{{ container_data_path }}/dst-server/:/data:rw"
