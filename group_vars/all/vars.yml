@@ -4,7 +4,11 @@ required_packages:
   - name: rsync
   - name: smartmontools
 
+docker_compose_version: "v2.2.3"
+docker_package_state: latest
+
 # ssh hardening
+ssh_ansible_identity_key: "{{ vault_ansible_ssh_identity_key }}"
 ssh_identity_key: "{{ vault_ssh_identity_key }}"
 sftp_enabled: true
 

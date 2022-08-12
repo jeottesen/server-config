@@ -1,0 +1,24 @@
+---
+
+- name: Git checkout nvidia-patch
+  git:
+    repo: 'https://github.com/keylase/nvidia-patch.git'
+    dest: /opt/nvidia-patch/
+  register: git_nvidia_patch
+
+- name: Run patch.sh script
+  command: "bash /opt/nvidia-patch/patch.sh"
+  when: git_nvidia_patch.changed
+
+# Commands for testing
+# docker run --gpus all --rm willprice/nvidia-ffmpeg \
+# -y -vsync 0 -hwaccel cuda -hwaccel_output_format cuda \
+# -f lavfi -i testsrc -t 50 \
+# -vf hwupload -c:a copy -c:v h264_nvenc -b:v 4M -f null - \
+# -vf hwupload -c:a copy -c:v h264_nvenc -b:v 1M -f null - \
+# -vf hwupload -c:a copy -c:v h264_nvenc -b:v 8M -f null - \
+# -vf hwupload -c:a copy -c:v h264_nvenc -b:v 6M -f null -
+
+# docker run --rm --gpus all --entrypoint nvidia-smi willprice/nvidia-ffmpeg
+
+# docker run --rm --gpus all nvidia/cuda:11.0-base nvidia-smi

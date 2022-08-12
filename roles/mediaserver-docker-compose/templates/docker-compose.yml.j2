@@ -380,11 +380,13 @@ services:
     image: linuxserver/plex
     container_name: plex
     restart: unless-stopped
+    runtime: nvidia
     environment:
       - PUID=${PUID}
       - PGID=${PGID}
       - TZ=${TZ}
       - VERSION=latest
+      - NVIDIA_VISIBLE_DEVICES=ALL
     volumes:
       - '$DOCKER_CONTAINER_DIR/plex/config:/config'
       - '{{ media_data_path }}:/data'
@@ -526,8 +528,8 @@ services:
       TZ: "${TZ}"
       USER_ID: ${PUID}
       GROUP_ID: ${PGID}
-      INSTALL_JAVA8: "false"
-      INSTALL_JAVA11: "false"
+      INSTALL_JAVA8: "true"
+      INSTALL_JAVA11: "true"
       INSTALL_JAVA17: "true"
     ports:
       - "25565-25570:25565-25570/tcp"
@@ -538,3 +540,18 @@ services:
       - "$DOCKER_CONTAINER_DIR/crafty/database:/crafty_db:rw"
       - "$DOCKER_CONTAINER_DIR/crafty/backups:/crafty_web/backups:rw"
       - "$DOCKER_CONTAINER_DIR/crafty/minecraft:/var/opt/minecraft"
+
+  dst-server:
+    image: jamesits/dst-server:latest
+    container_name: dst-server
+    profiles:
+      - donotstart
+    environment:
+      TZ: "${TZ}"
+      USER_ID: ${PUID}
+      GROUP_ID: ${PGID}
+    ports:
+      - "10999-11000:10999-11000/udp"
+      - "12346-12347:12346-12347/udp"
+    volumes:
+      - "$DOCKER_CONTAINER_DIR/dst-server/:/data:rw"

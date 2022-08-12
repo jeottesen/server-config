@@ -60,3 +60,12 @@ samba__shares:
     force user: nobody
     create mask: 666
     directory mask: 777
+
+  'data':
+    path: '/data'
+    comment: 'Same as Media added for PKC convienience'
+    read only: no
+    guest ok: yes
+    force user: nobody
+    create mask: 666
+    directory mask: 777
