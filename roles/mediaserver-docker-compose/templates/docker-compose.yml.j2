@@ -6,9 +6,6 @@ networks:
   proxies:
     # Containers part of the reverse proxy system
     driver: bridge
-  isolated:
-    # Containers not part of the reverse proxy system
-    driver: bridge
   socket_proxy:
     # network for the docker socket
     driver: bridge
@@ -23,6 +20,8 @@ networks:
 # Common environment values
 x-environment: &default-tz-puid-pgid
   TZ: $TZ
+  USER_ID: ${PUID}
+  GROUP_ID: ${PGID}
   PUID: $PUID
   PGID: $PGID
 
@@ -99,7 +98,7 @@ services:
       - --providers.docker.endpoint=tcp://socket-proxy:2375
       # Automatically set Host rule for services
       - --providers.docker.exposedByDefault=false
-      # - --entrypoints.https.http.middlewares=chain-oauth@file
+      # - --entrypoints.https.http.middlewares=chain-basic-auth@file
       - --entrypoints.https.http.tls.options=tls-opts@file
       # Add route53 as default certresolver for all services. Also enables TLS and no need to specify on individual services
       - --entrypoints.https.http.tls.certresolver=route53
@@ -115,6 +114,8 @@ services:
       - --certificatesResolvers.route53.acme.storage=/acme.json
       - --certificatesResolvers.route53.acme.dnsChallenge.provider=route53
       - --certificatesResolvers.route53.acme.dnsChallenge.delayBeforeCheck=90 # To delay DNS check and reduce LE hitrate
+      # Disable SSL verification on backend
+      - "--serverstransport.insecureskipverify=true"
     networks:
       - proxies
       - socket_proxy
@@ -151,6 +152,10 @@ services:
     labels:
       #- "autoheal=true"
       - "traefik.enable=true"
+      # Local HTTP Router
+      {# - "traefik.http.routers.http-local.entrypoints=http"
+      - "traefik.http.routers.http-local.rule.allow-subnet.action=allow"
+      - "traefik.http.routers.http-local.rule.allow-subnet.rule=HeadersRegexp(`X-Real-Ip`, `^192\\.168\\.`)" #}
       # HTTP-to-HTTPS Redirect
       - "traefik.http.routers.http-catchall.entrypoints=http"
       - "traefik.http.routers.http-catchall.rule=HostRegexp(`{host:.+}`)"
@@ -159,6 +164,10 @@ services:
       # HTTP Routers
       - "traefik.http.routers.traefik-rtr.entrypoints=https"
       - "traefik.http.routers.traefik-rtr.rule=Host(`traefik.$DOMAINNAME0`)"
+      - "traefik.http.routers.traefik-rtr.tls=true"
+      - "traefik.http.routers.traefik-rtr.tls.certresolver=route53"
+      - "traefik.http.routers.traefik-rtr.tls.domains[0].main=$DOMAINNAME0"
+      - "traefik.http.routers.traefik-rtr.tls.domains[0].sans=*.$DOMAINNAME0"
       ## Services - API
       - "traefik.http.routers.traefik-rtr.service=api@internal"
       ## Healthcheck/ping
@@ -263,7 +272,7 @@ services:
   organizr:
     <<: *common-keys-core
     container_name: organizr
-    image: organizrtools/organizr-v2:latest
+    image: organizr/organizr
 #    ports:
 #      - "$ORGANIZR_PORT:80"
     volumes:
@@ -276,22 +285,40 @@ services:
       - "traefik.enable=true"
       ## HTTP Routers
       - "traefik.http.routers.organizr-rtr.entrypoints=https"
-      - "traefik.http.routers.organizr-rtr.rule=Host(`$DOMAINNAME0`,`www.$DOMAINNAME0`)"
+      - "traefik.http.routers.organizr-rtr.rule=Host(`organizr.$DOMAINNAME0`)"
       ## Middlewares
       - "traefik.http.routers.organizr-rtr.middlewares=chain-basic-auth@file"
       ## HTTP Services
       - "traefik.http.routers.organizr-rtr.service=organizr-svc"
       - "traefik.http.services.organizr-svc.loadbalancer.server.port=80"
 
+  muximux:
+    <<: *common-keys-core
+    image: linuxserver/muximux
+    container_name: muximux
+    environment:
+      <<: *default-tz-puid-pgid
+    volumes:
+      - '$DOCKER_CONTAINER_DIR/muximux:/config'
+    labels:
+      - "traefik.enable=true"
+      ## HTTP Routers
+      - "traefik.http.routers.muximux-rtr.entrypoints=https"
+      - "traefik.http.routers.muximux-rtr.rule=Host(`$DOMAINNAME0`,`www.$DOMAINNAME0`)"
+      ## Middlewares
+      - "traefik.http.routers.muximux-rtr.middlewares=chain-basic-auth@file"
+      ## HTTP Services
+      - "traefik.http.routers.muximux-rtr.service=muximux-svc"
+      - "traefik.http.services.muximux-svc.loadbalancer.server.port=80"
+
   unifi-controller:
+    <<: *common-keys-core
     image: lscr.io/linuxserver/unifi-controller
     container_name: unifi-controller
     environment:
-      - PUID=${PUID}
-      - PGID=${PGID}
-      - TZ=${TZ}
-      - MEM_LIMIT=1024M #optional
-      - MEM_STARTUP=1024M #optional
+      <<: *default-tz-puid-pgid
+      MEM_LIMIT: 1024M #optional
+      MEM_STARTUP: 1024M #optional
     volumes:
       - $DOCKER_CONTAINER_DIR/unifi:/config
     ports:
@@ -299,14 +326,11 @@ services:
       - 10001:10001/udp
       # - 8080:8080
       - 8443:8443
-      - 1900:1900/udp #optional
+      #- 1900:1900/udp #optional
       - 8843:8843 #optional
       - 8880:8880 #optional
       - 6789:6789 #optional
       - 5514:5514/udp #optional
-    restart: unless-stopped
-    security_opt:
-      - no-new-privileges:true
 
   vpn:
     image: dperson/openvpn-client
@@ -315,7 +339,7 @@ services:
     cap_add:
       - net_admin
     environment:
-      - TZ=${TZ}
+      TZ: ${TZ}
     command: -d
     # if using '-d' or 'DNS' you can't enable the `read_only: true` option
     read_only: false
@@ -347,10 +371,8 @@ services:
     container_name: qbittorrent
     restart: unless-stopped
     environment:
-      - PUID=${PUID}
-      - PGID=${PGID}
-      - TZ=${TZ}
-      - WEBUI_PORT=8080
+      <<: *default-tz-puid-pgid
+      #WEBUI_PORT=8080
     volumes:
       - $DOCKER_CONTAINER_DIR/qbittorrent:/config
       - {{ media_data_path }}:/data
@@ -359,107 +381,86 @@ services:
       - vpn
     security_opt:
       - no-new-privileges:true
+    labels:
+      - "traefik.enable=true"
+      ## HTTP Routers
+      - "traefik.http.routers.qbittorrent-rtr.entrypoints=https"
+      - "traefik.http.routers.qbittorrent-rtr.rule=Host(`qbt.$DOMAINNAME0`)"
+      ## Middlewares
+      - "traefik.http.routers.qbittorrent-rtr.middlewares=chain-basic-auth@file"
+      ## HTTP Services
+      - "traefik.http.routers.qbittorrent-rtr.service=qbittorrent-svc"
+      - "traefik.http.services.qbittorrent-svc.loadbalancer.server.port=8080"
 
   jackett:
+    <<: *common-keys-apps # See EXTENSION FIELDS at the top
     image: lscr.io/linuxserver/jackett
     container_name: jackett
     environment:
-      - PUID=${PUID}
-      - PGID=${PGID}
-      - TZ=${TZ}
-      - AUTO_UPDATE=true #optional
+      <<: *default-tz-puid-pgid
+      AUTO_UPDATE: "true" #optional
     volumes:
       - $DOCKER_CONTAINER_DIR/jackett:/config
-    restart: unless-stopped
-    networks:
-      - proxies
-    security_opt:
-      - no-new-privileges:true
 
   plex:
+    <<: *common-keys-apps # See EXTENSION FIELDS at the top
     image: linuxserver/plex
     container_name: plex
-    restart: unless-stopped
     runtime: nvidia
+    ports:
+      - "32400:32400/tcp"
+      - "3005:3005/tcp"
+      - "8324:8324/tcp"
+      - "32469:32469/tcp"
+      - "1900:1900/udp"
+      - "32410:32410/udp"
+      - "32412:32412/udp"
+      - "32413:32413/udp"
+      - "32414:32414/udp"
+      #- "$PLEX_WEB_TOOLS_PORT:33400"
     environment:
-      - PUID=${PUID}
-      - PGID=${PGID}
-      - TZ=${TZ}
-      - VERSION=latest
-      - NVIDIA_VISIBLE_DEVICES=ALL
+      <<: *default-tz-puid-pgid
+      VERSION: latest
+      NVIDIA_VISIBLE_DEVICES: ALL
     volumes:
       - '$DOCKER_CONTAINER_DIR/plex/config:/config'
       - '{{ media_data_path }}:/data'
       - '$DOCKER_CONTAINER_DIR/plex/transcode:/transcode'
-    network_mode: host
-    security_opt:
-      - no-new-privileges:true
+    labels:
+      - "traefik.enable=true"
+      ## HTTP Routers
+      - "traefik.http.routers.plexms-rtr.entrypoints=https"
+      - "traefik.http.routers.plexms-rtr.rule=Host(`plex.$DOMAINNAME0`)"
+      ## Middlewares
+      - "traefik.http.routers.plexms-rtr.middlewares=chain-no-auth@file"
+      ## HTTP Servicesnoauth
+      - "traefik.http.routers.plexms-rtr.service=plexms-svc"
+      - "traefik.http.services.plexms-svc.loadbalancer.server.port=32400"
 
-
-  # nginx:
-  #   image: nginx
-  #   container_name: nginx
-  #   restart: unless-stopped
-  #   ports:
-  #     - '80:80'
-  #     - '443:443'
-  #   volumes:
-  #     - '$DOCKER_CONTAINER_DIR/nginx/html:/etc/nginx/html'
-  #     - '$DOCKER_CONTAINER_DIR/nginx/config:/etc/nginx'
-  #     - '$DOCKER_CONTAINER_DIR/certbot/conf:/etc/letsencrypt'
-  #     - '$DOCKER_CONTAINER_DIR/certbot/www:/var/www/certbot'
-  #   command: "/bin/sh -c 'while :; do sleep 6h & wait ${!}; nginx -s reload; done & nginx -g \"daemon off;\"'"
-  #   networks:
-  #     - proxies
-  #   security_opt:
-  #     - no-new-privileges:true
-
-  muximux:
-    image: linuxserver/muximux
-    container_name: muximux
-    restart: unless-stopped
-    environment:
-      - PUID=${PUID}
-      - PGID=${PGID}
-      - TZ=${TZ}
-    volumes:
-      - '$DOCKER_CONTAINER_DIR/muximux:/config'
-    networks:
-      - proxies
-    security_opt:
-      - no-new-privileges:true
 
   tautulli:
+    <<: *common-keys-apps # See EXTENSION FIELDS at the top
     image: linuxserver/tautulli
     container_name: tautulli
-    restart: unless-stopped
     environment:
-        - PUID=${PUID}
-        - PGID=${PGID}
-        - TZ=${TZ}
+      <<: *default-tz-puid-pgid
     volumes:
       - '$DOCKER_CONTAINER_DIR/tautulli:/config'
       - '$DOCKER_CONTAINER_DIR/plex/config/Library/Application Support/Plex Media Server/Logs/:/logs'
-    networks:
-      - proxies
-    security_opt:
-      - no-new-privileges:true
 
-  beets:
+  {# beets:
     image: linuxserver/beets
     container_name: beets
     restart: unless-stopped
     environment:
-      - PUID=${PUID}
-      - PGID=${PGID}
-      - TZ=${TZ}
+      <<: *default-tz-puid-pgid
     volumes:
       - '$DOCKER_CONTAINER_DIR/beets:/config'
       - '{{ media_data_path }}/Music:/music'
     networks:
       - isolated
     security_opt:
-      - no-new-privileges:true
+      - no-new-privileges:true #}
 
   {# certbot:
     image: certbot/certbot
@@ -474,72 +475,87 @@ services:
       - no-new-privileges:true #}
 
   anime-sonarr:
+    <<: *common-keys-apps # See EXTENSION FIELDS at the top
     image: lscr.io/linuxserver/sonarr
     container_name: anime-sonarr
-    restart: unless-stopped
     environment:
-      - PUID=${PUID}
-      - PGID=${PGID}
-      - TZ=${TZ}
+      <<: *default-tz-puid-pgid
     volumes:
       - '$DOCKER_CONTAINER_DIR/anime-sonarr:/config'
       - '{{ media_data_path }}:/data'
-    networks:
-      - proxies
-    security_opt:
-      - no-new-privileges:true
 
   tv-sonarr:
+    <<: *common-keys-apps # See EXTENSION FIELDS at the top
     image: lscr.io/linuxserver/sonarr
     container_name: tv-sonarr
-    restart: unless-stopped
     environment:
-      - PUID=${PUID}
-      - PGID=${PGID}
-      - TZ=${TZ}
+      <<: *default-tz-puid-pgid
     volumes:
       - '$DOCKER_CONTAINER_DIR/tv-sonarr:/config'
       - '{{ media_data_path }}:/data'
-    networks:
-      - proxies
-    security_opt:
-      - no-new-privileges:true
 
   radarr:
+    <<: *common-keys-apps # See EXTENSION FIELDS at the top
     image: lscr.io/linuxserver/radarr
     container_name: radarr
-    restart: unless-stopped
     environment:
-      - PUID=${PUID}
-      - PGID=${PGID}
-      - TZ=${TZ}
+      <<: *default-tz-puid-pgid
     volumes:
       - '$DOCKER_CONTAINER_DIR/radarr:/config'
       - '{{ media_data_path }}:/data'
-    networks:
-      - proxies
-    security_opt:
-      - no-new-privileges:true
+
+  # File Browser - Explorer
+  filebrowser:
+    <<: *common-keys-apps # See EXTENSION FIELDS at the top
+    image: filebrowser/filebrowser:s6
+    container_name: filebrowser
+    #ports:
+    #  - "$FILEBROWSER_PORT:80"
+    volumes:
+      - $DOCKER_CONTAINER_DIR/filebrowser:/config
+      - /data/:/data/data
+    environment:
+      <<: *default-tz-puid-pgid
+    labels:
+      - "traefik.enable=true"
+      ## HTTP Routers
+      - "traefik.http.routers.filebrowser-rtr.entrypoints=https"
+      - "traefik.http.routers.filebrowser-rtr.rule=Host(`fb.$DOMAINNAME0`)"
+      ## Middlewares
+      - "traefik.http.routers.filebrowser-rtr.middlewares=chain-basic-auth@file"
+      ## HTTP Services
+      - "traefik.http.routers.filebrowser-rtr.service=filebrowser-svc"
+      - "traefik.http.services.filebrowser-svc.loadbalancer.server.port=80"
 
   crafty-web:
+    <<: *common-keys-apps # See EXTENSION FIELDS at the top
     image: shawly/crafty-web
     container_name: crafty
     environment:
-      TZ: "${TZ}"
-      USER_ID: ${PUID}
-      GROUP_ID: ${PGID}
+      <<: *default-tz-puid-pgid
       INSTALL_JAVA8: "true"
       INSTALL_JAVA11: "true"
       INSTALL_JAVA17: "true"
     ports:
       - "25565-25570:25565-25570/tcp"
       - "25565-25570:25565-25570/udp"
-      - "8000:8000"
+      #- "8000:8000"
     volumes:
-      - "$DOCKER_CONTAINER_DIR/crafty/servers:/minecraft_servers:rw"
       - "$DOCKER_CONTAINER_DIR/crafty/database:/crafty_db:rw"
       - "$DOCKER_CONTAINER_DIR/crafty/backups:/crafty_web/backups:rw"
       - "$DOCKER_CONTAINER_DIR/crafty/minecraft:/var/opt/minecraft"
+    labels:
+      - "traefik.enable=true"
+      ## HTTP Routers
+      - "traefik.http.routers.crafty-rtr.entrypoints=https"
+      - "traefik.http.routers.crafty-rtr.rule=Host(`crafty.$DOMAINNAME0`)"
+      - "traefik.http.routers.crafty-rtr.tls=true"
+      ## Middlewares
+      - "traefik.http.routers.crafty-rtr.middlewares=chain-basic-auth@file"
+      ## HTTP Services
+      - "traefik.http.routers.crafty-rtr.service=crafty-svc"
+      - "traefik.http.services.crafty-svc.loadbalancer.server.scheme=https"
+      - "traefik.http.services.crafty-svc.loadbalancer.server.port=8000"
 
   dst-server:
     image: jamesits/dst-server:latest
@@ -547,9 +563,7 @@ services:
     profiles:
       - donotstart
     environment:
-      TZ: "${TZ}"
-      USER_ID: ${PUID}
-      GROUP_ID: ${PGID}
+      <<: *default-tz-puid-pgid
     ports:
       - "10999-11000:10999-11000/udp"
       - "12346-12347:12346-12347/udp"

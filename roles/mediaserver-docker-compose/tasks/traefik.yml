@@ -8,15 +8,17 @@
     state: "directory"
 
 - name: Ensure 'traefik/acme/acme.json' exists
-  file:
-    path: "{{ traefik_directory }}/acme/acme.json"
-    state: touch
+  copy:
+    content: ""
+    dest: "{{ traefik_directory }}/acme/acme.json"
+    force: no
     mode: '0600'
 
 - name: Ensure 'traefik/traefik.log' exists
-  file:
-    path: "{{ traefik_directory }}/traefik.log"
-    state: touch
+  copy:
+    content: ""
+    dest: "{{ traefik_directory }}/traefik.log"
+    force: no
     mode: '0755'
 
 - name: Create 'traefik/rules/middlewares.yml' file
