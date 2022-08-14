@@ -10,4 +10,14 @@
   template:
     src: authelia/configuration.yml.j2
     dest: "{{ container_data_path }}/authelia/configuration.yml"
+    owner: "{{ primary_user }}"
+    group: "{{ primary_group }}"
+    mode: 0644
+
+- name: Create authelia/users_database.yml file
+  template:
+    src: authelia/users_database.yml.j2
+    dest: "{{ container_data_path }}/authelia/users_database.yml"
+    owner: "{{ primary_user }}"
+    group: "{{ primary_group }}"
     mode: 0644

@@ -51,18 +51,22 @@ secrets:
     file: $DOCKER_DIR/secrets/htpasswd
   traefik_forward_auth:
     file: $DOCKER_DIR/secrets/traefik_forward_auth
-  {# authelia_jwt_secret:
-    file: $DOCKER_CONTAINER_DIR/secrets/authelia_jwt_secret
+  mysql_root_password:
+    file: $DOCKER_DIR/secrets/mysql_root_password
+  authelia_jwt_secret:
+    file: $DOCKER_DIR/secrets/authelia_jwt_secret
   authelia_session_secret:
-    file: $DOCKER_CONTAINER_DIR/secrets/authelia_session_secret
-  authelia_storage_mysql_password:
-    file: $DOCKER_CONTAINER_DIR/secrets/authelia_storage_mysql_password
-  authelia_notifier_smtp_password:
-    file: $DOCKER_CONTAINER_DIR/secrets/authelia_notifier_smtp_password
-  authelia_duo_api_secret_key:
-    file: $DOCKER_CONTAINER_DIR/secrets/authelia_duo_api_secret_key
+    file: $DOCKER_DIR/secrets/authelia_session_secret
   authelia_storage_encryption_key:
-    file: $DOCKER_CONTAINER_DIR/secrets/authelia_storage_encryption_key #}
+      file: $DOCKER_DIR/secrets/authelia_storage_encryption_key
+  #authelia_notifier_smtp_password:
+  #  file: $DOCKER_DIR/secrets/authelia_notifier_smtp_password
+  #authelia_storage_encryption_key:
+  #  file: $DOCKER_DIR/secrets/authelia_storage_encryption_key
+  #authelia_storage_mysql_password:
+  #  file: $DOCKER_DIR/secrets/authelia_storage_mysql_password
+  #authelia_duo_api_secret_key:
+  #  file: $DOCKER_DIR/secrets/authelia_duo_api_secret_key
 
 
 services:
@@ -179,8 +183,8 @@ services:
       ## Middlewares
       #- "traefik.http.routers.traefik-rtr.middlewares=chain-no-auth@file" # For No Authentication
       #- "traefik.http.routers.traefik-rtr.middlewares=chain-auth-basic@file" # For Basic HTTP Authentication
-      - "traefik.http.routers.traefik-rtr.middlewares=chain-oauth@file" # For Google OAuth
-      #- "traefik.http.routers.traefik-rtr.middlewares=chain-authelia@file" # For Authelia Authentication
+      #- "traefik.http.routers.traefik-rtr.middlewares=chain-oauth@file" # For Google OAuth
+      - "traefik.http.routers.traefik-rtr.middlewares=chain-authelia@file" # For Authelia Authentication
 
   # Docker Socket Proxy - Security Enchanced Proxy for Docker Socket
   socket-proxy:
@@ -232,47 +236,44 @@ services:
       - VOLUMES=1 # Portainer
 
 
-  {# # Authelia (Lite) - Self-Hosted Single Sign-On and Two-Factor Authentication
+  # Authelia (Lite) - Self-Hosted Single Sign-On and Two-Factor Authentication
   authelia:
+    <<: *common-keys-core # See EXTENSION FIELDS at the top
     container_name: authelia
     # Check this before upgrading: https://github.com/authelia/authelia/blob/master/BREAKING.md
-    image: authelia/authelia:latest
-    restart: always
-    networks:
-      - proxies
-      - default
-    # ports:
-    #   - "9091:9091"
+    image: authelia/authelia:4
+    #depends_on:
+      #- mariadb
+      #- redis
     volumes:
       - $DOCKER_CONTAINER_DIR/authelia:/config
     environment:
       <<: *default-tz-puid-pgid
       AUTHELIA_JWT_SECRET_FILE: /run/secrets/authelia_jwt_secret
       AUTHELIA_SESSION_SECRET_FILE: /run/secrets/authelia_session_secret
-      AUTHELIA_STORAGE_MYSQL_PASSWORD_FILE: /run/secrets/authelia_storage_mysql_password
-      AUTHELIA_NOTIFIER_SMTP_PASSWORD_FILE: /run/secrets/authelia_notifier_smtp_password
-      AUTHELIA_DUO_API_SECRET_KEY_FILE: /run/secrets/authelia_duo_api_secret_key
-      #AUTHELIA_STORAGE_ENCRYPTION_KEY_FILE: /run/secrets/authelia_storage_encryption_key
+      AUTHELIA_STORAGE_ENCRYPTION_KEY_FILE: /run/secrets/authelia_storage_encryption_key
+      #AUTHELIA_STORAGE_MYSQL_PASSWORD_FILE: /run/secrets/authelia_storage_mysql_password
+      #AUTHELIA_NOTIFIER_SMTP_PASSWORD_FILE: /run/secrets/authelia_notifier_smtp_password
+      #AUTHELIA_DUO_API_SECRET_KEY_FILE: /run/secrets/authelia_duo_api_secret_key
     secrets:
       - authelia_jwt_secret
       - authelia_session_secret
-      - authelia_storage_mysql_password
-      - authelia_notifier_smtp_password
-      - authelia_duo_api_secret_key
-      #- authelia_storage_encryption_key
+      - authelia_storage_encryption_key
+      #- authelia_storage_mysql_password
+      #- authelia_notifier_smtp_password
+      #- authelia_duo_api_secret_key
     labels:
       - "traefik.enable=true"
       ## HTTP Routers
       - "traefik.http.routers.authelia-rtr.entrypoints=https"
-      - "traefik.http.routers.authelia-rtr.rule=Host(`authelia.$DOMAINNAME0`)"
-      - "traefik.http.routers.authelia-rtr.tls=true"
+      - "traefik.http.routers.authelia-rtr.rule=HostHeader(`authelia.$DOMAINNAME0`)"
       ## Middlewares
       - "traefik.http.routers.authelia-rtr.middlewares=chain-authelia@file"
       ## HTTP Services
       - "traefik.http.routers.authelia-rtr.service=authelia-svc"
-      - "traefik.http.services.authelia-svc.loadbalancer.server.port=9091" #}
+      - "traefik.http.services.authelia-svc.loadbalancer.server.port=9091"
 
-  # Google OAuth - Single Sign On using OAuth 2.0
+  {# # Google OAuth - Single Sign On using OAuth 2.0
   # https://www.smarthomebeginner.com/google-oauth-with-traefik-docker/
   oauth:
     <<: *common-keys-core # See EXTENSION FIELDS at the top
@@ -304,10 +305,10 @@ services:
       - "traefik.http.routers.oauth-rtr.entrypoints=https"
       - "traefik.http.routers.oauth-rtr.rule=Host(`oauth.$DOMAINNAME0`)"
       ## Middlewares
-      - "traefik.http.routers.oauth-rtr.middlewares=chain-oauth@file"
+      - "traefik.http.routers.oauth-rtr.middlewares=chain-authelia@file"
       ## HTTP Services
       - "traefik.http.routers.oauth-rtr.service=oauth-svc"
-      - "traefik.http.services.oauth-svc.loadbalancer.server.port=4181"
+      - "traefik.http.services.oauth-svc.loadbalancer.server.port=4181" #}
 
 
   # Organizr - Unified Frontend
@@ -329,7 +330,7 @@ services:
       - "traefik.http.routers.organizr-rtr.entrypoints=https"
       - "traefik.http.routers.organizr-rtr.rule=Host(`organizr.$DOMAINNAME0`)"
       ## Middlewares
-      - "traefik.http.routers.organizr-rtr.middlewares=chain-oauth@file"
+      - "traefik.http.routers.organizr-rtr.middlewares=chain-authelia@file"
       ## HTTP Services
       - "traefik.http.routers.organizr-rtr.service=organizr-svc"
       - "traefik.http.services.organizr-svc.loadbalancer.server.port=80"
@@ -348,7 +349,7 @@ services:
       - "traefik.http.routers.muximux-rtr.entrypoints=https"
       - "traefik.http.routers.muximux-rtr.rule=Host(`$DOMAINNAME0`,`www.$DOMAINNAME0`)"
       ## Middlewares
-      - "traefik.http.routers.muximux-rtr.middlewares=chain-oauth@file"
+      - "traefik.http.routers.muximux-rtr.middlewares=chain-authelia@file"
       ## HTTP Services
       - "traefik.http.routers.muximux-rtr.service=muximux-svc"
       - "traefik.http.services.muximux-svc.loadbalancer.server.port=80"
@@ -386,6 +387,48 @@ services:
       - "traefik.http.services.unifi-svc.loadbalancer.passHostHeader=true"
       - "traefik.http.services.unifi-svc.loadbalancer.server.scheme=https"
       - "traefik.http.services.unifi-svc.loadbalancer.server.port=8443"
+
+  ############################# Database
+
+  {# # MariaDB - MySQL Database
+  # After starting container for first time dexec and mysqladmin -u root password <password>
+  mariadb:
+    <<: *common-keys-core # See EXTENSION FIELDS at the top
+    container_name: mariadb
+    image: lscr.io/linuxserver/mariadb
+    #ports:
+    #  - "$MARIADB_PORT:3306"
+    volumes:
+      - $DOCKER_CONTAINER_DIR/appdata/mariadb/data:/config
+    environment:
+      <<: *default-tz-puid-pgid
+      FILE__MYSQL_ROOT_PASSWORD: /run/secrets/mysql_root_password # Note FILE__ (double underscore) - Issue #127
+    secrets:
+      - mysql_root_password
+
+  # phpMyAdmin - Database management
+  # Create a new user with admin privileges. Cannot login as MySQL root for some reason.
+  phpmyadmin:
+    <<: *common-keys-apps # See EXTENSION FIELDS at the top
+    image: phpmyadmin/phpmyadmin:latest
+    container_name: phpmyadmin
+    environment:
+      - PMA_HOST=$MARIADB_HOST
+      - PMA_PORT=$MARIADB_PORT
+      #- PMA_ARBITRARY=1
+      - MYSQL_ROOT_PASSWORD_FILE=/run/secrets/mysql_root_password
+    secrets:
+      - mysql_root_password
+    labels:
+      - "traefik.enable=true"
+      ## HTTP Routers
+      - "traefik.http.routers.phpmyadmin-rtr.entrypoints=https"
+      - "traefik.http.routers.phpmyadmin-rtr.rule=Host(`pma.$DOMAINNAME0`)"
+      ## Middlewares
+      - "traefik.http.routers.phpmyadmin-rtr.middlewares=chain-authelia@file"
+      ## HTTP Services
+      - "traefik.http.routers.phpmyadmin-rtr.service=phpmyadmin-svc"
+      - "traefik.http.services.phpmyadmin-svc.loadbalancer.server.port=80" #}
 
   ############################# Downloaders
 
@@ -444,7 +487,7 @@ services:
       - "traefik.http.routers.qbittorrent-rtr.entrypoints=https"
       - "traefik.http.routers.qbittorrent-rtr.rule=Host(`qbt.$DOMAINNAME0`)"
       ## Middlewares
-      - "traefik.http.routers.qbittorrent-rtr.middlewares=chain-oauth@file"
+      - "traefik.http.routers.qbittorrent-rtr.middlewares=chain-authelia@file"
       ## HTTP Services
       - "traefik.http.routers.qbittorrent-rtr.service=qbittorrent-svc"
       - "traefik.http.services.qbittorrent-svc.loadbalancer.server.port=8080"
@@ -464,7 +507,7 @@ services:
       - "traefik.http.routers.jackett-rtr.entrypoints=https"
       - "traefik.http.routers.jackett-rtr.rule=Host(`jackett.$DOMAINNAME0`)"
       ## Middlewares
-      - "traefik.http.routers.jackett-rtr.middlewares=chain-oauth@file"
+      - "traefik.http.routers.jackett-rtr.middlewares=chain-authelia@file"
       ## HTTP Services
       - "traefik.http.routers.jackett-rtr.service=jackett-svc"
       - "traefik.http.services.jackett-svc.loadbalancer.server.port=9117"
@@ -522,7 +565,7 @@ services:
       - "traefik.http.routers.tautulli-rtr.entrypoints=https"
       - "traefik.http.routers.tautulli-rtr.rule=Host(`tautulli.$DOMAINNAME0`)"
       ## Middlewares
-      - "traefik.http.routers.tautulli-rtr.middlewares=chain-oauth@file"
+      - "traefik.http.routers.tautulli-rtr.middlewares=chain-authelia@file"
       ## HTTP Services
       - "traefik.http.routers.tautulli-rtr.service=tautulli-svc"
       - "traefik.http.services.tautulli-svc.loadbalancer.server.port=8181"
@@ -555,9 +598,9 @@ services:
       - "traefik.enable=true"
       ## HTTP Routers
       - "traefik.http.routers.anime-sonarr-rtr.entrypoints=https"
-      - "traefik.http.routers.anime-sonarr-rtr.rule=Host(`sonarr.$DOMAINNAME0`)&& PathPrefix(`/anime`)"
+      - "traefik.http.routers.anime-sonarr-rtr.rule=Host(`sonarr.$DOMAINNAME0`) && PathPrefix(`/anime`)"
       ## Middlewares
-      - "traefik.http.routers.anime-sonarr-rtr.middlewares=chain-oauth@file"
+      - "traefik.http.routers.anime-sonarr-rtr.middlewares=chain-authelia@file"
       ## HTTP Services
       - "traefik.http.routers.anime-sonarr-rtr.service=anime-sonarr-svc"
       - "traefik.http.services.anime-sonarr-svc.loadbalancer.server.port=8989"
@@ -575,9 +618,9 @@ services:
       - "traefik.enable=true"
       ## HTTP Routers
       - "traefik.http.routers.tv-sonarr-rtr.entrypoints=https"
-      - "traefik.http.routers.tv-sonarr-rtr.rule=Host(`sonarr.$DOMAINNAME0`)&& PathPrefix(`/tv`)"
+      - "traefik.http.routers.tv-sonarr-rtr.rule=Host(`sonarr.$DOMAINNAME0`) && PathPrefix(`/tv`)"
       ## Middlewares
-      - "traefik.http.routers.tv-sonarr-rtr.middlewares=chain-oauth@file"
+      - "traefik.http.routers.tv-sonarr-rtr.middlewares=chain-authelia@file"
       ## HTTP Services
       - "traefik.http.routers.tv-sonarr-rtr.service=tv-sonarr-svc"
       - "traefik.http.services.tv-sonarr-svc.loadbalancer.server.port=8989"
@@ -597,7 +640,7 @@ services:
       - "traefik.http.routers.radarr-rtr.entrypoints=https"
       - "traefik.http.routers.radarr-rtr.rule=Host(`radarr.$DOMAINNAME0`)"
       ## Middlewares
-      - "traefik.http.routers.radarr-rtr.middlewares=chain-oauth@file"
+      - "traefik.http.routers.radarr-rtr.middlewares=chain-authelia@file"
       ## HTTP Services
       - "traefik.http.routers.radarr-rtr.service=radarr-svc"
       - "traefik.http.services.radarr-svc.loadbalancer.server.port=7878"
@@ -624,7 +667,7 @@ services:
       - "traefik.http.routers.filebrowser-rtr.entrypoints=https"
       - "traefik.http.routers.filebrowser-rtr.rule=Host(`files.$DOMAINNAME0`)"
       ## Middlewares
-      - "traefik.http.routers.filebrowser-rtr.middlewares=chain-oauth@file"
+      - "traefik.http.routers.filebrowser-rtr.middlewares=chain-authelia@file"
       ## HTTP Services
       - "traefik.http.routers.filebrowser-rtr.service=filebrowser-svc"
       - "traefik.http.services.filebrowser-svc.loadbalancer.server.port=80"
@@ -655,7 +698,7 @@ services:
       - "traefik.http.routers.crafty-rtr.rule=Host(`crafty.$DOMAINNAME0`)"
       - "traefik.http.routers.crafty-rtr.tls=true"
       ## Middlewares
-      - "traefik.http.routers.crafty-rtr.middlewares=chain-oauth@file"
+      - "traefik.http.routers.crafty-rtr.middlewares=chain-authelia@file"
       ## HTTP Services
       - "traefik.http.routers.crafty-rtr.service=crafty-svc"
       - "traefik.http.services.crafty-svc.loadbalancer.server.scheme=https"
@@ -674,3 +717,26 @@ services:
       - "12346-12347:12346-12347/udp"
     volumes:
       - "$DOCKER_CONTAINER_DIR/dst-server/:/data:rw"
+
+  ############################# MAINTENANCE
+
+  # Docker-GC - Automatic Docker Garbage Collection
+  # Create docker-gc-exclude file
+  dockergc:
+    <<: *common-keys-apps # See EXTENSION FIELDS at the top
+    image: clockworksoul/docker-gc-cron:latest
+    container_name: docker-gc
+    networks:
+      - socket_proxy
+    volumes:
+      # - /var/run/docker.sock:/var/run/docker.sock # Use Docker Socket Proxy instead for improved security
+      - $DOCKER_CONTAINER_DIR/docker-gc/docker-gc-exclude:/etc/docker-gc-exclude
+    environment:
+      CRON: 0 0 0 * * ? # Everyday at midnight. Previously 0 0 * * *
+      FORCE_IMAGE_REMOVAL: 1
+      FORCE_CONTAINER_REMOVAL: 0
+      GRACE_PERIOD_SECONDS: 604800
+      DRY_RUN: 0
+      CLEAN_UP_VOLUMES: 1
+      TZ: $TZ
+      DOCKER_HOST: tcp://socket-proxy:2375

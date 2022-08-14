@@ -1,7 +1,7 @@
 ---
 media_data_path: /data
 
-docker_compose_path: ~/docker
+docker_compose_path: "/home/{{ primary_user }}/docker"
 container_data_path: "{{ docker_compose_path }}/containers"
 
 traefik_directory: "{{ container_data_path }}/traefik"

@@ -5,6 +5,21 @@
 - include: traefik.yml
 - include: authelia.yml
 
+- name: Set container folder user permissions
+  file:
+    dest: "{{ container_data_path }}"
+    owner: "{{ primary_user }}"
+    group: "{{ primary_group }}"
+    mode: "u+rwX,g-w,o-w"
+    recurse: yes
+  become: yes
+
+- name: Setup docker-gc-exclude
+  get_url:
+    url: https://raw.githubusercontent.com/clockworksoul/docker-gc-cron/master/compose/docker-gc-exclude
+    dest: "{{ container_data_path }}/docker-gc/docker-gc-exclude"
+    mode: 0644
+
 - name: install docker pip modules
   pip:
     name: docker-compose
@@ -25,5 +40,6 @@
 - name: Pull and start docker-compose configuration
   community.docker.docker_compose:
     project_src: "{{ docker_compose_path }}"
+    remove_orphans: yes
     pull: yes
     state: present
