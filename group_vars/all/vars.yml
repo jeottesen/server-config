@@ -15,7 +15,7 @@ sftp_enabled: true
 email_user: "jotaro0010"
 admin_email_address: "{{ email_user }}@gmail.com"
 admin_email_password: "{{ vault_admin_email_password }}"
-
+alternate_email_address: "{{ vault_alternate_email_address }}"
 
 email_password_url_encoded: "{{ vault_email_password_url_encoded }}"
 

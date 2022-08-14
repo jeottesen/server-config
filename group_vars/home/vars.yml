@@ -10,3 +10,7 @@ sudo_users:
 
 docker_users:
   - "{{ primary_user }}"
+
+oauth_client_id: "{{ vault_oauth_client_id }}"
+oauth_client_secret: "{{ vault_oauth_client_secret }}"
+forward_auth_secret: "{{ vault_forward_auth_secret }}"
