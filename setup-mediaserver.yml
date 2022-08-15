@@ -1,5 +1,7 @@
 ---
 
+- include: setup-common.yml
+
 - name: Setup Mediaserver
   hosts: mediaserver
   become: yes

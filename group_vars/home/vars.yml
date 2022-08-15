@@ -1,15 +1,16 @@
 primary_user: jeremy
 primary_group: jeremy
-primary_user_htpass: "{{vault_home_primary_user_htpass }}"
 ansible_user: "{{ primary_user }}"
 ssh_user: "{{ primary_user }}"
-remote_user: "{{ primary_user }}"
 
 sudo_users:
   - { user: "{{ primary_user }}", group: "{{ primary_user }}" }
 
 docker_users:
   - "{{ primary_user }}"
+
+# Basic Auth
+primary_user_htpass: "{{vault_home_primary_user_htpass }}"
 
 #Oauth
 oauth_client_id: "{{ vault_oauth_client_id }}"
