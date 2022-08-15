@@ -1,10 +1,26 @@
+# primary_user defined in home and remote group vars
+primary_user_pass: "{{ vault_primary_user_pass }}"
+primary_user_puid: 1000
+primary_user_guid: 1000
+ansible_user: "{{ primary_user }}"
+ssh_user: "{{ primary_user }}"
+
+sudo_users:
+  - { user: "{{ primary_user }}", group: "{{ primary_user }}" }
+
+docker_users:
+  - "{{ primary_user }}"
+compose_puid: "{{ primary_user_puid }}"
+compose_guid: "{{ primary_user_guid }}"
+
 required_packages:
   - name: vim
   - name: pip # required for docker management
   - name: rsync
-  - name: smartmontools
+  - name: git
+  - name: iptables-persistent
 
-docker_compose_version: "v2.2.3"
+docker_compose_version: "v2.9.0"
 docker_package_state: latest
 
 # ssh hardening
@@ -18,10 +34,5 @@ admin_email_password: "{{ vault_admin_email_password }}"
 alternate_email_address: "{{ vault_alternate_email_address }}"
 
 email_password_url_encoded: "{{ vault_email_password_url_encoded }}"
-
-route53_access_key: "{{ vault_route53_access_key_id }}"
-route53_secret_access_key: "{{ vault_route53_secret_access_key }}"
-route53_region: us-west-1
-route53_zone_id: "{{ vault_route53_zone_id }}"
 
 domain_name: "{{ vault_domain_name }}"

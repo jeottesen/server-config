@@ -6,7 +6,13 @@
       pkg: "sudo"
       state: present
 
-  - name: Assure sudo users created
+  - name: Ensure sudo users groups are created
+    group:
+      name: "{{ item.group }}"
+      state: present
+    loop: "{{ sudo_users }}"
+
+  - name: Ensure sudo users are created
     user:
       name: "{{ item.user }}"
       groups: "{{ item.group }}"
@@ -22,10 +28,8 @@
     loop: "{{ sudo_users }}"
     notify: Reset open ssh sessions
 
-
-
-  # become root to install and setup sudo
-  become: yes
-  become_method: su
-  become_user: root
-  when: ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu'
+    # become root to install and setup sudo
+    become: yes
+    become_method: su
+    become_user: root
+    when: ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu'

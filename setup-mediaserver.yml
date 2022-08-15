@@ -1,6 +1,8 @@
 ---
 
-- include: setup-common.yml
+- import_playbook: setup-common.yml
+  vars:
+    limit_hosts: mediaserver
 
 - name: Setup Mediaserver
   hosts: mediaserver
@@ -10,27 +12,24 @@
       tags:
         #- always
         - packages
-    - name: mergerfs
-      tags:
-        - mergerfs
-    - name: snapraid
+    - name: mediaserver/mergerfs
+      tags: mergerfs
+    - name: mediaserver/snapraid
       tags: snapraid
-    - name: iptables
-      tags: iptables
-    - name: debian-patched-nvidia-drivers
+    - name: mediaserver/debian-patched-nvidia-drivers
       tags: nvidia
     # install docker and docker compose
     - name: geerlingguy.docker
       tags: docker
     # then install nvidia module
-    - name: nvidia-docker
+    - name: mediaserver/nvidia-docker
       tags: docker
-    - name: samba
+    - name: mediaserver/samba
       tags: samba
-    - name: mediaserver-docker-compose
+    - name: mediaserver/docker-compose
       become: no
       tags: docker-compose
-    - name: mediaserver-folders
+    - name: mediaserver/data-folders
       tags: folders
     - name: email-setup
       tags: email
@@ -39,7 +38,7 @@
   hosts: mediaserver
   become: yes
   roles:
-    - name: cron-backup
+    - name: mediaserver/cron-backup
       vars:
         backup_cron_name: "docker-backup"
         backup_name_prepend: "docker"

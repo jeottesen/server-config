@@ -4,12 +4,20 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "Run Ansible - Tag: docker-compose",
+      "label": "Run Ansible Mediaserver - Tag: docker-compose",
       "type": "shell",
       "command": "ansible-playbook setup-mediaserver.yml --tag docker-compose",
       "group": {
-        "kind": "build",
-        "isDefault": true
+        "kind": "build"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Run Ansible Stormfront- Tag: docker-compose",
+      "type": "shell",
+      "command": "ansible-playbook setup-stormfront.yml --tag docker-compose",
+      "group": {
+        "kind": "build"
       },
       "problemMatcher": []
     }

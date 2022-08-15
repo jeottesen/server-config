@@ -1,0 +1,22 @@
+---
+
+- import_playbook: setup-common.yml
+  vars:
+    limit_hosts: stormfront
+
+- name: Setup Stormfront
+  hosts: stormfront
+  become: yes
+  roles:
+    - name: grog.package
+      tags:
+        #- always
+        - packages
+    # install docker and docker compose
+    - name: geerlingguy.docker
+      tags: docker
+    # - name: stormfront/docker-compose
+    #   become: no
+    #   tags: docker-compose
+    # - name: email-setup
+    #   tags: email

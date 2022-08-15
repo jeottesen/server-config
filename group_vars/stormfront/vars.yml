@@ -1,5 +1,5 @@
 # grog.package role
 package_list:
   - "{{ required_packages }}" # stored in group_vars/all/vars.yml
-  - name: smartmontools
-  - name: nfs-kernel-server
+
+stormfront_domain: "{{ vault_stormfront_domain }}"
