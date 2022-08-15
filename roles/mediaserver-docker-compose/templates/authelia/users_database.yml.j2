@@ -1,0 +1,8 @@
+users:
+  {{ primary_user }}:
+    displayname: "{{ primary_user }}"
+    password: "{{ authelia_hashed_pass }}"
+    email: {{ admin_email_address }}
+    groups:
+      - admins
+      - dev

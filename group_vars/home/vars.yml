@@ -1,5 +1,6 @@
 primary_user: jeremy
 primary_group: jeremy
+primary_user_htpass: "{{vault_home_primary_user_htpass }}"
 ansible_user: "{{ primary_user }}"
 ssh_user: "{{ primary_user }}"
 remote_user: "{{ primary_user }}"
@@ -9,3 +10,14 @@ sudo_users:
 
 docker_users:
   - "{{ primary_user }}"
+
+#Oauth
+oauth_client_id: "{{ vault_oauth_client_id }}"
+oauth_client_secret: "{{ vault_oauth_client_secret }}"
+forward_auth_secret: "{{ vault_forward_auth_secret }}"
+
+#Authelia
+authelia_jwt_secret: "{{ vault_authelia_jwt_secret }}"
+authelia_session_secret: "{{ vault_authelia_session_secret }}"
+authelia_hashed_pass: "{{ vault_authelia_hashed_pass }}"
+authelia_storage_encryption_key: "{{ vault_authelia_storage_encryption_key }}"

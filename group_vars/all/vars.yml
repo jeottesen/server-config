@@ -15,6 +15,13 @@ sftp_enabled: true
 email_user: "jotaro0010"
 admin_email_address: "{{ email_user }}@gmail.com"
 admin_email_password: "{{ vault_admin_email_password }}"
-
+alternate_email_address: "{{ vault_alternate_email_address }}"
 
 email_password_url_encoded: "{{ vault_email_password_url_encoded }}"
+
+route53_access_key: "{{ vault_route53_access_key_id }}"
+route53_secret_access_key: "{{ vault_route53_secret_access_key }}"
+route53_region: us-west-1
+route53_zone_id: "{{ vault_route53_zone_id }}"
+
+domain_name: "{{ vault_domain_name }}"
