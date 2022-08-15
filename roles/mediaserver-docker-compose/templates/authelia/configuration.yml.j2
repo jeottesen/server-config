@@ -47,13 +47,13 @@ access_control:
     # Rules applied to everyone
     - domain: authelia.{{ domain_name }}
       policy: bypass
-#    - domain:
-#        - "*.{{ domain_name }}"
-#        - "{{ domain_name }}"
-#      policy: bypass
-#      networks:
-#        - 192.168.0.0/16
-#        #- HOME-WAN-IP-ADDRESS
+    - domain:
+        - "*.{{ domain_name }}"
+        - "{{ domain_name }}"
+      policy: bypass
+      networks:
+        - 192.168.0.0/16
+        #- HOME-WAN-IP-ADDRESS
 #    - domain: radarr.{{ domain_name }}
 #      policy: bypass
 #      subject: "group:admins"

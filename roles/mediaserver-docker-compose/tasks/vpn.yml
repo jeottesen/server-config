@@ -3,7 +3,7 @@
     path: "{{ container_data_path }}/vpn/"
     owner: "{{ primary_user }}"
     group: "{{ primary_group }}"
-    mode: '0755'
+    mode: '0700'
     state: "directory"
 
 - name: add ovpn file for vpn container
@@ -12,4 +12,4 @@
     dest: "{{ container_data_path }}/vpn/vpn.ovpn"
     owner: "{{ primary_user }}"
     group: "{{ primary_group }}"
-    mode: '0644'
+    mode: '0600'

@@ -4,7 +4,7 @@
     path: "{{ traefik_directory }}/acme"
     owner: "{{ primary_user }}"
     group: "{{ primary_group }}"
-    mode: '0755'
+    mode: '0700'
     state: "directory"
 
 - name: Ensure 'traefik/acme/acme.json' exists
@@ -19,22 +19,14 @@
     content: ""
     dest: "{{ traefik_directory }}/traefik.log"
     force: no
-    mode: '0755'
+    mode: '0700'
 
-- name: Create 'traefik/rules/middlewares.yml' file
+- name: Create trafik rules
   template:
-    src: traefik/rules/middlewares.yml.j2
-    dest: "{{ traefik_directory }}/rules/middlewares.yml"
-    mode: 0644
-
-- name: Create 'traefik/tls-opts.yml' file
-  template:
-    src: traefik/rules/tls-opts.yml.j2
-    dest: "{{ traefik_directory }}/rules/tls-opts.yml"
-    mode: 0644
-
-- name: Create 'traefik/rules/middleware-chains.yml' file
-  template:
-    src: traefik/rules/middleware-chains.yml.j2
-    dest: "{{ traefik_directory }}/rules/middleware-chains.yml"
-    mode: 0644
+    src: "{{ item }}"
+    dest: "{{ traefik_directory }}/rules/{{ item | basename | regex_replace('.j2','') }}"
+    owner: "{{ primary_user }}"
+    group: "{{ primary_group }}"
+    mode: 0600
+  with_fileglob:
+   - templates/traefik/rules/*.j2

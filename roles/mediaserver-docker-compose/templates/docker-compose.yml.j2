@@ -158,15 +158,11 @@ services:
     labels:
       #- "autoheal=true"
       - "traefik.enable=true"
-      # Local HTTP Router
-      {# - "traefik.http.routers.http-local.entrypoints=http"
-      - "traefik.http.routers.http-local.rule.allow-subnet.action=allow"
-      - "traefik.http.routers.http-local.rule.allow-subnet.rule=HeadersRegexp(`X-Real-Ip`, `^192\\.168\\.`)" #}
       # HTTP-to-HTTPS Redirect
       - "traefik.http.routers.http-catchall.entrypoints=http"
       - "traefik.http.routers.http-catchall.rule=HostRegexp(`{host:.+}`)"
-      - "traefik.http.routers.http-catchall.middlewares=redirect-to-https"
-      - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
+      - "traefik.http.routers.http-catchall.middlewares=chain-redirect@file"
+      #- "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
       # HTTP Routers
       - "traefik.http.routers.traefik-rtr.entrypoints=https"
       - "traefik.http.routers.traefik-rtr.rule=Host(`traefik.$DOMAINNAME0`)"

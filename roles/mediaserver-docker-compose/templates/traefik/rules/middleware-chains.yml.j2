@@ -1,6 +1,12 @@
 # {{ ansible_managed }}
 http:
   middlewares:
+    chain-redirect:
+      chain:
+        middlewares:
+          - middleware-local-redirect
+          - middlewares-https-redirectscheme
+
     chain-no-auth:
       chain:
         middlewares:

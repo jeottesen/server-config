@@ -11,6 +11,11 @@ http:
         average: 100
         burst: 50
 
+    middleware-local-redirect:
+      redirectRegex:
+          regex: "^(https?://.*)mediaserver(.samuari)?/(.*)$"
+          replacement: "${1}{{ domain_name }}/${3}"
+
     middlewares-https-redirectscheme:
       redirectScheme:
         scheme: https

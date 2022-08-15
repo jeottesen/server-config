@@ -10,7 +10,7 @@
     dest: "{{ container_data_path }}"
     owner: "{{ primary_user }}"
     group: "{{ primary_group }}"
-    mode: "u+rwX,g-w,o-w"
+    mode: "u+rwX,g-rw,o-rw"
     recurse: yes
   become: yes
 
@@ -18,7 +18,7 @@
   get_url:
     url: https://raw.githubusercontent.com/clockworksoul/docker-gc-cron/master/compose/docker-gc-exclude
     dest: "{{ container_data_path }}/docker-gc/docker-gc-exclude"
-    mode: 0644
+    mode: 0600
 
 - name: install docker pip modules
   pip:
@@ -29,13 +29,13 @@
   template:
     src: docker-compose.yml.j2
     dest: "{{ docker_compose_path }}/docker-compose.yml"
-    mode: 0644
+    mode: 0600
 
 - name: Create docker-compose env file
   template:
     src: .env.j2
     dest: "{{ docker_compose_path }}/.env"
-    mode: 0644
+    mode: 0600
 
 - name: Pull and start docker-compose configuration
   community.docker.docker_compose:
