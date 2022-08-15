@@ -77,7 +77,7 @@ services:
   traefik:
     <<: *common-keys-core # See EXTENSION FIELDS at the top
     container_name: traefik
-    image: traefik:2.6
+    image: traefik:v2.8
     command: # CLI arguments
       - --global.checkNewVersion=true
       - --global.sendAnonymousUsage=true
@@ -377,7 +377,7 @@ services:
       - "traefik.http.routers.unifi-rtr.entrypoints=https"
       - "traefik.http.routers.unifi-rtr.rule=Host(`unifi.$DOMAINNAME0`)"
       ## Middlewares
-      - "traefik.http.routers.unifi-rtr.middlewares=chain-no-auth@file"
+      - "traefik.http.routers.unifi-rtr.middlewares=chain-authelia@file"
       ## HTTP Services
       - "traefik.http.routers.unifi-rtr.service=unifi-svc"
       - "traefik.http.services.unifi-svc.loadbalancer.passHostHeader=true"
@@ -429,20 +429,20 @@ services:
   ############################# Downloaders
 
   vpn:
+    <<: *common-keys-core # See EXTENSION FIELDS at the top
     image: dperson/openvpn-client
     container_name: vpn
     # cap_add, security_opt, and volume required for the image to function
     cap_add:
       - net_admin
     environment:
-      TZ: ${TZ}
+      <<: *default-tz-puid-pgid
     command: -d
     # if using '-d' or 'DNS' you can't enable the `read_only: true` option
     read_only: false
     tmpfs:
       - /run
       - /tmp
-    restart: unless-stopped
     security_opt:
       - label:disable
     stdin_open: true
@@ -457,10 +457,17 @@ services:
     ports:
       - 6881:6881
       - 6881:6881/udp
-    networks:
-      - proxies
-    security_opt:
-      - no-new-privileges:true
+    labels:
+      - "traefik.enable=true"
+      ### QBittorent Router
+      ## HTTP Routers
+      - "traefik.http.routers.qbittorrent-rtr.entrypoints=https"
+      - "traefik.http.routers.qbittorrent-rtr.rule=Host(`qbt.$DOMAINNAME0`)"
+      ## Middlewares
+      - "traefik.http.routers.qbittorrent-rtr.middlewares=chain-authelia@file"
+      ## HTTP Services
+      - "traefik.http.routers.qbittorrent-rtr.service=qbittorrent-svc"
+      - "traefik.http.services.qbittorrent-svc.loadbalancer.server.port=8080"
 
   qbittorrent:
     image: lscr.io/linuxserver/qbittorrent
@@ -471,22 +478,14 @@ services:
       #WEBUI_PORT=8080
     volumes:
       - $DOCKER_CONTAINER_DIR/qbittorrent:/config
-      - {{ media_data_path }}:/data
+      - $DATA_DIR:/data
     network_mode: "service:vpn"
     depends_on:
       - vpn
     security_opt:
       - no-new-privileges:true
-    labels:
-      - "traefik.enable=true"
-      ## HTTP Routers
-      - "traefik.http.routers.qbittorrent-rtr.entrypoints=https"
-      - "traefik.http.routers.qbittorrent-rtr.rule=Host(`qbt.$DOMAINNAME0`)"
-      ## Middlewares
-      - "traefik.http.routers.qbittorrent-rtr.middlewares=chain-authelia@file"
-      ## HTTP Services
-      - "traefik.http.routers.qbittorrent-rtr.service=qbittorrent-svc"
-      - "traefik.http.services.qbittorrent-svc.loadbalancer.server.port=8080"
+    # Traefik labels attached to vpn container
+
 
   jackett:
     <<: *common-keys-apps # See EXTENSION FIELDS at the top
@@ -532,7 +531,7 @@ services:
       NVIDIA_VISIBLE_DEVICES: ALL
     volumes:
       - '$DOCKER_CONTAINER_DIR/plex/config:/config'
-      - '{{ media_data_path }}:/data'
+      - '$DATA_DIR:/data'
       - '$DOCKER_CONTAINER_DIR/plex/transcode:/transcode'
     labels:
       - "traefik.enable=true"
@@ -566,6 +565,35 @@ services:
       - "traefik.http.routers.tautulli-rtr.service=tautulli-svc"
       - "traefik.http.services.tautulli-svc.loadbalancer.server.port=8181"
 
+  {# # Jellyfin - Media Server
+  jellyfin:
+    <<: *common-keys-media # See EXTENSION FIELDS at the top
+    image: jellyfin/jellyfin:latest
+    container_name: jellyfin
+    #devices:
+    #  - /dev/dri:/dev/dri # for harware transcoding
+    ports:
+      - "$JELLYFIN_PORT:8096"
+      - "8920:8920" # Emby also uses same port if running both
+    environment:
+      <<: *default-tz-puid-pgid
+      UMASK_SET: 022
+    volumes:
+      - $DOCKER_CONTAINER_DIR/jellyfin:/config
+      - $DOCKER_CONTAINER_DIR/jellyfin/metadata:/config/metadata
+      - $DATA_DIR:/data
+      #- /dev/shm:/data/transcode # Offload transcoding to RAM if you have enough RAM
+    labels:
+      - "traefik.enable=true"
+      ## HTTP Routers
+      - "traefik.http.routers.jellyfin-rtr.entrypoints=https"
+      - "traefik.http.routers.jellyfin-rtr.rule=Host(`proxjf.$DOMAINNAME0`)"
+      ## Middlewares
+      - "traefik.http.routers.jellyfin-rtr.middlewares=chain-no-auth@file"
+      ## HTTP Services
+      - "traefik.http.routers.jellyfin-rtr.service=jellyfin-svc"
+      - "traefik.http.services.jellyfin-svc.loadbalancer.server.port=8096" #}
+
   #TODO Replace with Lidarr
   {# beets:
     image: linuxserver/beets
@@ -575,7 +603,7 @@ services:
       <<: *default-tz-puid-pgid
     volumes:
       - '$DOCKER_CONTAINER_DIR/beets:/config'
-      - '{{ media_data_path }}/Music:/music'
+      - '$DATA_DIR/Music:/music'
     networks:
       - isolated
     security_opt:
@@ -589,7 +617,8 @@ services:
       <<: *default-tz-puid-pgid
     volumes:
       - '$DOCKER_CONTAINER_DIR/anime-sonarr:/config'
-      - '{{ media_data_path }}:/data'
+      - '$DATA_DIR:/data'
+      - "/etc/localtime:/etc/localtime:ro"
     labels:
       - "traefik.enable=true"
       ## HTTP Routers
@@ -609,7 +638,8 @@ services:
       <<: *default-tz-puid-pgid
     volumes:
       - '$DOCKER_CONTAINER_DIR/tv-sonarr:/config'
-      - '{{ media_data_path }}:/data'
+      - '$DATA_DIR:/data'
+      - "/etc/localtime:/etc/localtime:ro"
     labels:
       - "traefik.enable=true"
       ## HTTP Routers
@@ -629,7 +659,8 @@ services:
       <<: *default-tz-puid-pgid
     volumes:
       - '$DOCKER_CONTAINER_DIR/radarr:/config'
-      - '{{ media_data_path }}:/data'
+      - '$DATA_DIR:/data'
+      - "/etc/localtime:/etc/localtime:ro"
     labels:
       - "traefik.enable=true"
       ## HTTP Routers
@@ -640,6 +671,68 @@ services:
       ## HTTP Services
       - "traefik.http.routers.radarr-rtr.service=radarr-svc"
       - "traefik.http.services.radarr-svc.loadbalancer.server.port=7878"
+
+  {# # Lidarr - Music Management
+  # Set url_base in lidarr settings if using PathPrefix
+  lidarr:
+    <<: *common-keys-media # See EXTENSION FIELDS at the top
+    image: lscr.io/linuxserver/lidarr:latest
+    container_name: lidarr
+    networks:
+      t2_proxy:
+        ipv4_address: 192.168.90.163
+    ports:
+      - "$LIDARR_PORT:8686"
+    volumes:
+      - $DOCKER_CONTAINER_DIR/lidarr:/config
+      - $DATA_DIR:/data
+      - "/etc/localtime:/etc/localtime:ro"
+    environment:
+      <<: *default-tz-puid-pgid
+    labels:
+      - "traefik.enable=true"
+      ## HTTP Routers Auth Bypass
+      - "traefik.http.routers.lidarr-rtr-bypass.entrypoints=https"
+      - "traefik.http.routers.lidarr-rtr-bypass.rule=Host(`lidarr.$DOMAINNAME0`) && (Headers(`X-Api-Key`, `$LIDARR_API_KEY`) || Query(`apikey`, `$LIDARR_API_KEY`))"
+      - "traefik.http.routers.lidarr-rtr-bypass.priority=100"
+      ## HTTP Routers Auth
+      - "traefik.http.routers.lidarr-rtr.entrypoints=https"
+      - "traefik.http.routers.lidarr-rtr.rule=Host(`lidarr.$DOMAINNAME0`)"
+      - "traefik.http.routers.lidarr-rtr.priority=99"
+      ## Middlewares
+      - "traefik.http.routers.lidarr-rtr-bypass.middlewares=chain-no-auth@file"
+      - "traefik.http.routers.lidarr-rtr.middlewares=chain-authelia@file"
+      ## HTTP Services
+      - "traefik.http.routers.lidarr-rtr.service=lidarr-svc"
+      - "traefik.http.routers.lidarr-rtr-bypass.service=lidarr-svc"
+      - "traefik.http.services.lidarr-svc.loadbalancer.server.port=8686" #}
+
+  {# # Readarr - Books management
+  # Set url_base in readarr settings if using PathPrefix
+  readarr:
+    <<: *common-keys-media # See EXTENSION FIELDS at the top
+    image: hotio/readarr:nightly
+    container_name: readarr
+    # ports:
+    #  - "$READARR_PORT:8787"
+    volumes:
+      - $DOCKER_CONTAINER_DIR/readarr:/config
+      - $DATA_DIR:/data
+      - "/etc/localtime:/etc/localtime:ro"
+    environment:
+      <<: *default-tz-puid-pgid
+      UMASK: 002
+      #ARGS: ""
+    labels:
+      - "traefik.enable=true"
+      ## HTTP Routers Auth
+      - "traefik.http.routers.readarr-rtr.entrypoints=https"
+      - "traefik.http.routers.readarr-rtr.rule=Host(`readarr.$DOMAINNAME0`)"
+      ## Middlewares
+      - "traefik.http.routers.readarr-rtr.middlewares=chain-authelia@file"
+      ## HTTP Services
+      - "traefik.http.routers.readarr-rtr.service=readarr-svc"
+      - "traefik.http.services.readarr-svc.loadbalancer.server.port=8787" #}
 
   ############################# Utilites
 
@@ -667,6 +760,79 @@ services:
       ## HTTP Services
       - "traefik.http.routers.filebrowser-rtr.service=filebrowser-svc"
       - "traefik.http.services.filebrowser-svc.loadbalancer.server.port=80"
+
+  {# # Guacamole - Remote desktop, SSH, on Telnet on any HTML5 Browser
+  # Create all databases and tables first
+  guacamole:
+    <<: *common-keys-apps # See EXTENSION FIELDS at the top
+    image: guacamole/guacamole:latest
+    container_name: guacamole
+    networks:
+      - proxies
+      - default
+    # ports:
+    #   - "$GUACAMOLE_PORT:8080"
+    environment:
+      GUACD_HOSTNAME: guacd
+      MYSQL_HOSTNAME: mariadb
+      MYSQL_PORT: 3306
+      MYSQL_DATABASE_FILE: /run/secrets/guac_db_name
+      MYSQL_USER_FILE: /run/secrets/guac_mysql_user
+      MYSQL_PASSWORD_FILE: /run/secrets/guac_mysql_password
+    secrets:
+      - guac_db_name
+      - guac_mysql_user
+      - guac_mysql_password
+    labels:
+      - "traefik.enable=true"
+      ## HTTP Routers
+      - "traefik.http.routers.guacamole-rtr.entrypoints=https"
+      - "traefik.http.routers.guacamole-rtr.rule=Host(`guac.$DOMAINNAME0`)"
+      ## Middlewares
+      - "traefik.http.routers.guacamole-rtr.middlewares=chain-authelia@file,add-guacamole"
+      - "traefik.http.middlewares.add-guacamole.addPrefix.prefix=/guacamole"
+      ## HTTP Services
+      - "traefik.http.routers.guacamole-rtr.service=guacamole-svc"
+      - "traefik.http.services.guacamole-svc.loadbalancer.server.port=8080"
+
+  # Guacamole Daemon - Needed for Guacamole
+  guacd:
+    <<: *common-keys-apps # See EXTENSION FIELDS at the top
+    image: guacamole/guacd
+    container_name: guacd
+    restart: unless-stopped #}
+
+  {# # qDirStat - Directory Statistics
+  qdirstat:
+    <<: *common-keys-apps # See EXTENSION FIELDS at the top
+    image: jlesage/qdirstat:latest
+    container_name: qdirstat
+    # ports:
+    #   - "$QDIRSTAT_PORT:5800"
+    volumes:
+      - $USERDIR:/data/home:ro
+      - $DOCKERDIR/appdata/qdirstat/config:/config:rw
+      - /media/data:/data/data:ro
+    environment:
+      USER_ID: $PUID
+      GROUP_ID: $PGID
+      UMASK: 002
+      TZ: $TZ
+      KEEP_APP_RUNNING: 1
+      CLEAN_TMP_DIR: 1
+      DISPLAY_WIDTH: 1600
+      DISPLAY_HEIGHT: 960
+      VNC_PASSWORD: $QDIRSTAT_VNC_PASSWD
+    labels:
+      - "traefik.enable=true"
+      ## HTTP Routers
+      - "traefik.http.routers.qdirstat-rtr.entrypoints=https"
+      - "traefik.http.routers.qdirstat-rtr.rule=Host(`qdirstat.$DOMAINNAME_CLOUD_SERVER`)"
+      ## Middlewares
+      - "traefik.http.routers.qdirstat-rtr.middlewares=chain-oauth@file"
+      ## HTTP Services
+      - "traefik.http.routers.qdirstat-rtr.service=qdirstat-svc"
+      - "traefik.http.services.qdirstat-svc.loadbalancer.server.port=5800" #}
 
   ############################# Game Servers
   # Crafty Controller - Minecraft server manager
