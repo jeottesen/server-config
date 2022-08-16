@@ -6,13 +6,16 @@ Mediaserver is completely managed by ansible.<br />
 Stormfront is in the process of being converted to an ansible configuration.<br />
 pfsense and esxi are something to look into at a later date.
 
-
-Command to initialize a server:<br />
-`ansible-playbook setup-common.yml -l stormfront -e "ansible_user=debian" -k`
-
 Docker configuration based on guide found here:<br />
 https://www.smarthomebeginner.com/traefik-2-docker-tutorial/ <br />
 https://github.com/htpcBeginner/docker-traefik
+
+## Ansible Commands
+Command to install ansible requirements:<br />
+`ansible-galaxy install -r requirements.yml`
+
+Command to initialize a server:<br />
+`ansible-playbook setup-common.yml -l stormfront -e "ansible_user=debian" -k`
 
 ## Docker Folder Structure
 The docker folder is located in the users home directory.

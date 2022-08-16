@@ -35,4 +35,4 @@ alternate_email_address: "{{ vault_alternate_email_address }}"
 
 email_password_url_encoded: "{{ vault_email_password_url_encoded }}"
 
-domain_name: "{{ vault_domain_name }}"
+base_domain_name: "{{ vault_base_domain_name }}"

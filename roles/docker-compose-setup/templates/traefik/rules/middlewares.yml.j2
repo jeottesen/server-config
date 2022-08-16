@@ -85,3 +85,10 @@ http:
         maxResponseBodyBytes: 2000000
         maxRequestBodyBytes: 10485760
         retryExpression: "IsNetworkError() && Attempts() <= 2"
+
+    qb-headers:
+      headers:
+        customRequestHeaders:
+          X-Frame-Options: SAMEORIGIN
+          Referer: ""
+          Origin: ""

@@ -13,3 +13,17 @@ compose_tz: America/Denver
 route53__access_key: ""
 route53_secret_access_key: ""
 route53_zone_id: ""
+
+# Basic Auth
+primary_user_htpass: ""
+
+#Oauth
+oauth_client_id: ""
+oauth_client_secret: ""
+forward_auth_secret: ""
+
+#Authelia
+authelia_jwt_secret: ""
+authelia_session_secret: ""
+authelia_hashed_pass: ""
+authelia_storage_encryption_key: ""

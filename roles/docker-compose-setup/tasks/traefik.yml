@@ -1,5 +1,5 @@
 ---
-- name: Create trafick dirs
+- name: Create trafick acme dir
   file:
     path: "{{ traefik_directory }}/acme"
     owner: "{{ primary_user }}"
@@ -20,6 +20,14 @@
     dest: "{{ traefik_directory }}/traefik.log"
     force: no
     mode: '0700'
+
+- name: Create trafick rules dir
+  file:
+    path: "{{ traefik_directory }}/rules"
+    owner: "{{ primary_user }}"
+    group: "{{ primary_group }}"
+    mode: '0700'
+    state: "directory"
 
 - name: Create trafik rules
   template:

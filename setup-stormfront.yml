@@ -15,8 +15,8 @@
     # install docker and docker compose
     - name: geerlingguy.docker
       tags: docker
-    # - name: stormfront/docker-compose
-    #   become: no
-    #   tags: docker-compose
+    - name: stormfront/docker-compose
+      become: no
+      tags: docker-compose
     # - name: email-setup
     #   tags: email
