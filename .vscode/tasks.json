@@ -4,7 +4,7 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "Run Ansible Mediaserver - Tag: docker-compose",
+      "label": "Run Mediaserver - Tag: docker-compose",
       "type": "shell",
       "command": "ansible-playbook setup-mediaserver.yml --tag docker-compose",
       "group": {
@@ -13,9 +13,27 @@
       "problemMatcher": []
     },
     {
-      "label": "Run Ansible Stormfront- Tag: docker-compose",
+      "label": "Run Mediaserver - Skip-Tag: compose-setup Tag: docker-compose",
+      "type": "shell",
+      "command": "ansible-playbook setup-mediaserver.yml --skip-tag compose-setup --tag docker-compose",
+      "group": {
+        "kind": "build"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Run Stormfront- Tag: docker-compose",
       "type": "shell",
       "command": "ansible-playbook setup-stormfront.yml --tag docker-compose",
+      "group": {
+        "kind": "build"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Run Stormfront - Skip-Tag: compose-setup Tag: docker-compose",
+      "type": "shell",
+      "command": "ansible-playbook setup-stormfront.yml --skip-tag compose-setup --tag docker-compose",
       "group": {
         "kind": "build"
       },
