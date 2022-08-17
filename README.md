@@ -17,6 +17,9 @@ Command to install ansible requirements:<br />
 Command to initialize a server:<br />
 `ansible-playbook setup-common.yml -l stormfront -e "ansible_user=debian" -k`
 
+Command to generate a hashed Authelia password:<br />
+`docker run authelia/authelia:latest authelia hash-password -- 'YOUR_PA$$WORD'`
+
 ## Docker Folder Structure
 The docker folder is located in the users home directory.
 

@@ -8,7 +8,7 @@
 
 - name: Create authelia/configuration.yml file
   template:
-    src: authelia/configuration.yml.j2
+    src: "{{ authelia_configuration_template }}"
     dest: "{{ container_appdata_path }}/authelia/configuration.yml"
     owner: "{{ primary_user }}"
     group: "{{ primary_group }}"
@@ -16,7 +16,7 @@
 
 - name: Create authelia/users_database.yml file
   template:
-    src: authelia/users_database.yml.j2
+    src: "{{ authelia_users_db_template }}"
     dest: "{{ container_appdata_path }}/authelia/users_database.yml"
     owner: "{{ primary_user }}"
     group: "{{ primary_group }}"

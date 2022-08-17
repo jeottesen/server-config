@@ -2,6 +2,15 @@
 package_list:
   - "{{ required_packages }}" # stored in group_vars/all/vars.yml
 
+secondary_user: "{{ vault_secondary_user }}"
+secondary_group: "{{ vault_secondary_group }}"
+secondary_user_pass: "{{ vault_secondary_user_pass }}"
+secondary_user_ssh_identity_key: "{{ vault_secondary_user_ssh_identity_key }}"
+secondary_user_puid: 1001
+secondary_user_guid: 1001
+secondary_user_email_address: "{{ vault_secondary_user_email_address }}"
+secondary_user_authelia_hashed_pass: "{{ vault_secondary_user_authelia_hashed_pass }}"
+
 primary_dns_ipv4: 9.9.9.9
 secondary_dns_ipv4: 149.112.112.112
 

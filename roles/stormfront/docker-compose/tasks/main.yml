@@ -4,6 +4,9 @@
   include_role:
     name: docker-compose-setup
     public: "yes"
+  vars:
+   authelia_configuration_template: "authelia-override/configuration.yml.j2"
+   authelia_users_db_template: "authelia-override/users_database.yml.j2"
 
 - name: Create {{ docker_compose_file }}/docker-compose.yml file
   template:

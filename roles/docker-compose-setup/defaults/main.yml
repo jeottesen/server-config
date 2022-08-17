@@ -14,6 +14,12 @@ route53__access_key: ""
 route53_secret_access_key: ""
 route53_zone_id: ""
 
+# Template files
+authelia_configuration_template: "authelia/configuration.yml.j2"
+authelia_users_db_template: "authelia/users_database.yml.j2"
+
+secrets_template_folder: "templates/secrets/"
+
 # Basic Auth
 primary_user_htpass: ""
 

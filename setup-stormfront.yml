@@ -20,3 +20,50 @@
       tags: docker-compose
     # - name: email-setup
     #   tags: email
+
+- name: Setup secondary user
+  hosts: stormfront
+  become: yes
+  tags: create-secondary-user
+  tasks:
+    - name: Create group {{ secondary_group }}
+      group:
+        name: "{{ secondary_group }}"
+        gid: "{{ secondary_user_guid }}"
+        state: present
+    - name: Create user {{ secondary_user }}
+      user:
+        name: "{{ secondary_user }}"
+        password: "{{ secondary_user_pass }}"
+        group: "{{ secondary_group }}"
+        uid: "{{ secondary_user_puid }}"
+        shell: "/bin/bash"
+        state: present
+    - name: Add "{{ secondary_user }}" ssh key to authorized keys on host
+      authorized_key:
+        user: "{{ secondary_user }}"
+        key: "{{ secondary_user_ssh_identity_key }}"
+
+- name: Setup share folder
+  hosts: stormfront
+  become: yes
+  tags: setup-share
+  tasks:
+    - name: Create share dir
+      file:
+        path: /home/share
+        owner: "{{ primary_user }}"
+        group: "{{ primary_group }}"
+        mode: '0777'
+        recurse: yes
+        state: directory
+    - name: create directory symlinks
+      file:
+        src: "/home/share"
+        dest: "/home/{{ item }}/share"
+        owner: "{{ item }}"
+        group: "{{ item }}"
+        state: link
+      loop:
+        - "{{ primary_user }}"
+        - "{{ secondary_user }}"
