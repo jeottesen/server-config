@@ -1,0 +1,23 @@
+- name: Create authelia dir
+  file:
+    path: "{{ container_appdata_path }}/authelia"
+    owner: "{{ primary_user }}"
+    group: "{{ primary_group }}"
+    mode: '0700'
+    state: "directory"
+
+- name: Create authelia/configuration.yml file
+  template:
+    src: "{{ authelia_configuration_template }}"
+    dest: "{{ container_appdata_path }}/authelia/configuration.yml"
+    owner: "{{ primary_user }}"
+    group: "{{ primary_group }}"
+    mode: 0600
+
+- name: Create authelia/users_database.yml file
+  template:
+    src: "{{ authelia_users_db_template }}"
+    dest: "{{ container_appdata_path }}/authelia/users_database.yml"
+    owner: "{{ primary_user }}"
+    group: "{{ primary_group }}"
+    mode: 0600

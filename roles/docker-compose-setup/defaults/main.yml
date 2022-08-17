@@ -1,0 +1,35 @@
+---
+media_data_path: /data
+
+docker_compose_file: "/home/{{ primary_user }}/docker"
+container_appdata_path: "{{ docker_compose_file }}/appdata"
+
+traefik_directory: "{{ container_appdata_path }}/traefik"
+
+compose_puid: 1000
+compose_guid: 1000
+compose_tz: America/Denver
+
+route53__access_key: ""
+route53_secret_access_key: ""
+route53_zone_id: ""
+
+# Template files
+authelia_configuration_template: "authelia/configuration.yml.j2"
+authelia_users_db_template: "authelia/users_database.yml.j2"
+
+secrets_template_folder: "templates/secrets/"
+
+# Basic Auth
+primary_user_htpass: ""
+
+#Oauth
+oauth_client_id: ""
+oauth_client_secret: ""
+forward_auth_secret: ""
+
+#Authelia
+authelia_jwt_secret: ""
+authelia_session_secret: ""
+authelia_hashed_pass: ""
+authelia_storage_encryption_key: ""

@@ -1,0 +1,27 @@
+---
+
+- include: wireguard.yml
+
+- name: Setup docker-compose-files
+  include_role:
+    name: docker-compose-setup
+    public: "yes"
+
+- name: Create docker-compose.yml file
+  template:
+    src: docker-compose.yml.j2
+    dest: "{{ docker_compose_file }}/docker-compose.yml"
+    mode: 0600
+
+- name: Create docker-compose env file
+  template:
+    src: .env.j2
+    dest: "{{ docker_compose_file }}/.env"
+    mode: 0600
+
+- name: Pull and start docker-compose configuration
+  community.docker.docker_compose:
+    project_src: "{{ docker_compose_file }}"
+    remove_orphans: yes
+    pull: yes
+    state: present

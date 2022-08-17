@@ -1,0 +1,663 @@
+# {{ ansible_managed }}
+
+version: "3.8"
+
+networks:
+  proxies:
+    # Containers part of the reverse proxy system
+    driver: bridge
+  socket_proxy:
+    # network for the docker socket
+    driver: bridge
+    #ipam:
+    #  config:
+    #    - subnet: 192.168.91.0/24
+
+########################### EXTENSION FIELDS
+# Helps eliminate repetition of sections
+# More Info on how to use this: https://github.com/htpcBeginner/docker-traefik/pull/228
+
+# Common environment values
+x-environment: &default-tz-puid-pgid
+  TZ: $TZ
+  USER_ID: $PUID
+  GROUP_ID: $PGID
+  PUID: $PUID
+  PGID: $PGID
+
+x-environment: &secondary-tz-puid-pgid
+  TZ: $TZ
+  USER_ID: $SECONDARY_PUID
+  GROUP_ID: $SECONDARY_PUID
+  PUID: $SECONDARY_PUID
+  PGID: $SECONDARY_PUID
+
+# Proxy Network and Security
+x-network-and-security: &network-and-security
+  networks:
+    - proxies
+  security_opt:
+    - no-new-privileges:true
+
+# Keys common to some of the services
+x-common-keys-core: &common-keys-core
+  <<: *network-and-security
+  restart: always
+  # profiles:
+  # - basic
+
+# Keys common to some of the dependent services/apps
+x-common-keys-apps: &common-keys-apps
+  <<: *network-and-security
+  restart: unless-stopped
+  # profiles:
+  # - apps
+
+secrets:
+  #htpasswd:
+  #  file: $DOCKER_DIR/secrets/htpasswd
+  #traefik_forward_auth:
+  #  file: $DOCKER_DIR/secrets/traefik_forward_auth
+  #mysql_root_password:
+  #  file: $DOCKER_DIR/secrets/mysql_root_password
+  authelia_jwt_secret:
+    file: $DOCKER_DIR/secrets/authelia_jwt_secret
+  authelia_session_secret:
+    file: $DOCKER_DIR/secrets/authelia_session_secret
+  authelia_storage_encryption_key:
+      file: $DOCKER_DIR/secrets/authelia_storage_encryption_key
+  #authelia_notifier_smtp_password:
+  #  file: $DOCKER_DIR/secrets/authelia_notifier_smtp_password
+  #authelia_storage_mysql_password:
+  #  file: $DOCKER_DIR/secrets/authelia_storage_mysql_password
+  #authelia_duo_api_secret_key:
+  #  file: $DOCKER_DIR/secrets/authelia_duo_api_secret_key
+
+
+services:
+
+########################### Core Services
+
+  wireguard:
+    restart: always
+    image: ghcr.io/linuxserver/wireguard
+    container_name: wireguard
+    cap_add:
+      - NET_ADMIN
+      - SYS_MODULE
+    environment:
+      <<: *default-tz-puid-pgid
+      SERVERURL: $DOMAIN_NAME
+      PEERS: "$PRIMARY_USER,$SECONDARY_USER,home"
+      PEERDNS: $PRIMARY_DNS
+      INTERNAL_SUBNET: 10.13.13.0
+    volumes:
+      - $CONTAINER_APPDATA_DIR/wireguard:/config
+      - /lib/modules:/lib/modules
+    ports:
+      - 51820:51820/udp
+    sysctls:
+      - net.ipv4.conf.all.src_valid_mark=1
+    security_opt:
+      - no-new-privileges:true
+
+  # Docker Socket Proxy - Security Enchanced Proxy for Docker Socket
+  socket-proxy:
+    <<: *common-keys-core # See EXTENSION FIELDS at the top
+    container_name: socket-proxy
+    image: tecnativa/docker-socket-proxy
+    networks:
+      - socket_proxy
+    #  socket_proxy:
+    #    ipv4_address: 192.168.91.254 # You can specify a static IP
+    privileged: true
+    #ports:
+    # - "127.0.0.1:2375:2375" # Port 2375 should only ever get exposed to the internal network. When possible use this line.
+    # I use the next line instead, as I want portainer to manage multiple docker endpoints within my home network.
+    # - "2375:2375"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    environment:
+      - LOG_LEVEL=info # debug,info,notice,warning,err,crit,alert,emerg
+      ## Variables match the URL prefix (i.e. AUTH blocks access to /auth/* parts of the API, etc.).
+      # 0 to revoke access.
+      # 1 to grant access.
+      ## Granted by Default
+      - EVENTS=1
+      - PING=1
+      - VERSION=1
+      ## Revoked by Default
+      # Security critical
+      - AUTH=0
+      - SECRETS=0
+      - POST=1 # Watchtower
+      # Not always needed
+      - BUILD=0
+      - COMMIT=0
+      - CONFIGS=0
+      - CONTAINERS=1 # Traefik, portainer, etc.
+      - DISTRIBUTION=0
+      - EXEC=0
+      - IMAGES=1 # Portainer
+      - INFO=1 # Portainer
+      - NETWORKS=1 # Portainer
+      - NODES=0
+      - PLUGINS=0
+      - SERVICES=1 # Portainer
+      - SESSION=0
+      - SWARM=0
+      - SYSTEM=0
+      - TASKS=1 # Portainer
+      - VOLUMES=1 # Portainer
+
+  # Traefik 2 - Reverse Proxy
+  traefik:
+    <<: *common-keys-core # See EXTENSION FIELDS at the top
+    container_name: traefik
+    image: traefik:v2.8
+    command: # CLI arguments
+      - --global.checkNewVersion=true
+      - --global.sendAnonymousUsage=true
+      - --entryPoints.http.address=:80
+      - --entryPoints.https.address=:443
+      # Allow these IPs to set the X-Forwarded-* headers - Cloudflare IPs: https://www.cloudflare.com/ips/
+      # - --entrypoints.https.forwardedHeaders.trustedIPs=173.245.48.0/20,103.21.244.0/22,103.22.200.0/22,103.31.4.0/22,141.101.64.0/18,108.162.192.0/18,190.93.240.0/20,188.114.96.0/20,197.234.240.0/22,198.41.128.0/17,162.158.0.0/15,104.16.0.0/13,104.24.0.0/14,172.64.0.0/13,131.0.72.0/22
+      - --entryPoints.traefik.address=:8080
+      # - --entryPoints.ping.address=:8081
+      - --api=true
+      - --api.insecure=false
+      - --api.dashboard=true
+      #- --ping=true
+      #- --pilot.token=$TRAEFIK_PILOT_TOKEN
+      # - --serversTransport.insecureSkipVerify=true
+      - --log=true
+      - --log.level=WARN  # (Default: error) DEBUG, INFO, WARN, ERROR, FATAL, PANIC
+      - --accessLog=true
+      - --accessLog.filePath=/traefik.log
+      - --accessLog.bufferingSize=100 # Configuring a buffer of 100 lines
+      - --accessLog.filters.statusCodes=400-499
+      - --providers.docker=true
+      # - --providers.docker.endpoint=unix:///var/run/docker.sock # Use Docker Socket Proxy instead for improved security
+      - --providers.docker.endpoint=tcp://socket-proxy:2375
+      # Automatically set Host rule for services
+      - --providers.docker.exposedByDefault=false
+      # - --entrypoints.https.http.middlewares=chain-basic-auth@file
+      - --entrypoints.https.http.tls.options=tls-opts@file
+      # Add route53 as default certresolver for all services. Also enables TLS and no need to specify on individual services
+      - --entrypoints.https.http.tls.certresolver=route53
+      # - --entrypoints.https.http.tls.domains[0].main=$DOMAIN_NAME
+      # - --entrypoints.https.http.tls.domains[0].sans=*.$DOMAIN_NAME
+      - --providers.docker.network=docker_proxies
+      - --providers.docker.swarmMode=false
+      - --providers.file.directory=/rules # Load dynamic configuration from one or more .toml or .yml files in a directory
+      # - --providers.file.filename=/path/to/file # Load dynamic configuration from a file
+      - --providers.file.watch=true # Only works on top level files in the rules folder
+      #- --certificatesResolvers.route53.acme.caServer=https://acme-staging-v02.api.letsencrypt.org/directory # LetsEncrypt Staging Server - uncomment when testing
+      - --certificatesResolvers.route53.acme.email=$EMAIL_ADDRESS
+      - --certificatesResolvers.route53.acme.storage=/acme.json
+      - --certificatesResolvers.route53.acme.dnsChallenge.provider=route53
+      - --certificatesResolvers.route53.acme.dnsChallenge.delayBeforeCheck=90 # To delay DNS check and reduce LE hitrate
+      # Disable SSL verification on backend
+      - "--serverstransport.insecureskipverify=true"
+    networks:
+      - proxies
+      - socket_proxy
+      #t2_proxy:
+      #  ipv4_address: 192.168.90.254 # You can specify a static IP
+    #healthcheck:
+    #  test: ["CMD", "traefik", "healthcheck", "--ping"]
+    #  interval: 5s
+    #  retries: 3
+    ports:
+      - target: 80
+        published: 80
+        protocol: tcp
+        mode: host
+      - target: 443
+        published: 443
+        protocol: tcp
+        mode: host
+      # - target: 8080
+      #  published: 8080
+      #  protocol: tcp
+      #  mode: host
+    volumes:
+      - $CONTAINER_APPDATA_DIR/traefik/rules:/rules # file provider directory
+      - $CONTAINER_APPDATA_DIR/traefik/acme/acme.json:/acme.json # cert location - you must touch this file and change permissions to 600
+      - $CONTAINER_APPDATA_DIR/traefik/traefik.log:/traefik.log # for fail2ban - make sure to touch file before starting container
+    environment:
+      AWS_ACCESS_KEY_ID: $AWS_ACCESS_KEY_ID
+      AWS_SECRET_ACCESS_KEY: $AWS_SECRET_ACCESS_KEY
+      AWS_REGION: $AWS_REGION
+      AWS_HOSTED_ZONE_ID: $AWS_HOSTED_ZONE_ID
+    labels:
+      #- "autoheal=true"
+      - "traefik.enable=true"
+      # HTTP-to-HTTPS Redirect
+      - "traefik.http.routers.http-catchall.entrypoints=http"
+      - "traefik.http.routers.http-catchall.rule=HostRegexp(`{host:.+}`)"
+      - "traefik.http.routers.http-catchall.middlewares=chain-redirect@file"
+      #- "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
+      # HTTP Routers
+      - "traefik.http.routers.traefik-rtr.entrypoints=https"
+      - "traefik.http.routers.traefik-rtr.rule=Host(`traefik.$DOMAIN_NAME`)"
+      - "traefik.http.routers.traefik-rtr.tls=true"
+      - "traefik.http.routers.traefik-rtr.tls.certresolver=route53"
+      - "traefik.http.routers.traefik-rtr.tls.domains[0].main=$DOMAIN_NAME"
+      - "traefik.http.routers.traefik-rtr.tls.domains[0].sans=*.$DOMAIN_NAME"
+      ## Services - API
+      - "traefik.http.routers.traefik-rtr.service=api@internal"
+      ## Healthcheck/ping
+      #- "traefik.http.routers.ping.rule=Host(`traefik.$DOMAIN_NAME`) && Path(`/ping`)"
+      #- "traefik.http.routers.ping.tls=true"
+      #- "traefik.http.routers.ping.service=ping@internal"
+      ## Middlewares
+      #- "traefik.http.routers.traefik-rtr.middlewares=chain-no-auth@file" # For No Authentication
+      #- "traefik.http.routers.traefik-rtr.middlewares=chain-auth-basic@file" # For Basic HTTP Authentication
+      #- "traefik.http.routers.traefik-rtr.middlewares=chain-oauth@file" # For Google OAuth
+      - "traefik.http.routers.traefik-rtr.middlewares=chain-authelia@file" # For Authelia Authentication
+
+  # Authelia (Lite) - Self-Hosted Single Sign-On and Two-Factor Authentication
+  authelia:
+    <<: *common-keys-core # See EXTENSION FIELDS at the top
+    container_name: authelia
+    # Check this before upgrading: https://github.com/authelia/authelia/blob/master/BREAKING.md
+    image: authelia/authelia:4
+    #depends_on:
+      #- mariadb
+      #- redis
+    volumes:
+      - $CONTAINER_APPDATA_DIR/authelia:/config
+    environment:
+      <<: *default-tz-puid-pgid
+      AUTHELIA_JWT_SECRET_FILE: /run/secrets/authelia_jwt_secret
+      AUTHELIA_SESSION_SECRET_FILE: /run/secrets/authelia_session_secret
+      AUTHELIA_STORAGE_ENCRYPTION_KEY_FILE: /run/secrets/authelia_storage_encryption_key
+      #AUTHELIA_STORAGE_MYSQL_PASSWORD_FILE: /run/secrets/authelia_storage_mysql_password
+      #AUTHELIA_NOTIFIER_SMTP_PASSWORD_FILE: /run/secrets/authelia_notifier_smtp_password
+      #AUTHELIA_DUO_API_SECRET_KEY_FILE: /run/secrets/authelia_duo_api_secret_key
+    secrets:
+      - authelia_jwt_secret
+      - authelia_session_secret
+      - authelia_storage_encryption_key
+      #- authelia_storage_mysql_password
+      #- authelia_notifier_smtp_password
+      #- authelia_duo_api_secret_key
+    labels:
+      - "traefik.enable=true"
+      ## HTTP Routers
+      - "traefik.http.routers.authelia-rtr.entrypoints=https"
+      - "traefik.http.routers.authelia-rtr.rule=Host(`authelia.$DOMAIN_NAME`) || HostHeader(`authelia.$DOMAIN_NAME`)"
+      ## Middlewares
+      - "traefik.http.routers.authelia-rtr.middlewares=chain-authelia@file"
+      ## HTTP Services
+      - "traefik.http.routers.authelia-rtr.service=authelia-svc"
+      - "traefik.http.services.authelia-svc.loadbalancer.server.port=9091"
+
+  muximux:
+    <<: *common-keys-core
+    image: linuxserver/muximux
+    container_name: muximux
+    environment:
+      <<: *default-tz-puid-pgid
+    volumes:
+      - '$CONTAINER_APPDATA_DIR/muximux:/config'
+    labels:
+      - "traefik.enable=true"
+      ## HTTP Routers
+      - "traefik.http.routers.muximux-rtr.entrypoints=https"
+      - "traefik.http.routers.muximux-rtr.rule=Host(`$DOMAIN_NAME`)"
+      ## Middlewares
+      - "traefik.http.routers.muximux-rtr.middlewares=chain-authelia@file"
+      ## HTTP Services
+      - "traefik.http.routers.muximux-rtr.service=muximux-svc"
+      - "traefik.http.services.muximux-svc.loadbalancer.server.port=80"
+
+  ############################# Downloaders
+
+  qbittorrent:
+    <<: *common-keys-apps # See EXTENSION FIELDS at the top
+    image: lscr.io/linuxserver/qbittorrent
+    container_name: qbittorrent
+    restart: unless-stopped
+    environment:
+      <<: *default-tz-puid-pgid
+      #WEBUI_PORT=8080
+    volumes:
+      - $CONTAINER_APPDATA_DIR/qbittorrent:/config
+      - $DOWNLOADS_DIR/default:/downloads
+    labels:
+      - "traefik.enable=true"
+      ### QBittorent Router
+      ## HTTP Routers
+      - "traefik.http.routers.qbittorrent-rtr.entrypoints=https"
+      - "traefik.http.routers.qbittorrent-rtr.rule=Host(`qbt.$DOMAIN_NAME`)"
+      ## Middlewares
+      - "traefik.http.routers.qbittorrent-rtr.middlewares=chain-authelia@file"
+      ## HTTP Services
+      - "traefik.http.routers.qbittorrent-rtr.service=qbittorrent-svc"
+      - "traefik.http.services.qbittorrent-svc.loadbalancer.server.port=8080"
+
+  qbittorrent-books:
+    <<: *common-keys-apps # See EXTENSION FIELDS at the top
+    image: lscr.io/linuxserver/qbittorrent
+    container_name: qbittorrent-books
+    restart: unless-stopped
+    environment:
+      <<: *default-tz-puid-pgid
+      #WEBUI_PORT=8080
+    ports:
+      - 51911:51911
+    volumes:
+      - $CONTAINER_APPDATA_DIR/qbittorrent-books:/config
+      - $DOWNLOADS_DIR/books:/downloads
+    labels:
+      - "traefik.enable=true"
+      ### QBittorent Router
+      ## HTTP Routers
+      - "traefik.http.routers.qbittorrent-books-rtr.entrypoints=https"
+      - "traefik.http.routers.qbittorrent-books-rtr.rule=Host(`qbt.$DOMAIN_NAME`) && PathPrefix(`/books`)"
+      - "traefik.http.middlewares.qb-books-redirect.redirectregex.regex=^(.*)/books$$"
+      - "traefik.http.middlewares.qb-books-redirect.redirectregex.replacement=$$1/books/"
+      - "traefik.http.middlewares.qb-books-strip.stripprefix.prefixes=/books/"
+      ## Middlewares
+      - "traefik.http.routers.qbittorrent-books-rtr.middlewares=qb-books-strip,qb-books-redirect,qb-headers@file,chain-authelia@file"
+      ## HTTP Services
+      - "traefik.http.routers.qbittorrent-books-rtr.service=qbittorrent-books-svc"
+      - "traefik.http.services.qbittorrent-books-svc.loadbalancer.server.port=8080"
+      - "traefik.http.services.qbittorrent-books-svc.loadbalancer.passhostheader=false"
+
+  qbittorrent-public:
+    <<: *common-keys-apps # See EXTENSION FIELDS at the top
+    image: lscr.io/linuxserver/qbittorrent
+    container_name: qbittorrent-public
+    restart: unless-stopped
+    environment:
+      <<: *default-tz-puid-pgid
+      #WEBUI_PORT=8080
+    volumes:
+      - $CONTAINER_APPDATA_DIR/qbittorrent-public:/config
+      - $DOWNLOADS_DIR/public:/downloads
+    labels:
+      - "traefik.enable=true"
+      ### QBittorent Router
+      ## HTTP Routers
+      - "traefik.http.routers.qbittorrent-public-rtr.entrypoints=https"
+      - "traefik.http.routers.qbittorrent-public-rtr.rule=Host(`qbt.$DOMAIN_NAME`) && PathPrefix(`/public`)"
+      - "traefik.http.middlewares.qb-public-redirect.redirectregex.regex=^(.*)/public$$"
+      - "traefik.http.middlewares.qb-public-redirect.redirectregex.replacement=$$1/public/"
+      - "traefik.http.middlewares.qb-public-strip.stripprefix.prefixes=/public/"
+      ## Middlewares
+      - "traefik.http.routers.qbittorrent-public-rtr.middlewares=qb-public-strip,qb-public-redirect,qb-headers@file,chain-authelia@file"
+      ## HTTP Services
+      - "traefik.http.routers.qbittorrent-public-rtr.service=qbittorrent-public-svc"
+      - "traefik.http.services.qbittorrent-public-svc.loadbalancer.server.port=8080"
+      - "traefik.http.services.qbittorrent-public-svc.loadbalancer.passhostheader=false"
+
+  qbittorrent-temp:
+    <<: *common-keys-apps # See EXTENSION FIELDS at the top
+    image: lscr.io/linuxserver/qbittorrent
+    container_name: qbittorrent-temp
+    restart: unless-stopped
+    environment:
+      <<: *default-tz-puid-pgid
+      #WEBUI_PORT=8080
+    volumes:
+      - $CONTAINER_APPDATA_DIR/qbittorrent-temp:/config
+      - $DOWNLOADS_DIR/temp:/downloads
+    labels:
+      - "traefik.enable=true"
+      ### QBittorent Router
+      - "traefik.http.routers.qbittorrent-temp-rtr.rule=Host(`qbt.$DOMAIN_NAME`) && PathPrefix(`/temp`)"
+      - "traefik.http.middlewares.qb-temp-redirect.redirectregex.regex=^(.*)/temp$$"
+      - "traefik.http.middlewares.qb-temp-redirect.redirectregex.replacement=$$1/temp/"
+      - "traefik.http.middlewares.qb-temp-strip.stripprefix.prefixes=/temp/"
+      ## Middlewares
+      - "traefik.http.routers.qbittorrent-temp-rtr.middlewares=qb-temp-strip,qb-temp-redirect,qb-headers@file,chain-authelia@file"
+      ## HTTP Services
+      - "traefik.http.routers.qbittorrent-temp-rtr.service=qbittorrent-temp-svc"
+      - "traefik.http.services.qbittorrent-temp-svc.loadbalancer.server.port=8080"
+      - "traefik.http.services.qbittorrent-temp-svc.loadbalancer.passhostheader=false"
+
+  {# jackett:
+    <<: *common-keys-apps # See EXTENSION FIELDS at the top
+    image: lscr.io/linuxserver/jackett
+    container_name: jackett
+    environment:
+      <<: *default-tz-puid-pgid
+      AUTO_UPDATE: "true" #optional
+    volumes:
+      - $CONTAINER_APPDATA_DIR/jackett:/config
+    labels:
+      - "traefik.enable=true"
+      ## HTTP Routers
+      - "traefik.http.routers.jackett-rtr.entrypoints=https"
+      - "traefik.http.routers.jackett-rtr.rule=Host(`jackett.$DOMAIN_NAME`)"
+      ## Middlewares
+      - "traefik.http.routers.jackett-rtr.middlewares=chain-authelia@file"
+      ## HTTP Services
+      - "traefik.http.routers.jackett-rtr.service=jackett-svc"
+      - "traefik.http.services.jackett-svc.loadbalancer.server.port=9117" #}
+
+  ############################# Media
+
+  # Jellyfin - Media Server
+  jellyfin:
+    <<: *common-keys-apps # See EXTENSION FIELDS at the top
+    image: jellyfin/jellyfin:latest
+    container_name: jellyfin
+    #devices:
+    #  - /dev/dri:/dev/dri # for harware transcoding
+    #ports:
+    #  - "8096:8096"
+    #  - "8920:8920" # Emby also uses same port if running both
+    environment:
+      <<: *default-tz-puid-pgid
+      UMASK_SET: 066
+    volumes:
+      - $CONTAINER_APPDATA_DIR/jellyfin:/config
+      - $CONTAINER_APPDATA_DIR/jellyfin/metadata:/config/metadata
+      - $DOWNLOADS_DIR:/data
+    labels:
+      - "traefik.enable=true"
+      ## HTTP Router
+      - "traefik.http.routers.jellyfin-rtr.entryPoints=https"
+      - "traefik.http.routers.jellyfin-rtr.rule=Host(`media.$DOMAIN_NAME`)"
+      ## Middlewares
+      - "traefik.http.routers.jellyfin-rtr.middlewares=chain-authelia@file"
+      ## HTTP Services
+      - "traefik.http.routers.jellyfin-rtr.service=jellyfin-svc"
+      - "traefik.http.services.jellyfin-svc.loadbalancer.server.port=8096"
+      - "traefik.http.services.jellyfin-svc.loadBalancer.passHostHeader=true"
+
+  {# sonarr:
+    <<: *common-keys-apps # See EXTENSION FIELDS at the top
+    image: lscr.io/linuxserver/sonarr
+    container_name: sonarr
+    environment:
+      <<: *default-tz-puid-pgid
+    volumes:
+      - '$CONTAINER_APPDATA_DIR/tv-sonarr:/config'
+      - '$DATA_DIR:/data'
+      - "/etc/localtime:/etc/localtime:ro"
+    labels:
+      - "traefik.enable=true"
+      ## HTTP Routers
+      - "traefik.http.routers.tv-sonarr-rtr.entrypoints=https"
+      - "traefik.http.routers.tv-sonarr-rtr.rule=Host(`sonarr.$DOMAIN_NAME`) && PathPrefix(`/tv`)"
+      ## Middlewares
+      - "traefik.http.routers.tv-sonarr-rtr.middlewares=chain-authelia@file"
+      ## HTTP Services
+      - "traefik.http.routers.tv-sonarr-rtr.service=tv-sonarr-svc"
+      - "traefik.http.services.tv-sonarr-svc.loadbalancer.server.port=8989" #}
+
+  {# radarr:
+    <<: *common-keys-apps # See EXTENSION FIELDS at the top
+    image: lscr.io/linuxserver/radarr
+    container_name: radarr
+    environment:
+      <<: *default-tz-puid-pgid
+    volumes:
+      - '$CONTAINER_APPDATA_DIR/radarr:/config'
+      - '$DATA_DIR:/data'
+      - "/etc/localtime:/etc/localtime:ro"
+    labels:
+      - "traefik.enable=true"
+      ## HTTP Routers
+      - "traefik.http.routers.radarr-rtr.entrypoints=https"
+      - "traefik.http.routers.radarr-rtr.rule=Host(`radarr.$DOMAIN_NAME`)"
+      ## Middlewares
+      - "traefik.http.routers.radarr-rtr.middlewares=chain-authelia@file"
+      ## HTTP Services
+      - "traefik.http.routers.radarr-rtr.service=radarr-svc"
+      - "traefik.http.services.radarr-svc.loadbalancer.server.port=7878" #}
+
+  ############################# Utilites
+
+  # File Browser - Explorer
+  filebrowser:
+    <<: *common-keys-apps # See EXTENSION FIELDS at the top
+    image: filebrowser/filebrowser:s6
+    container_name: filebrowser
+    #ports:
+    #  - "$FILEBROWSER_PORT:80"
+    volumes:
+      - $CONTAINER_APPDATA_DIR/filebrowser:/config
+      - $CONTAINER_APPDATA_DIR/filebrowser/database/:/database/
+      - $USER_DIR:/srv/
+      - /home/share:/home/share
+    environment:
+      <<: *default-tz-puid-pgid
+      FB_NOAUTH: noauth
+    labels:
+      - "traefik.enable=true"
+      ## HTTP Routers
+      - "traefik.http.routers.filebrowser-rtr.entrypoints=https"
+      - "traefik.http.routers.filebrowser-rtr.rule=Host(`files.$DOMAIN_NAME`)"
+      ## Middlewares
+      - "traefik.http.routers.filebrowser-rtr.middlewares=chain-authelia@file"
+      ## HTTP Services
+      - "traefik.http.routers.filebrowser-rtr.service=filebrowser-svc"
+      - "traefik.http.services.filebrowser-svc.loadbalancer.server.port=80"
+
+  # qDirStat - Directory Statistics
+  qdirstat:
+    <<: *common-keys-apps # See EXTENSION FIELDS at the top
+    image: jlesage/qdirstat:latest
+    container_name: qdirstat
+    # ports:
+    #   - "$QDIRSTAT_PORT:5800"
+    volumes:
+      - $USER_DIR:/data/home:ro
+      - $CONTAINER_APPDATA_DIR/qdirstat/config:/config:rw
+    environment:
+      <<: *default-tz-puid-pgid
+      UMASK: 002
+      KEEP_APP_RUNNING: 1
+      CLEAN_TMP_DIR: 1
+      DISPLAY_WIDTH: 1600
+      DISPLAY_HEIGHT: 960
+    labels:
+      - "traefik.enable=true"
+      ## HTTP Routers
+      - "traefik.http.routers.qdirstat-rtr.entrypoints=https"
+      - "traefik.http.routers.qdirstat-rtr.rule=Host(`qdirstat.$DOMAIN_NAME`)"
+      ## Middlewares
+      - "traefik.http.routers.qdirstat-rtr.middlewares=chain-authelia@file"
+      ## HTTP Services
+      - "traefik.http.routers.qdirstat-rtr.service=qdirstat-svc"
+      - "traefik.http.services.qdirstat-svc.loadbalancer.server.port=5800"
+      - "traefik.http.services.qdirstat-svc.loadbalancer.passhostheader=false"
+
+  ############################# $SECONDARY_USER
+
+  muximux-{{ secondary_user }}:
+    <<: *common-keys-core
+    image: linuxserver/muximux
+    container_name: muximux-$SECONDARY_USER
+    environment:
+      <<: *secondary-tz-puid-pgid
+    volumes:
+      - '$SECONDARY_CONTAINER_APPDATA_DIR/muximux-$SECONDARY_USER:/config'
+    labels:
+      - "traefik.enable=true"
+      ## HTTP Routers
+      - "traefik.http.routers.muximux-$SECONDARY_USER-rtr.entrypoints=https"
+      - "traefik.http.routers.muximux-$SECONDARY_USER-rtr.rule=Host(`$SECONDARY_USER.$DOMAIN_NAME`)"
+      ## Middlewares
+      - "traefik.http.routers.muximux-$SECONDARY_USER-rtr.middlewares=chain-authelia@file"
+      ## HTTP Services
+      - "traefik.http.routers.muximux-$SECONDARY_USER-rtr.service=muximux-$SECONDARY_USER-svc"
+      - "traefik.http.services.muximux-$SECONDARY_USER-svc.loadbalancer.server.port=80"
+
+  qbittorrent-{{ secondary_user }}:
+    <<: *common-keys-apps # See EXTENSION FIELDS at the top
+    image: lscr.io/linuxserver/qbittorrent
+    container_name: qbittorrent-$SECONDARY_USER
+    restart: unless-stopped
+    environment:
+      <<: *secondary-tz-puid-pgid
+      #WEBUI_PORT=8080
+    volumes:
+      - $SECONDARY_CONTAINER_APPDATA_DIR/qbittorrent-$SECONDARY_USER:/config
+      - ${{ secondary_user|upper }}_DOWNLOADS_DIR/:/downloads
+    labels:
+      - "traefik.enable=true"
+      ### QBittorent Router
+      ## HTTP Routers
+      - "traefik.http.routers.qbittorrent-$SECONDARY_USER-rtr.entrypoints=https"
+      - "traefik.http.routers.qbittorrent-$SECONDARY_USER-rtr.rule=Host(`$SECONDARY_USER.qbt.$DOMAIN_NAME`)"
+      ## Middlewares
+      - "traefik.http.routers.qbittorrent-$SECONDARY_USER-rtr.middlewares=qb-headers@file,chain-authelia@file"
+      ## HTTP Services
+      - "traefik.http.routers.qbittorrent-$SECONDARY_USER-rtr.service=qbittorrent-$SECONDARY_USER-svc"
+      - "traefik.http.services.qbittorrent-$SECONDARY_USER-svc.loadbalancer.server.port=8080"
+      - "traefik.http.services.qbittorrent-$SECONDARY_USER-svc.loadbalancer.passhostheader=false"
+
+  # File Browser - Explorer
+  filebrowser-{{ secondary_user }}:
+    <<: *common-keys-apps # See EXTENSION FIELDS at the top
+    image: filebrowser/filebrowser:s6
+    container_name: filebrowser-$SECONDARY_USER
+    volumes:
+      - $SECONDARY_CONTAINER_APPDATA_DIR/filebrowser-$SECONDARY_USER:/config
+      - $SECONDARY_CONTAINER_APPDATA_DIR/filebrowser-$SECONDARY_USER/database/:/database/
+      - ${{ secondary_user|upper }}_DIR:/srv/
+      - /home/share:/home/share
+    environment:
+      <<: *secondary-tz-puid-pgid
+      FB_NOAUTH: noauth
+    labels:
+      - "traefik.enable=true"
+      ## HTTP Routers
+      - "traefik.http.routers.filebrowser-$SECONDARY_USER-rtr.entrypoints=https"
+      - "traefik.http.routers.filebrowser-$SECONDARY_USER-rtr.rule=Host(`$SECONDARY_USER.files.$DOMAIN_NAME`)"
+      ## Middlewares
+      - "traefik.http.routers.filebrowser-$SECONDARY_USER-rtr.middlewares=chain-authelia@file"
+      ## HTTP Services
+      - "traefik.http.routers.filebrowser-$SECONDARY_USER-rtr.service=filebrowser-$SECONDARY_USER-svc"
+      - "traefik.http.services.filebrowser-$SECONDARY_USER-svc.loadbalancer.server.port=80"
+      - "traefik.http.services.filebrowser-$SECONDARY_USER-svc.loadbalancer.passhostheader=false"
+
+  ############################# MAINTENANCE
+
+  # Docker-GC - Automatic Docker Garbage Collection
+  # Create docker-gc-exclude file
+  dockergc:
+    <<: *common-keys-apps # See EXTENSION FIELDS at the top
+    image: clockworksoul/docker-gc-cron:latest
+    container_name: docker-gc
+    networks:
+      - socket_proxy
+    volumes:
+      # - /var/run/docker.sock:/var/run/docker.sock # Use Docker Socket Proxy instead for improved security
+      - $CONTAINER_APPDATA_DIR/docker-gc/docker-gc-exclude:/etc/docker-gc-exclude
+    environment:
+      CRON: 0 0 0 * * ? # Everyday at midnight. Previously 0 0 * * *
+      FORCE_IMAGE_REMOVAL: 1
+      FORCE_CONTAINER_REMOVAL: 0
+      GRACE_PERIOD_SECONDS: 604800
+      DRY_RUN: 0
+      CLEAN_UP_VOLUMES: 1
+      TZ: $TZ
+      DOCKER_HOST: tcp://socket-proxy:2375

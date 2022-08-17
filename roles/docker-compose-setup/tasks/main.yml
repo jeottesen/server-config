@@ -1,0 +1,36 @@
+---
+- name: Docker Compose setup
+  block:
+  - include: secrets.yml
+  - include: traefik.yml
+  - include: authelia.yml
+
+  - name: Create docker-gc-exclude dir
+    file:
+      path: "{{ container_appdata_path }}/docker-gc/"
+      owner: "{{ primary_user }}"
+      group: "{{ primary_group }}"
+      mode: '0700'
+      state: "directory"
+
+  - name: Setup docker-gc-exclude
+    get_url:
+      url: https://raw.githubusercontent.com/clockworksoul/docker-gc-cron/master/compose/docker-gc-exclude
+      dest: "{{ container_appdata_path }}/docker-gc/docker-gc-exclude"
+      mode: 0600
+
+  - name: install docker pip modules
+    pip:
+      name: docker-compose
+      state: present
+
+  - name: Set container folder user permissions
+    file:
+      dest: "{{ container_appdata_path }}"
+      owner: "{{ primary_user }}"
+      group: "{{ primary_group }}"
+      mode: "u+rwX,g-rw,o-rw"
+      recurse: yes
+    become: yes
+
+  tags: compose-setup

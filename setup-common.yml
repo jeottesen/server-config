@@ -1,27 +1,41 @@
 ---
 
-- name: Setup sudo for debian systems
-  hosts: all
-  roles:
-    - debian-sudo
+- name: Apply standard config
+  hosts: "{{ limit_hosts | default('all')}}"
+  become: true
+  tags: common-config
+  tasks:
+    - name: Create group {{ primary_group }}
+      group:
+        name: "{{ primary_group }}"
+        gid: "{{ primary_user_guid }}"
+        state: present
+      tags: create-user
+    - name: Create user {{ primary_user }}
+      user:
+        name: "{{ primary_user }}"
+        password: "{{ primary_user_pass }}"
+        group: "{{ primary_group }}"
+        uid: "{{ primary_user_puid }}"
+        shell: "/bin/bash"
+        state: present
+      tags: create-user
 
-- name: Add ssh keys for user
-  hosts: all
+- hosts: "{{ limit_hosts | default('all')}}"
+  become: true
+  tags: common-config
   roles:
-    - add-ssh-keys
-
-- name: Harden SSH on all systems
-  hosts: all
-  become: yes
-  collections:
-    - devsec.hardening
-  roles:
-    - ssh_hardening
-  vars:
-    ssh_allow_tcp_forwarding: "yes"
-
-- name: Update all packages
-  hosts: all
-  become: yes
-  roles:
-    - update-all-packages
+    - name: common/debian-sudo
+    - name: common/add-ssh-keys
+      become: yes
+      tags: ssh
+    - name: devsec.hardening.ssh_hardening #
+      vars:
+        ssh_allow_tcp_forwarding: "yes"
+        #ssh_server_password_login: true
+        #sshd_authenticationmethods: publickey password
+      tags: ssh
+    - name: common/update-all-packages
+      become: yes
+    - name: common/iptables
+      tags: iptables

@@ -1,0 +1,15 @@
+- name: create folder for vpn container
+  file:
+    path: "{{ container_appdata_path }}/wireguard/"
+    owner: "{{ primary_user }}"
+    group: "{{ primary_group }}"
+    mode: '0700'
+    state: "directory"
+
+- name: add wireguard conf file for container
+  copy:
+    src: files/vault/wg0.conf
+    dest: "{{ container_appdata_path }}/wireguard/wg0.conf"
+    owner: "{{ primary_user }}"
+    group: "{{ primary_group }}"
+    mode: '0600'

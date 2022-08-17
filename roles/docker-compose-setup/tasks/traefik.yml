@@ -1,0 +1,40 @@
+---
+- name: Create trafick acme dir
+  file:
+    path: "{{ traefik_directory }}/acme"
+    owner: "{{ primary_user }}"
+    group: "{{ primary_group }}"
+    mode: '0700'
+    state: "directory"
+
+- name: Ensure 'traefik/acme/acme.json' exists
+  copy:
+    content: ""
+    dest: "{{ traefik_directory }}/acme/acme.json"
+    force: no
+    mode: '0600'
+
+- name: Ensure 'traefik/traefik.log' exists
+  copy:
+    content: ""
+    dest: "{{ traefik_directory }}/traefik.log"
+    force: no
+    mode: '0700'
+
+- name: Create trafick rules dir
+  file:
+    path: "{{ traefik_directory }}/rules"
+    owner: "{{ primary_user }}"
+    group: "{{ primary_group }}"
+    mode: '0700'
+    state: "directory"
+
+- name: Create trafik rules
+  template:
+    src: "{{ item }}"
+    dest: "{{ traefik_directory }}/rules/{{ item | basename | regex_replace('.j2','') }}"
+    owner: "{{ primary_user }}"
+    group: "{{ primary_group }}"
+    mode: 0600
+  with_fileglob:
+   - templates/traefik/rules/*.j2

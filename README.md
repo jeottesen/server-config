@@ -1,12 +1,24 @@
-# mediaserver-config
-The mediaserver configuration that I use on my home server. Runs plex, beets, and more then serves these applications through an nginx reverse proxy server.
+# server-config
+The server configurations that I use. Serves a variety of docker service through traefik and authenticates users using Authelia.
 
-I am now trying to follow the infrastructure as code methodology for my server management.
-Mediaserver is now completely managed by ansible.
+I am now trying to follow the infrastructure as code methodology.<br />
+Mediaserver is completely managed by ansible.<br />
+Stormfront is in the process of being converted to an ansible configuration.<br />
+pfsense and esxi are something to look into at a later date.
 
-Docker configuration based on guide found here:
-https://www.smarthomebeginner.com/traefik-2-docker-tutorial/
+Docker configuration based on guide found here:<br />
+https://www.smarthomebeginner.com/traefik-2-docker-tutorial/ <br />
 https://github.com/htpcBeginner/docker-traefik
+
+## Ansible Commands
+Command to install ansible requirements:<br />
+`ansible-galaxy install -r requirements.yml`
+
+Command to initialize a server:<br />
+`ansible-playbook setup-common.yml -l stormfront -e "ansible_user=debian" -k`
+
+Command to generate a hashed Authelia password:<br />
+`docker run authelia/authelia:latest authelia hash-password -- 'YOUR_PA$$WORD'`
 
 ## Docker Folder Structure
 The docker folder is located in the users home directory.
@@ -26,6 +38,8 @@ The `docker-compose.yml` file contains the setup information for all the docker 
 The `containers/` folder hold the config files for the containers. The `.gitkeep` files are only there so the empty directories get added to github.
 
 ## TODO
+
+### Mediaserver
 - Guacamole remote desktop solution
 - Music organization through Lidarr
 - Setup FoundryVTT and supporting tools for video chat.
@@ -49,3 +63,8 @@ The `containers/` folder hold the config files for the containers. The `.gitkeep
 - Get letsencrypt working again with my domain name.
 - Add Authelia to external network for remote access.
 - Playbook to restore docker container files in case of rebuild.
+
+### Stormfront
+- Setup stormfront vpn using wireguard
+- Setup basic stormfront server functionality with ansible.
+- Give stormfront containers for another user.

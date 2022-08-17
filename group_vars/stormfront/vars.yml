@@ -1,0 +1,35 @@
+# grog.package role
+package_list:
+  - "{{ required_packages }}" # stored in group_vars/all/vars.yml
+
+secondary_user: "{{ vault_secondary_user }}"
+secondary_group: "{{ vault_secondary_group }}"
+secondary_user_pass: "{{ vault_secondary_user_pass }}"
+secondary_user_ssh_identity_key: "{{ vault_secondary_user_ssh_identity_key }}"
+secondary_user_puid: 1001
+secondary_user_guid: 1001
+secondary_user_email_address: "{{ vault_secondary_user_email_address }}"
+secondary_user_authelia_hashed_pass: "{{ vault_secondary_user_authelia_hashed_pass }}"
+
+primary_dns_ipv4: 9.9.9.9
+secondary_dns_ipv4: 149.112.112.112
+
+primary_dns_ipv6: 2620:fe::fe
+secondary_dns_ipv6: 2620:fe::9
+
+stormfront_sub_domain: "{{ vault_stormfront_sub_domain }}"
+
+# override the base domain name
+domain_name: "{{ stormfront_sub_domain }}.{{ base_domain_name }}"
+
+#Authelia
+authelia_jwt_secret: "{{ vault_authelia_jwt_secret }}"
+authelia_session_secret: "{{ vault_authelia_session_secret }}"
+authelia_hashed_pass: "{{ vault_authelia_hashed_pass }}"
+authelia_storage_encryption_key: "{{ vault_authelia_storage_encryption_key }}"
+
+# Route 53
+route53_access_key: "{{ vault_route53_access_key_id }}"
+route53_secret_access_key: "{{ vault_route53_secret_access_key }}"
+route53_region: us-west-1
+route53_zone_id: "{{ vault_route53_zone_id }}"

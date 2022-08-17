@@ -1,13 +1,7 @@
 primary_user: jeremy
 primary_group: jeremy
-ansible_user: "{{ primary_user }}"
-ssh_user: "{{ primary_user }}"
 
-sudo_users:
-  - { user: "{{ primary_user }}", group: "{{ primary_user }}" }
-
-docker_users:
-  - "{{ primary_user }}"
+domain_name: "{{ base_domain_name }}"
 
 # Basic Auth
 primary_user_htpass: "{{vault_home_primary_user_htpass }}"
@@ -22,3 +16,9 @@ authelia_jwt_secret: "{{ vault_authelia_jwt_secret }}"
 authelia_session_secret: "{{ vault_authelia_session_secret }}"
 authelia_hashed_pass: "{{ vault_authelia_hashed_pass }}"
 authelia_storage_encryption_key: "{{ vault_authelia_storage_encryption_key }}"
+
+# Route 53
+route53_access_key: "{{ vault_route53_access_key_id }}"
+route53_secret_access_key: "{{ vault_route53_secret_access_key }}"
+route53_region: us-west-1
+route53_zone_id: "{{ vault_route53_zone_id }}"
