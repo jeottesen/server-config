@@ -9,9 +9,7 @@
   become: yes
   roles:
     - name: grog.package
-      tags:
-        #- always
-        - packages
+      tags: packages
     # install docker and docker compose
     - name: geerlingguy.docker
       tags: docker
@@ -57,6 +55,14 @@
         mode: '0777'
         recurse: yes
         state: directory
+    - name: Sets default ACL share folder
+      ansible.posix.acl:
+        path: /home/share
+        etype: mask
+        permissions: rwX
+        recursive: yes
+        default: yes
+        state: present
     - name: create directory symlinks
       file:
         src: "/home/share"

@@ -9,9 +9,7 @@
   become: yes
   roles:
     - name: grog.package
-      tags:
-        #- always
-        - packages
+      tags: packages
     - name: mediaserver/mergerfs
       tags: mergerfs
     - name: mediaserver/snapraid

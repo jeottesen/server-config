@@ -14,6 +14,7 @@ compose_puid: "{{ primary_user_puid }}"
 compose_guid: "{{ primary_user_guid }}"
 
 required_packages:
+  - name: acl
   - name: vim
   - name: pip # required for docker management
   - name: rsync

@@ -38,10 +38,7 @@ The `docker-compose.yml` file contains the setup information for all the docker 
 The `containers/` folder hold the config files for the containers. The `.gitkeep` files are only there so the empty directories get added to github.
 
 ## TODO
-### Stormfront
-- Setup Stormfront vpn: Either openvpn or watchtower
-- Setup basic Stormfront server functionality with ansible.
-- Give Stormfront containers for another user.
+
 ### Mediaserver
 - Guacamole remote desktop solution
 - Music organization through Lidarr
@@ -66,3 +63,8 @@ The `containers/` folder hold the config files for the containers. The `.gitkeep
 - Get letsencrypt working again with my domain name.
 - Add Authelia to external network for remote access.
 - Playbook to restore docker container files in case of rebuild.
+
+### Stormfront
+- Setup stormfront vpn using wireguard
+- Setup basic stormfront server functionality with ansible.
+- Give stormfront containers for another user.

@@ -514,7 +514,7 @@ services:
 
   ############################# Utilites
 
-  {# # File Browser - Explorer
+  # File Browser - Explorer
   filebrowser:
     <<: *common-keys-apps # See EXTENSION FIELDS at the top
     image: filebrowser/filebrowser:s6
@@ -523,10 +523,12 @@ services:
     #  - "$FILEBROWSER_PORT:80"
     volumes:
       - $CONTAINER_APPDATA_DIR/filebrowser:/config
-      - $CONTAINER_APPDATA_DIR/filebrowser/filebrowser.db:/database/filebrowser.db
-      - /data/:/srv/data
+      - $CONTAINER_APPDATA_DIR/filebrowser/database/:/database/
+      - $USER_DIR:/srv/
+      - /home/share:/home/share
     environment:
       <<: *default-tz-puid-pgid
+      FB_NOAUTH: noauth
     labels:
       - "traefik.enable=true"
       ## HTTP Routers
@@ -536,7 +538,7 @@ services:
       - "traefik.http.routers.filebrowser-rtr.middlewares=chain-authelia@file"
       ## HTTP Services
       - "traefik.http.routers.filebrowser-rtr.service=filebrowser-svc"
-      - "traefik.http.services.filebrowser-svc.loadbalancer.server.port=80" #}
+      - "traefik.http.services.filebrowser-svc.loadbalancer.server.port=80"
 
   # qDirStat - Directory Statistics
   qdirstat:

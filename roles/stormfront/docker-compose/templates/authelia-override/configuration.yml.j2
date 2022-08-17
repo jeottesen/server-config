@@ -30,6 +30,8 @@ totp:
 #  secret_key: # use docker secret file instead AUTHELIA_DUO_API_SECRET_KEY_FILE
 
 authentication_backend:
+  password_reset:
+    disable: false
   file:
     path: /config/users_database.yml
     # customize passwords based on https://docs.authelia.com/configuration/authentication/file.html
