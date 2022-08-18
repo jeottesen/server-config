@@ -3,6 +3,11 @@ primary_group: jeremy
 
 domain_name: "{{ base_domain_name }}"
 
+foundry_admin_key: "{{ vault_foundry_admin_key }}"
+foundry_password:  "{{ vault_foundry_password }}"
+foundry_username:  "{{ vault_foundry_username }}"
+foundry_license_key:  "{{ vault_foundry_license_key }}"
+
 # Basic Auth
 primary_user_htpass: "{{vault_home_primary_user_htpass }}"
 
@@ -14,7 +19,6 @@ forward_auth_secret: "{{ vault_forward_auth_secret }}"
 #Authelia
 authelia_jwt_secret: "{{ vault_authelia_jwt_secret }}"
 authelia_session_secret: "{{ vault_authelia_session_secret }}"
-authelia_hashed_pass: "{{ vault_authelia_hashed_pass }}"
 authelia_storage_encryption_key: "{{ vault_authelia_storage_encryption_key }}"
 
 # Route 53

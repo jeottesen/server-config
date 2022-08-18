@@ -1,0 +1,27 @@
+# https://docs.authelia.com/configuration/access-control.html
+authelia_access_control:
+  default_policy: deny
+  rules:
+    # Rules applied to everyone
+    - domain: authelia.{{ domain_name }}
+      policy: bypass
+    - domain:
+        - "*.{{ domain_name }}"
+        - "{{ domain_name }}"
+      policy: bypass
+      networks:
+        - 192.168.0.0/16
+        #- HOME-WAN-IP-ADDRESS
+#    - domain: radarr.{{ domain_name }}
+#      policy: bypass
+#      subject: "group:admins"
+#      resources:
+#      - "^/api/.*$"
+#    - domain: "*.{{ domain_name }}"
+#      policy: one_factor
+    - domain: "*.{{ domain_name }}"
+      policy: one_factor
+    - domain: "{{ domain_name }}"
+      policy: one_factor
+
+authelia_users: "{{ vault_authelia_users }}"

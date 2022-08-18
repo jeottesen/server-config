@@ -47,6 +47,8 @@ x-common-keys-apps: &common-keys-apps
   # - apps
 
 secrets:
+  foundry_config:
+    file: $DOCKER_DIR/secrets/foundry-config.json
   #htpasswd:
   #  file: $DOCKER_DIR/secrets/htpasswd
   #traefik_forward_auth:
@@ -266,43 +268,51 @@ services:
       - "traefik.http.routers.authelia-rtr.service=authelia-svc"
       - "traefik.http.services.authelia-svc.loadbalancer.server.port=9091"
 
-  {# # Google OAuth - Single Sign On using OAuth 2.0
-  # https://www.smarthomebeginner.com/google-oauth-with-traefik-docker/
-  oauth:
+  # Portainer - WebUI for Containers
+  portainer:
     <<: *common-keys-core # See EXTENSION FIELDS at the top
-    container_name: oauth
-    image: thomseddon/traefik-forward-auth:latest
-    # image: thomseddon/traefik-forward-auth:2.1-arm # Use this image with Raspberry Pi
-    # Allow apps to bypass OAuth. Radarr example below will bypass OAuth if API key is present in the request (eg. from NZB360 mobile app).
-    # While this is one way, the recommended way is to bypass authentication using Traefik labels shown in some of the -Arr apps in this file.
-    # command: --rule.radarr.action=allow --rule.radarr.rule="Headers(`X-Api-Key`, `$RADARR_API_KEY`)"
-    # command: --rule.sabnzbd.action=allow --rule.sabnzbd.rule="HeadersRegexp(`X-Forwarded-Uri`, `$SABNZBD_API_KEY`)"
+    container_name: portainer
+    image: portainer/portainer-ce:latest
+    # command: -H unix:///var/run/docker.sock # # Use Docker Socket Proxy instead for improved security
+    command: -H tcp://socket-proxy:2375
+    networks:
+      - proxies
+      - socket_proxy
+    volumes:
+      # - /var/run/docker.sock:/var/run/docker.sock:ro # # Use Docker Socket Proxy instead for improved security
+      - $CONTAINER_APPDATA_DIR/portainer/data:/data # Change to local directory if you want to save/transfer config locally
     environment:
-      CONFIG: /config
-      COOKIE_DOMAIN: $DOMAIN_NAME
-      INSECURE_COOKIE: "false"
-      AUTH_HOST: oauth.$DOMAIN_NAME
-      URL_PATH: /_oauth
-      LOG_LEVEL: warn # set to trace while testing bypass rules
-      LOG_FORMAT: text
-      LIFETIME: 86400 # 1 day
-      DEFAULT_ACTION: auth
-      DEFAULT_PROVIDER: google
-    secrets:
-      - source: traefik_forward_auth
-        target: /config
+      - TZ=$TZ
     labels:
       - "traefik.enable=true"
       ## HTTP Routers
-      - "traefik.http.routers.oauth-rtr.tls=true"
-      - "traefik.http.routers.oauth-rtr.entrypoints=https"
-      - "traefik.http.routers.oauth-rtr.rule=Host(`oauth.$DOMAIN_NAME`)"
+      - "traefik.http.routers.portainer-rtr.entrypoints=https"
+      - "traefik.http.routers.portainer-rtr.rule=Host(`portainer.$DOMAIN_NAME`)"
       ## Middlewares
-      - "traefik.http.routers.oauth-rtr.middlewares=chain-authelia@file"
+      - "traefik.http.routers.portainer-rtr.middlewares=chain-authelia@file"
       ## HTTP Services
-      - "traefik.http.routers.oauth-rtr.service=oauth-svc"
-      - "traefik.http.services.oauth-svc.loadbalancer.server.port=4181" #}
+      - "traefik.http.routers.portainer-rtr.service=portainer-svc"
+      - "traefik.http.services.portainer-svc.loadbalancer.server.port=9000"
 
+  # Autoindex - Simple Directory Index
+  autoindex:
+    <<: *common-keys-apps # See EXTENSION FIELDS at the top
+    container_name: autoindex
+    image: dceoy/nginx-autoindex:latest
+    # ports:
+    #   - "$AUTOINDEX_PORT:80"
+    volumes:
+      - $CONTAINER_APPDATA_DIR/index:/var/lib/nginx/html:ro # Location you want to index
+    labels:
+      - "traefik.enable=true"
+      ## HTTP Routers
+      - "traefik.http.routers.autoindex-rtr.entrypoints=https"
+      - "traefik.http.routers.autoindex-rtr.rule=Host(`index.$DOMAIN_NAME`)"
+      ## Middlewares
+      - "traefik.http.routers.autoindex-rtr.middlewares=chain-no-auth@file"
+      ## HTTP Services
+      - "traefik.http.routers.autoindex-rtr.service=autoindex-svc"
+      - "traefik.http.services.autoindex-svc.loadbalancer.server.port=80"
 
   # Organizr - Unified Frontend
   organizr:
@@ -425,47 +435,8 @@ services:
 
   ############################# Downloaders
 
-  {# vpn:
-    <<: *common-keys-core # See EXTENSION FIELDS at the top
-    image: dperson/openvpn-client
-    container_name: vpn
-    # cap_add, security_opt, and volume required for the image to function
-    cap_add:
-      - net_admin
-    environment:
-      <<: *default-tz-puid-pgid
-    command: -d
-    # if using '-d' or 'DNS' you can't enable the `read_only: true` option
-    read_only: false
-    tmpfs:
-      - /run
-      - /tmp
-    security_opt:
-      - label:disable
-    stdin_open: true
-    tty: true
-    volumes:
-      - /dev/net:/dev/net:z
-      - $CONTAINER_APPDATA_DIR/vpn:/vpn
-    # Put .ovpn configuration file in the /vpn directory (in "volumes:" above or
-    # launch using the command line arguments, IE pick one:
-    #  - ./vpn:/vpn
-    # command: 'server;user;password[;port]'
-    ports:
-      - 6881:6881
-      - 6881:6881/udp
-    labels:
-      - "traefik.enable=true"
-      ### QBittorent Router
-      ## HTTP Routers
-      - "traefik.http.routers.qbittorrent-rtr.entrypoints=https"
-      - "traefik.http.routers.qbittorrent-rtr.rule=Host(`qbt.$DOMAIN_NAME`)"
-      ## Middlewares
-      - "traefik.http.routers.qbittorrent-rtr.middlewares=chain-authelia@file"
-      ## HTTP Services
-      - "traefik.http.routers.qbittorrent-rtr.service=qbittorrent-svc"
-      - "traefik.http.services.qbittorrent-svc.loadbalancer.server.port=8080" #}
-
+  # Wireguard - VPN Client for other services
+  # Command to test if connected: docker exec -it qbittorrent curl -w "\n" ifconfig.me
   wireguard:
     <<: *common-keys-core # See EXTENSION FIELDS at the top
     image: ghcr.io/linuxserver/wireguard
@@ -480,6 +451,7 @@ services:
       - /lib/modules:/lib/modules
     sysctls:
       - net.ipv4.conf.all.src_valid_mark=1
+    # Traefik routers must be connected to this service in order to route correctly
     labels:
       - "traefik.enable=true"
       ### QBittorent Router
@@ -508,8 +480,6 @@ services:
     security_opt:
       - no-new-privileges:true
     # traefik labels under wireguard
-
-
 
   jackett:
     <<: *common-keys-apps # See EXTENSION FIELDS at the top
@@ -567,7 +537,6 @@ services:
       ## HTTP Services
       - "traefik.http.routers.plexms-rtr.service=plexms-svc"
       - "traefik.http.services.plexms-svc.loadbalancer.server.port=32400"
-
 
   tautulli:
     <<: *common-keys-apps # See EXTENSION FIELDS at the top
@@ -696,17 +665,14 @@ services:
       - "traefik.http.routers.radarr-rtr.service=radarr-svc"
       - "traefik.http.services.radarr-svc.loadbalancer.server.port=7878"
 
-  {# # Lidarr - Music Management
+  # Lidarr - Music Management
   # Set url_base in lidarr settings if using PathPrefix
   lidarr:
-    <<: *common-keys-media # See EXTENSION FIELDS at the top
+    <<: *common-keys-apps # See EXTENSION FIELDS at the top
     image: lscr.io/linuxserver/lidarr:latest
     container_name: lidarr
-    networks:
-      t2_proxy:
-        ipv4_address: 192.168.90.163
-    ports:
-      - "$LIDARR_PORT:8686"
+    #ports:
+    #  - "$LIDARR_PORT:8686"
     volumes:
       - $CONTAINER_APPDATA_DIR/lidarr:/config
       - $DATA_DIR:/data
@@ -716,25 +682,25 @@ services:
     labels:
       - "traefik.enable=true"
       ## HTTP Routers Auth Bypass
-      - "traefik.http.routers.lidarr-rtr-bypass.entrypoints=https"
-      - "traefik.http.routers.lidarr-rtr-bypass.rule=Host(`lidarr.$DOMAIN_NAME`) && (Headers(`X-Api-Key`, `$LIDARR_API_KEY`) || Query(`apikey`, `$LIDARR_API_KEY`))"
-      - "traefik.http.routers.lidarr-rtr-bypass.priority=100"
+      #- "traefik.http.routers.lidarr-rtr-bypass.entrypoints=https"
+      #- "traefik.http.routers.lidarr-rtr-bypass.rule=Host(`lidarr.$DOMAIN_NAME`) && (Headers(`X-Api-Key`, `$LIDARR_API_KEY`) || Query(`apikey`, `$LIDARR_API_KEY`))"
+      #- "traefik.http.routers.lidarr-rtr-bypass.priority=100"
       ## HTTP Routers Auth
       - "traefik.http.routers.lidarr-rtr.entrypoints=https"
       - "traefik.http.routers.lidarr-rtr.rule=Host(`lidarr.$DOMAIN_NAME`)"
       - "traefik.http.routers.lidarr-rtr.priority=99"
       ## Middlewares
-      - "traefik.http.routers.lidarr-rtr-bypass.middlewares=chain-no-auth@file"
+      #- "traefik.http.routers.lidarr-rtr-bypass.middlewares=chain-no-auth@file"
       - "traefik.http.routers.lidarr-rtr.middlewares=chain-authelia@file"
       ## HTTP Services
       - "traefik.http.routers.lidarr-rtr.service=lidarr-svc"
-      - "traefik.http.routers.lidarr-rtr-bypass.service=lidarr-svc"
-      - "traefik.http.services.lidarr-svc.loadbalancer.server.port=8686" #}
+      #- "traefik.http.routers.lidarr-rtr-bypass.service=lidarr-svc"
+      - "traefik.http.services.lidarr-svc.loadbalancer.server.port=8686"
 
-  {# # Readarr - Books management
+  # Readarr - Books management
   # Set url_base in readarr settings if using PathPrefix
   readarr:
-    <<: *common-keys-media # See EXTENSION FIELDS at the top
+    <<: *common-keys-apps # See EXTENSION FIELDS at the top
     image: hotio/readarr:nightly
     container_name: readarr
     # ports:
@@ -756,7 +722,7 @@ services:
       - "traefik.http.routers.readarr-rtr.middlewares=chain-authelia@file"
       ## HTTP Services
       - "traefik.http.routers.readarr-rtr.service=readarr-svc"
-      - "traefik.http.services.readarr-svc.loadbalancer.server.port=8787" #}
+      - "traefik.http.services.readarr-svc.loadbalancer.server.port=8787"
 
   ############################# Utilites
 
@@ -769,9 +735,9 @@ services:
     #  - "$FILEBROWSER_PORT:80"
     volumes:
       - $CONTAINER_APPDATA_DIR/filebrowser:/config
-      - $CONTAINER_APPDATA_DIR/filebrowser/database/:/database/filebrowser.db
+      - $CONTAINER_APPDATA_DIR/filebrowser/database/:/database/
       - /data/:/srv/data
-      - /home/jeremy/:/srv/home
+      - $USER_DIR:/srv/home
     environment:
       <<: *default-tz-puid-pgid
     labels:
@@ -826,7 +792,7 @@ services:
     container_name: guacd
     restart: unless-stopped #}
 
-  {# # qDirStat - Directory Statistics
+  # qDirStat - Directory Statistics
   qdirstat:
     <<: *common-keys-apps # See EXTENSION FIELDS at the top
     image: jlesage/qdirstat:latest
@@ -834,31 +800,57 @@ services:
     # ports:
     #   - "$QDIRSTAT_PORT:5800"
     volumes:
-      - $USERDIR:/data/home:ro
-      - $DOCKERDIR/appdata/qdirstat/config:/config:rw
-      - /media/data:/data/data:ro
+      - $CONTAINER_APPDATA_DIR/qdirstat/config:/config:rw
+      - $DATA_DIR:/data/data:ro
     environment:
-      USER_ID: $PUID
-      GROUP_ID: $PGID
-      UMASK: 002
-      TZ: $TZ
+      <<: *default-tz-puid-pgid
       KEEP_APP_RUNNING: 1
       CLEAN_TMP_DIR: 1
       DISPLAY_WIDTH: 1600
       DISPLAY_HEIGHT: 960
-      VNC_PASSWORD: $QDIRSTAT_VNC_PASSWD
     labels:
       - "traefik.enable=true"
       ## HTTP Routers
       - "traefik.http.routers.qdirstat-rtr.entrypoints=https"
-      - "traefik.http.routers.qdirstat-rtr.rule=Host(`qdirstat.$DOMAINNAME_CLOUD_SERVER`)"
+      - "traefik.http.routers.qdirstat-rtr.rule=Host(`qdirstat.$DOMAIN_NAME`)"
       ## Middlewares
-      - "traefik.http.routers.qdirstat-rtr.middlewares=chain-oauth@file"
+      - "traefik.http.routers.qdirstat-rtr.middlewares=chain-authelia@file"
       ## HTTP Services
       - "traefik.http.routers.qdirstat-rtr.service=qdirstat-svc"
-      - "traefik.http.services.qdirstat-svc.loadbalancer.server.port=5800" #}
+      - "traefik.http.services.qdirstat-svc.loadbalancer.server.port=5800"
 
   ############################# Game Servers
+
+  # Foundry VTT - A server for TTRPGS
+  foundry:
+    <<: *common-keys-apps # See EXTENSION FIELDS at the top
+    image: felddy/foundryvtt:release
+    container_name: foundry
+    volumes:
+      - $CONTAINER_APPDATA_DIR/foundry:/data
+    environment:
+      FOUNDRY_UID: $PUID
+      FOUNDRY_GID: $PGID
+      TIMEZONE: $TZ
+      FOUNDRY_HOSTNAME: "foundry.$DOMAIN_NAME"
+      #FOUNDRY_PROXY_PORT: 443
+      FOUNDRY_PROXY_SSL: "true"
+      FOUNDRY_MINIFY_STATIC_FILES: "true"
+    secrets:
+      - source: foundry_config
+        target: config.json
+    labels:
+      - "traefik.enable=true"
+      ## HTTP Routers
+      - "traefik.http.routers.foundry-rtr.entrypoints=https"
+      - "traefik.http.routers.foundry-rtr.rule=Host(`foundry.$DOMAIN_NAME`)"
+      - "traefik.http.routers.foundry-rtr.tls=true"
+      ## Middlewares
+      - "traefik.http.routers.foundry-rtr.middlewares=chain-authelia@file"
+      ## HTTP Services
+      - "traefik.http.routers.foundry-rtr.service=foundry-svc"
+      - "traefik.http.services.foundry-svc.loadbalancer.server.port=30000"
+
   # Crafty Controller - Minecraft server manager
   crafty-web:
     <<: *common-keys-apps # See EXTENSION FIELDS at the top

@@ -7,6 +7,14 @@
     name: docker-compose-setup
     public: "yes"
 
+- name: Create mediaserver secrets
+  include_role:
+    name: docker-compose-setup
+    tasks_from: "secrets.yml"
+  vars:
+    secrets_template_folder: "templates/mediaserver-secrets"
+
+
 - name: Create docker-compose.yml file
   template:
     src: docker-compose.yml.j2

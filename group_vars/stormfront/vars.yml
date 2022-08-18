@@ -9,7 +9,6 @@ secondary_user_ssh_identity_key: "{{ vault_secondary_user_ssh_identity_key }}"
 secondary_user_puid: 1001
 secondary_user_guid: 1001
 secondary_user_email_address: "{{ vault_secondary_user_email_address }}"
-secondary_user_authelia_hashed_pass: "{{ vault_secondary_user_authelia_hashed_pass }}"
 
 primary_dns_ipv4: 9.9.9.9
 secondary_dns_ipv4: 149.112.112.112
@@ -25,7 +24,6 @@ domain_name: "{{ stormfront_sub_domain }}.{{ base_domain_name }}"
 #Authelia
 authelia_jwt_secret: "{{ vault_authelia_jwt_secret }}"
 authelia_session_secret: "{{ vault_authelia_session_secret }}"
-authelia_hashed_pass: "{{ vault_authelia_hashed_pass }}"
 authelia_storage_encryption_key: "{{ vault_authelia_storage_encryption_key }}"
 
 # Route 53

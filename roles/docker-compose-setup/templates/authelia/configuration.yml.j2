@@ -1,3 +1,4 @@
+# {{ ansible_managed }}
 ###############################################################
 #                   Authelia configuration                    #
 ###############################################################
@@ -30,6 +31,8 @@ totp:
 #  secret_key: # use docker secret file instead AUTHELIA_DUO_API_SECRET_KEY_FILE
 
 authentication_backend:
+  password_reset:
+    disable: false
   file:
     path: /config/users_database.yml
     # customize passwords based on https://docs.authelia.com/configuration/authentication/file.html
@@ -41,30 +44,8 @@ authentication_backend:
       memory: 64 # blocks this much of the RAM. Tune this.
 
 # https://docs.authelia.com/configuration/access-control.html
-access_control:
-  default_policy: deny
-  rules:
-    # Rules applied to everyone
-    - domain: authelia.{{ domain_name }}
-      policy: bypass
-    - domain:
-        - "*.{{ domain_name }}"
-        - "{{ domain_name }}"
-      policy: bypass
-      networks:
-        - 192.168.0.0/16
-        #- HOME-WAN-IP-ADDRESS
-#    - domain: radarr.{{ domain_name }}
-#      policy: bypass
-#      subject: "group:admins"
-#      resources:
-#      - "^/api/.*$"
-#    - domain: "*.{{ domain_name }}"
-#      policy: one_factor
-    - domain: "*.{{ domain_name }}"
-      policy: one_factor
-    - domain: "{{ domain_name }}"
-      policy: one_factor
+access_control: {{ authelia_access_control }}
+
 
 session:
   name: authelia_session
