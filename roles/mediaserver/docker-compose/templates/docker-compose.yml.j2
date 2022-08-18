@@ -20,8 +20,8 @@ networks:
 # Common environment values
 x-environment: &default-tz-puid-pgid
   TZ: $TZ
-  USER_ID: ${PUID}
-  GROUP_ID: ${PGID}
+  USER_ID:  $PUID
+  GROUP_ID: $PGID
   PUID: $PUID
   PGID: $PGID
 
@@ -480,6 +480,17 @@ services:
       - /lib/modules:/lib/modules
     sysctls:
       - net.ipv4.conf.all.src_valid_mark=1
+    labels:
+      - "traefik.enable=true"
+      ### QBittorent Router
+      ## HTTP Routers
+      - "traefik.http.routers.qbittorrent-rtr.entrypoints=https"
+      - "traefik.http.routers.qbittorrent-rtr.rule=Host(`qbt.$DOMAIN_NAME`)"
+      ## Middlewares
+      - "traefik.http.routers.qbittorrent-rtr.middlewares=chain-authelia@file"
+      ## HTTP Services
+      - "traefik.http.routers.qbittorrent-rtr.service=qbittorrent-svc"
+      - "traefik.http.services.qbittorrent-svc.loadbalancer.server.port=8080"
 
   qbittorrent:
     image: lscr.io/linuxserver/qbittorrent
@@ -496,18 +507,8 @@ services:
       - wireguard
     security_opt:
       - no-new-privileges:true
-    labels:
-      - "traefik.enable=true"
-      ### QBittorent Router
-      ## HTTP Routers
-      - "traefik.http.routers.qbittorrent-rtr.entrypoints=https"
-      - "traefik.http.routers.qbittorrent-rtr.rule=Host(`qbt.$DOMAIN_NAME`)"
-      ## Middlewares
-      - "traefik.http.routers.qbittorrent-rtr.middlewares=chain-authelia@file"
-      ## HTTP Services
-      - "traefik.http.routers.qbittorrent-rtr.service=qbittorrent-svc"
-      - "traefik.http.services.qbittorrent-svc.loadbalancer.server.port=8080"
-    # Traefik labels attached to wireguard container
+    # traefik labels under wireguard
+
 
 
   jackett:
