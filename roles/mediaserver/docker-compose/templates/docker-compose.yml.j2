@@ -3,11 +3,15 @@
 version: "3.8"
 
 networks:
+  # Containers part of the reverse proxy system
   proxies:
-    # Containers part of the reverse proxy system
     driver: bridge
+    ipam:
+      config:
+        - subnet: 192.168.100.0/24
+
+  # network for the docker socket
   socket_proxy:
-    # network for the docker socket
     driver: bridge
     #ipam:
     #  config:
@@ -140,7 +144,6 @@ services:
       - --api.insecure=false
       - --api.dashboard=true
       #- --ping=true
-      #- --pilot.token=$TRAEFIK_PILOT_TOKEN
       # - --serversTransport.insecureSkipVerify=true
       - --log=true
       - --log.level=WARN # (Default: error) DEBUG, INFO, WARN, ERROR, FATAL, PANIC
@@ -148,6 +151,8 @@ services:
       - --accessLog.filePath=/traefik.log
       - --accessLog.bufferingSize=100 # Configuring a buffer of 100 lines
       - --accessLog.filters.statusCodes=400-499
+      - --experimental.plugins.AddMissingHeaders.moduleName=github.com/jerrywoo96/AddMissingHeaders
+      - --experimental.plugins.AddMissingHeaders.version=v1.0.0
       - --providers.docker=true
       # - --providers.docker.endpoint=unix:///var/run/docker.sock # Use Docker Socket Proxy instead for improved security
       - --providers.docker.endpoint=tcp://socket-proxy:2375
@@ -172,10 +177,9 @@ services:
       # Disable SSL verification on backend
       - "--serverstransport.insecureskipverify=true"
     networks:
-      - proxies
-      - socket_proxy
-      #t2_proxy:
-      #  ipv4_address: 192.168.90.254 # You can specify a static IP
+      proxies:
+          ipv4_address: 192.168.100.200
+      socket_proxy:
     #healthcheck:
     #  test: ["CMD", "traefik", "healthcheck", "--ping"]
     #  interval: 5s
@@ -199,6 +203,7 @@ services:
       - $CONTAINER_APPDATA_DIR/traefik/rules:/rules # file provider directory
       - $CONTAINER_APPDATA_DIR/traefik/acme/acme.json:/acme.json # cert location - you must touch this file and change permissions to 600
       - $CONTAINER_APPDATA_DIR/traefik/traefik.log:/traefik.log # for fail2ban - make sure to touch file before starting container
+      - $CONTAINER_APPDATA_DIR/traefik/plugins-local:/plugins-local # traefik plugins
     environment:
       AWS_ACCESS_KEY_ID: $AWS_ACCESS_KEY_ID
       AWS_SECRET_ACCESS_KEY: $AWS_SECRET_ACCESS_KEY
@@ -237,9 +242,9 @@ services:
     container_name: authelia
     # Check this before upgrading: https://github.com/authelia/authelia/blob/master/BREAKING.md
     image: authelia/authelia:4
-    #depends_on:
-      #- mariadb
-      #- redis
+    networks:
+      proxies:
+        ipv4_address: 192.168.100.201
     volumes:
       - $CONTAINER_APPDATA_DIR/authelia:/config
     environment:
@@ -267,6 +272,23 @@ services:
       ## HTTP Services
       - "traefik.http.routers.authelia-rtr.service=authelia-svc"
       - "traefik.http.services.authelia-svc.loadbalancer.server.port=9091"
+
+  whoami:
+    <<: *common-keys-apps
+    image: "traefik/whoami"
+    container_name: "whoami"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.whoami-rtr.entrypoints=https"
+      - "traefik.http.routers.whoami-rtr.rule=Host(`whoami.$DOMAIN_NAME`)"
+      ## Middlewares
+      - "traefik.http.middlewares.anon-user.plugin.AddMissingHeaders.requestheaders.Remote-User=guest"
+      #- "traefik.http.middlewares.anon-user.headers.customrequestheaders.Remote-User=guest"
+      - "traefik.http.routers.whoami-rtr.middlewares=chain-authelia@file,anon-user"
+      ## HTTP Services
+      - "traefik.http.routers.whoami-rtr.service=whoami-svc"
+      - "traefik.http.services.whoami-svc.loadbalancer.server.port=80"
+
 
   # Portainer - WebUI for Containers
   portainer:
@@ -333,7 +355,8 @@ services:
       - "traefik.http.routers.organizr-rtr.entrypoints=https"
       - "traefik.http.routers.organizr-rtr.rule=Host(`organizr.$DOMAIN_NAME`)"
       ## Middlewares
-      - "traefik.http.routers.organizr-rtr.middlewares=chain-authelia@file"
+      - "traefik.http.middlewares.default-guest-user.plugin.AddMissingHeaders.requestheaders.Remote-User=guest"
+      - "traefik.http.routers.organizr-rtr.middlewares=chain-authelia@file,default-guest-user"
       ## HTTP Services
       - "traefik.http.routers.organizr-rtr.service=organizr-svc"
       - "traefik.http.services.organizr-svc.loadbalancer.server.port=80"
@@ -727,26 +750,35 @@ services:
   ############################# Utilites
 
   # File Browser - Explorer
+  # The following commands need to be ran manually configure proxy auth the first time.
+  # docker-compose run filebrowser config
+  # docker-compose run filebrowser config cat
   filebrowser:
     <<: *common-keys-apps # See EXTENSION FIELDS at the top
-    image: filebrowser/filebrowser:s6
+    image: filebrowser/filebrowser:v2
     container_name: filebrowser
     #ports:
     #  - "$FILEBROWSER_PORT:80"
     volumes:
-      - $CONTAINER_APPDATA_DIR/filebrowser:/config
-      - $CONTAINER_APPDATA_DIR/filebrowser/database/:/database/
+      - '$CONTAINER_APPDATA_DIR/filebrowser/filebrowser.db:/database.db'
       - /data/:/srv/data
       - $USER_DIR:/srv/home
     environment:
       <<: *default-tz-puid-pgid
+    # Override the default entrypoint so configuration commands can be run on startup
+    entrypoint: ["sh", -c]
+    command:
+      - |
+        /filebrowser config set --auth.method=proxy --auth.header=Remote-User
+        /filebrowser
     labels:
       - "traefik.enable=true"
       ## HTTP Routers
       - "traefik.http.routers.filebrowser-rtr.entrypoints=https"
       - "traefik.http.routers.filebrowser-rtr.rule=Host(`files.$DOMAIN_NAME`)"
       ## Middlewares
-      - "traefik.http.routers.filebrowser-rtr.middlewares=chain-authelia@file"
+      - "traefik.http.middlewares.default-guest-user.plugin.AddMissingHeaders.requestheaders.Remote-User=guest"
+      - "traefik.http.routers.filebrowser-rtr.middlewares=chain-authelia@file,default-guest-user"
       ## HTTP Services
       - "traefik.http.routers.filebrowser-rtr.service=filebrowser-svc"
       - "traefik.http.services.filebrowser-svc.loadbalancer.server.port=80"

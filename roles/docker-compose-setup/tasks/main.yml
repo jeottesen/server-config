@@ -19,6 +19,21 @@
       dest: "{{ container_appdata_path }}/docker-gc/docker-gc-exclude"
       mode: 0600
 
+  - name: Create docker-gc-exclude dir
+    file:
+      path: "{{ container_appdata_path }}/filebrowser"
+      owner: "{{ primary_user }}"
+      group: "{{ primary_group }}"
+      mode: '0700'
+      state: "directory"
+
+  - name: Create empty filebrowser.db file
+    copy:
+      content: ""
+      dest: "{{ container_appdata_path }}/filebrowser/filebrowser.db"
+      force: no
+      mode: '0600'
+
   - name: install docker pip modules
     pip:
       name: docker-compose
