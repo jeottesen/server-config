@@ -8,7 +8,7 @@ networks:
     driver: bridge
     ipam:
       config:
-        - subnet: 192.168.100.0/24
+        - subnet: 10.17.100.0/24
 
   # network for the docker socket
   socket_proxy:
@@ -178,7 +178,7 @@ services:
       - "--serverstransport.insecureskipverify=true"
     networks:
       proxies:
-          ipv4_address: 192.168.100.200
+          ipv4_address: 10.17.100.200
       socket_proxy:
     #healthcheck:
     #  test: ["CMD", "traefik", "healthcheck", "--ping"]
@@ -244,7 +244,7 @@ services:
     image: authelia/authelia:4
     networks:
       proxies:
-        ipv4_address: 192.168.100.201
+        ipv4_address: 10.17.100.201
     volumes:
       - $CONTAINER_APPDATA_DIR/authelia:/config
     environment:
@@ -273,6 +273,7 @@ services:
       - "traefik.http.routers.authelia-rtr.service=authelia-svc"
       - "traefik.http.services.authelia-svc.loadbalancer.server.port=9091"
 
+  # Traefik Whoami - a simple page to help debug headers and routing
   whoami:
     <<: *common-keys-apps
     image: "traefik/whoami"
@@ -353,32 +354,14 @@ services:
       - "traefik.enable=true"
       ## HTTP Routers
       - "traefik.http.routers.organizr-rtr.entrypoints=https"
-      - "traefik.http.routers.organizr-rtr.rule=Host(`organizr.$DOMAIN_NAME`)"
+      - "traefik.http.routers.organizr-rtr.rule=Host(`$DOMAIN_NAME`,`www.$DOMAIN_NAME`, `login.$DOMAIN_NAME`)"
       ## Middlewares
-      - "traefik.http.middlewares.default-guest-user.plugin.AddMissingHeaders.requestheaders.Remote-User=guest"
-      - "traefik.http.routers.organizr-rtr.middlewares=chain-authelia@file,default-guest-user"
+      #- "traefik.http.middlewares.default-guest-user.plugin.AddMissingHeaders.requestheaders.Remote-User=guest"
+      #- "traefik.http.routers.organizr-rtr.middlewares=chain-authelia@file,default-guest-user"
+      - "traefik.http.routers.organizr-rtr.middlewares=chain-authelia@file"
       ## HTTP Services
       - "traefik.http.routers.organizr-rtr.service=organizr-svc"
       - "traefik.http.services.organizr-svc.loadbalancer.server.port=80"
-
-  muximux:
-    <<: *common-keys-core
-    image: linuxserver/muximux
-    container_name: muximux
-    environment:
-      <<: *default-tz-puid-pgid
-    volumes:
-      - '$CONTAINER_APPDATA_DIR/muximux:/config'
-    labels:
-      - "traefik.enable=true"
-      ## HTTP Routers
-      - "traefik.http.routers.muximux-rtr.entrypoints=https"
-      - "traefik.http.routers.muximux-rtr.rule=Host(`$DOMAIN_NAME`,`www.$DOMAIN_NAME`)"
-      ## Middlewares
-      - "traefik.http.routers.muximux-rtr.middlewares=chain-authelia@file"
-      ## HTTP Services
-      - "traefik.http.routers.muximux-rtr.service=muximux-svc"
-      - "traefik.http.services.muximux-svc.loadbalancer.server.port=80"
 
   unifi-controller:
     <<: *common-keys-core
@@ -413,6 +396,33 @@ services:
       - "traefik.http.services.unifi-svc.loadbalancer.passHostHeader=true"
       - "traefik.http.services.unifi-svc.loadbalancer.server.scheme=https"
       - "traefik.http.services.unifi-svc.loadbalancer.server.port=8443"
+
+  # Speedtest tracker - Runs a speedtest check every hour and graphs the results
+  speedtest:
+    <<: *common-keys-core
+    container_name: speedtest
+    image: henrywhitaker3/speedtest-tracker
+    volumes:
+      - $CONTAINER_APPDATA_DIR/speedtest:/config
+    environment:
+      <<: *default-tz-puid-pgid
+      OOKLA_EULA_GDPR: "true"
+    logging:
+      driver: "json-file"
+      options:
+        max-file: "10"
+        max-size: "200k"
+    labels:
+      - "traefik.enable=true"
+      ## HTTP Routers
+      - "traefik.http.routers.speedtest-rtr.entrypoints=https"
+      - "traefik.http.routers.speedtest-rtr.rule=Host(`speedtest.$DOMAIN_NAME`)"
+      ## Middlewares
+      - "traefik.http.routers.speedtest-rtr.middlewares=chain-authelia@file"
+      ## HTTP Services
+      - "traefik.http.routers.speedtest-rtr.service=speedtest-svc"
+      - "traefik.http.services.speedtest-svc.loadbalancer.server.port=80"
+
 
   ############################# Database
 
@@ -833,7 +843,7 @@ services:
     #   - "$QDIRSTAT_PORT:5800"
     volumes:
       - $CONTAINER_APPDATA_DIR/qdirstat/config:/config:rw
-      - $DATA_DIR:/data/data:ro
+      - $DATA_DIR:/storage/data:ro
     environment:
       <<: *default-tz-puid-pgid
       KEEP_APP_RUNNING: 1
@@ -878,7 +888,7 @@ services:
       - "traefik.http.routers.foundry-rtr.rule=Host(`foundry.$DOMAIN_NAME`)"
       - "traefik.http.routers.foundry-rtr.tls=true"
       ## Middlewares
-      - "traefik.http.routers.foundry-rtr.middlewares=chain-authelia@file"
+      - "traefik.http.routers.foundry-rtr.middlewares=chain-no-auth@file"
       ## HTTP Services
       - "traefik.http.routers.foundry-rtr.service=foundry-svc"
       - "traefik.http.services.foundry-svc.loadbalancer.server.port=30000"

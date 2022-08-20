@@ -17,6 +17,8 @@ oauth_client_secret: "{{ vault_oauth_client_secret }}"
 forward_auth_secret: "{{ vault_forward_auth_secret }}"
 
 #Authelia
+authelia_users: "{{ vault_authelia_users }}"
+authelia_access_control: "{{ vault_authelia_access_control }}"
 authelia_jwt_secret: "{{ vault_authelia_jwt_secret }}"
 authelia_session_secret: "{{ vault_authelia_session_secret }}"
 authelia_storage_encryption_key: "{{ vault_authelia_storage_encryption_key }}"

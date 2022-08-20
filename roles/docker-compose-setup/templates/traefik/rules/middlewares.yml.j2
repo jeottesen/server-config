@@ -9,12 +9,12 @@ http:
     middlewares-rate-limit:
       rateLimit:
         average: 100
-        burst: 50
+        burst: 200
 
     middleware-local-redirect:
       redirectRegex:
-          regex: "^(https?://.*)mediaserver(.samuari)?/(.*)$"
-          replacement: "${1}{{ domain_name }}/${3}"
+          regex: "^(https?://.*)mediaserver(.samuari)?/(muximux)?(.*)$"
+          replacement: "${1}{{ domain_name }}/${4}"
 
     middlewares-https-redirectscheme:
       redirectScheme:
