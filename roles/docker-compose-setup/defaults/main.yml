@@ -15,6 +15,8 @@ route53_secret_access_key: ""
 route53_zone_id: ""
 
 # Template files
+traefik_rules_dir: "templates/traefik/rules"
+
 authelia_configuration_template: "authelia/configuration.yml.j2"
 authelia_users_db_template: "authelia/users_database.yml.j2"
 

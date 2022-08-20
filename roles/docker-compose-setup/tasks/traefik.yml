@@ -37,4 +37,4 @@
     group: "{{ primary_group }}"
     mode: 0600
   with_fileglob:
-   - templates/traefik/rules/*.j2
+   - "{{ traefik_rules_dir }}/*.j2"

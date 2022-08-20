@@ -54,7 +54,7 @@
     - name: Snapraid SMART emails
       cron:
         name: snapraid scrub
-        job: "snapraid smart | mail --subject='Snapraid SMART' {{ email_user }}+{{ ansible_hostname }}@gmail.com"
+        job: "sudo snapraid smart | mail --subject='Snapraid SMART' {{ email_user }}+{{ ansible_hostname }}@gmail.com"
         user: root
         weekday: "*"
         minute: "00"

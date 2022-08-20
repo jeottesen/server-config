@@ -14,6 +14,13 @@
   vars:
     secrets_template_folder: "templates/mediaserver-secrets"
 
+- name: Create mediaserver traefik rules
+  include_role:
+    name: docker-compose-setup
+    tasks_from: "traefik.yml"
+  vars:
+    traefik_rules_dir: "templates/mediaserver-traefik/rules"
+
 - name: Add Traefik middleware plugin for default header
   git:
     repo: https://github.com/jerrywoo96/AddMissingHeaders.git
