@@ -57,8 +57,6 @@ secrets:
   #  file: $DOCKER_DIR/secrets/htpasswd
   #traefik_forward_auth:
   #  file: $DOCKER_DIR/secrets/traefik_forward_auth
-  #mysql_root_password:
-  #  file: $DOCKER_DIR/secrets/mysql_root_password
   authelia_jwt_secret:
     file: $DOCKER_DIR/secrets/authelia_jwt_secret
   authelia_session_secret:
@@ -423,49 +421,6 @@ services:
       - "traefik.http.routers.speedtest-rtr.service=speedtest-svc"
       - "traefik.http.services.speedtest-svc.loadbalancer.server.port=80"
 
-
-  ############################# Database
-
-  {# # MariaDB - MySQL Database
-  # After starting container for first time dexec and mysqladmin -u root password <password>
-  mariadb:
-    <<: *common-keys-core # See EXTENSION FIELDS at the top
-    container_name: mariadb
-    image: lscr.io/linuxserver/mariadb
-    #ports:
-    #  - "$MARIADB_PORT:3306"
-    volumes:
-      - $CONTAINER_APPDATA_DIR/appdata/mariadb/data:/config
-    environment:
-      <<: *default-tz-puid-pgid
-      FILE__MYSQL_ROOT_PASSWORD: /run/secrets/mysql_root_password # Note FILE__ (double underscore) - Issue #127
-    secrets:
-      - mysql_root_password
-
-  # phpMyAdmin - Database management
-  # Create a new user with admin privileges. Cannot login as MySQL root for some reason.
-  phpmyadmin:
-    <<: *common-keys-apps # See EXTENSION FIELDS at the top
-    image: phpmyadmin/phpmyadmin:latest
-    container_name: phpmyadmin
-    environment:
-      - PMA_HOST=$MARIADB_HOST
-      - PMA_PORT=$MARIADB_PORT
-      #- PMA_ARBITRARY=1
-      - MYSQL_ROOT_PASSWORD_FILE=/run/secrets/mysql_root_password
-    secrets:
-      - mysql_root_password
-    labels:
-      - "traefik.enable=true"
-      ## HTTP Routers
-      - "traefik.http.routers.phpmyadmin-rtr.entrypoints=https"
-      - "traefik.http.routers.phpmyadmin-rtr.rule=Host(`pma.$DOMAIN_NAME`)"
-      ## Middlewares
-      - "traefik.http.routers.phpmyadmin-rtr.middlewares=chain-authelia@file"
-      ## HTTP Services
-      - "traefik.http.routers.phpmyadmin-rtr.service=phpmyadmin-svc"
-      - "traefik.http.services.phpmyadmin-svc.loadbalancer.server.port=80" #}
-
   ############################# Downloaders
 
   # Wireguard - VPN Client for other services
@@ -793,46 +748,30 @@ services:
       - "traefik.http.routers.filebrowser-rtr.service=filebrowser-svc"
       - "traefik.http.services.filebrowser-svc.loadbalancer.server.port=80"
 
-  {# # Guacamole - Remote desktop, SSH, on Telnet on any HTML5 Browser
+  # Guacamole - Remote desktop, SSH, on Telnet on any HTML5 Browser
   # Create all databases and tables first
   guacamole:
     <<: *common-keys-apps # See EXTENSION FIELDS at the top
-    image: guacamole/guacamole:latest
+    image: maxwaldorf/guacamole
     container_name: guacamole
-    networks:
-      - proxies
-      - default
     # ports:
-    #   - "$GUACAMOLE_PORT:8080"
+    #   - "8080:8080"
+    volumes:
+      - '$CONTAINER_APPDATA_DIR/guacamole/:/config'
     environment:
-      GUACD_HOSTNAME: guacd
-      MYSQL_HOSTNAME: mariadb
-      MYSQL_PORT: 3306
-      MYSQL_DATABASE_FILE: /run/secrets/guac_db_name
-      MYSQL_USER_FILE: /run/secrets/guac_mysql_user
-      MYSQL_PASSWORD_FILE: /run/secrets/guac_mysql_password
-    secrets:
-      - guac_db_name
-      - guac_mysql_user
-      - guac_mysql_password
+      <<: *default-tz-puid-pgid
+      EXTENSIONS: auth-header
     labels:
       - "traefik.enable=true"
       ## HTTP Routers
       - "traefik.http.routers.guacamole-rtr.entrypoints=https"
       - "traefik.http.routers.guacamole-rtr.rule=Host(`guac.$DOMAIN_NAME`)"
       ## Middlewares
-      - "traefik.http.routers.guacamole-rtr.middlewares=chain-authelia@file,add-guacamole"
-      - "traefik.http.middlewares.add-guacamole.addPrefix.prefix=/guacamole"
+      - "traefik.http.routers.guacamole-rtr.middlewares=chain-authelia@file"
       ## HTTP Services
       - "traefik.http.routers.guacamole-rtr.service=guacamole-svc"
       - "traefik.http.services.guacamole-svc.loadbalancer.server.port=8080"
 
-  # Guacamole Daemon - Needed for Guacamole
-  guacd:
-    <<: *common-keys-apps # See EXTENSION FIELDS at the top
-    image: guacamole/guacd
-    container_name: guacd
-    restart: unless-stopped #}
 
   # qDirStat - Directory Statistics
   qdirstat:
@@ -960,3 +899,25 @@ services:
       CLEAN_UP_VOLUMES: 1
       TZ: $TZ
       DOCKER_HOST: tcp://socket-proxy:2375
+
+    # WatchTower - Automatic Docker Container Updates
+  watchtower:
+    image: containrrr/watchtower
+    container_name: watchtower
+    restart: unless-stopped
+    networks:
+      - socket_proxy
+    depends_on:
+      - socket-proxy
+    environment:
+      TZ: $TZ
+      WATCHTOWER_CLEANUP: "true"
+      WATCHTOWER_REMOVE_VOLUMES: "true"
+      WATCHTOWER_INCLUDE_STOPPED: "true"
+      WATCHTOWER_NO_STARTUP_MESSAGE: "false"
+      WATCHTOWER_SCHEDULE: "0 30 12 * * *" # Everyday at 12:30
+      #WATCHTOWER_NOTIFICATIONS: shoutrrr
+      #WATCHTOWER_NOTIFICATION_URL: "telegram://$TGRAM_BOT_TOKEN@telegram?channels=$TGRAM_CHAT_ID"
+      #WATCHTOWER_NOTIFICATIONS_LEVEL: info
+      DOCKER_HOST: tcp://socket-proxy:2375
+      DOCKER_API_VERSION: "1.40"

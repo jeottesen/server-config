@@ -1,11 +1,11 @@
 ---
 
-- include: wireguard.yml
-
 - name: Setup docker-compose-files
   include_role:
     name: docker-compose-setup
     public: "yes"
+
+- include: wireguard.yml
 
 - name: Create mediaserver secrets
   include_role:

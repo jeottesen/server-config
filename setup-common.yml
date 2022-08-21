@@ -14,7 +14,7 @@
     - name: Create user {{ primary_user }}
       user:
         name: "{{ primary_user }}"
-        password: "{{ primary_user_pass }}"
+        password: "{{ primary_user_pass_encoded }}"
         group: "{{ primary_group }}"
         uid: "{{ primary_user_puid }}"
         shell: "/bin/bash"

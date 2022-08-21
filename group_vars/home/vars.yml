@@ -3,6 +3,7 @@ primary_group: jeremy
 
 domain_name: "{{ base_domain_name }}"
 
+# Foundry VTT
 foundry_admin_key: "{{ vault_foundry_admin_key }}"
 foundry_password:  "{{ vault_foundry_password }}"
 foundry_username:  "{{ vault_foundry_username }}"
