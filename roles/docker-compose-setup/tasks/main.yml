@@ -1,5 +1,6 @@
 ---
 - name: Docker Compose setup
+  become: yes
   block:
   - include: secrets.yml
   - include: traefik.yml
@@ -31,6 +32,8 @@
     copy:
       content: ""
       dest: "{{ container_appdata_path }}/filebrowser/filebrowser.db"
+      owner: "{{ primary_user }}"
+      group: "{{ primary_group }}"
       force: no
       mode: '0600'
 
@@ -39,13 +42,20 @@
       name: docker-compose
       state: present
 
-  - name: Set container folder user permissions
-    file:
-      dest: "{{ container_appdata_path }}"
-      owner: "{{ primary_user }}"
-      group: "{{ primary_group }}"
-      mode: "u+rwX,g-rw,o-rw"
-      recurse: yes
-    become: yes
+  # - name: Find container appdata folders, exclude guacamole
+  #   find:
+  #     paths: "{{ container_appdata_path }}"
+  #     excludes: 'guacamole'
+  #   register: files_to_change
+
+  # - name: Set container folder user permissions
+  #   file:
+  #     dest: "{{ item }}"
+  #     owner: "{{ primary_user }}"
+  #     group: "{{ primary_group }}"
+  #     mode: "u+rwX,g-rw,o-rw"
+  #     recurse: yes
+  #   become: yes
+  #   with_items: "{{ files_to_change.files }}"
 
   tags: compose-setup

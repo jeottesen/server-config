@@ -4,6 +4,9 @@
   include_role:
     name: docker-compose-setup
     public: "yes"
+  vars:
+    authelia_logo_file: "files/assets/logo.png"
+    authelia_favicon_file: "files/assets/favicon.ico"
 
 - include: wireguard.yml
 
@@ -26,6 +29,24 @@
     repo: https://github.com/jerrywoo96/AddMissingHeaders.git
     dest: "{{ traefik_directory }}/plugins-local/AddMissingHeaders"
     version: v1.0.0
+
+- name: Set guacamole container folder permissions
+  file:
+    dest: "{{ container_appdata_path }}/guacamole"
+    owner: "root"
+    group: "root"
+    mode: "u+rwX,g-rw,o-rw"
+    recurse: yes
+  become: yes
+
+- name: Set guacamole postgress container folder permissions
+  file:
+    dest: "{{ container_appdata_path }}/guacamole/postgress"
+    owner: "103"
+    group: "105"
+    mode: "u+rwX,g-rw,o-rw"
+    recurse: yes
+  become: yes
 
 - name: Create docker-compose.yml file
   template:

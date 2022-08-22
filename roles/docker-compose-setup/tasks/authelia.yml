@@ -21,3 +21,30 @@
     owner: "{{ primary_user }}"
     group: "{{ primary_group }}"
     mode: 0600
+
+- name: Create authelia assets dir
+  file:
+    path: "{{ container_appdata_path }}/authelia/{{ authelia_assets }}"
+    owner: "{{ primary_user }}"
+    group: "{{ primary_group }}"
+    mode: '0700'
+    state: "directory"
+
+
+- name: Copy logo.png asset if found
+  copy:
+    src: "{{ authelia_logo_file }}"
+    dest: "{{ container_appdata_path }}/authelia/assets/logo.png"
+    owner: "{{ primary_user }}"
+    group: "{{ primary_group }}"
+    mode: '0600'
+  when: authelia_logo_file is defined
+
+- name: Copy favicon.ico asset if found
+  copy:
+    src: "{{ authelia_favicon_file }}"
+    dest: "{{ container_appdata_path }}/authelia/assets/favicon.ico"
+    owner: "{{ primary_user }}"
+    group: "{{ primary_group }}"
+    mode: '0600'
+  when: authelia_favicon_file is defined

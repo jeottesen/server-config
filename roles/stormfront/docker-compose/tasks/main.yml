@@ -4,6 +4,9 @@
   include_role:
     name: docker-compose-setup
     public: "yes"
+  vars:
+    authelia_logo_file: "files/assets/logo.png"
+    authelia_favicon_file: "files/assets/favicon.ico"
 
 - name: Create {{ docker_compose_file }}/docker-compose.yml file
   template:

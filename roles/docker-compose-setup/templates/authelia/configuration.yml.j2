@@ -6,6 +6,7 @@
 server:
   host: 0.0.0.0
   port: 9091
+  asset_path: {{ authelia_assets }}
 
 log:
   level: info
@@ -48,7 +49,7 @@ access_control: {{ authelia_access_control }}
 
 
 session:
-  name: authelia_session
+  name: {{ inventory_hostname }}_authelia_session
   # This secret can also be set using the env variables AUTHELIA_SESSION_SECRET_FILE
   # Used a different secret, but the same site as jwt_secret above.
   # secret: SECRET_GOES_HERE # use docker secret file instead AUTHELIA_SESSION_SECRET_FILE
@@ -92,3 +93,5 @@ notifier:
   # For testing purpose, notifications can be sent in a file. Be sure map the volume in docker-compose.
   filesystem:
     filename: /config/notification.txt
+
+theme: auto
