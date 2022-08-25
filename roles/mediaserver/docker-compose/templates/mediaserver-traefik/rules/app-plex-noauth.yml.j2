@@ -1,0 +1,14 @@
+http:
+  routers:
+    plex-rtr:
+      rule: "Host(`plex.{{ domain_name }}`)"
+      entryPoints:
+        - https
+      middlewares:
+        - chain-no-auth
+      service: plex-svc
+  services:
+    plex-svc:
+      loadBalancer:
+        servers:
+          - url: "http://{{ host_ip }}:32400/"
