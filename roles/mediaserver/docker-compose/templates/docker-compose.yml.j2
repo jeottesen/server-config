@@ -453,6 +453,7 @@ services:
       - "traefik.http.services.qbittorrent-svc.loadbalancer.server.port=8080"
 
   qbittorrent:
+    restart: always
     image: lscr.io/linuxserver/qbittorrent
     container_name: qbittorrent
     restart: unless-stopped
@@ -492,6 +493,7 @@ services:
   ############################# Media
 
   plex:
+    restart: always
     network_mode: host
     security_opt:
       - no-new-privileges:true
