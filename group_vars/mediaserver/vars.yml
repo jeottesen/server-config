@@ -3,5 +3,6 @@ package_list:
   - "{{ required_packages }}" # stored in group_vars/all/vars.yml
   - name: smartmontools
   - name: nfs-kernel-server
+  - name: xfsprogs
 
 host_ip: "{{ vault_host_ip }}"

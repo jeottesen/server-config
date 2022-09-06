@@ -6,14 +6,14 @@ disk_mount_folder: "disk"
 
 # mergerfs role
 fstab_disks:
-  - { src: /dev/disk/by-id/ata-WDC_WD60EFRX-68L0BN1_WD-WX61DC8H2D25-part1, path: "{{ disk_mount_parent }}/{{ disk_mount_folder }}1", fstype: btrfs, opts: "defaults", passno: 2 }
+  - { src: /dev/disk/by-id/ata-TOSHIBA_HDWR180_X180A0R0FBLG-part1, path: "{{ disk_mount_parent }}/{{ disk_mount_folder }}1", fstype: xfs, opts: "defaults", passno: 2 }
   - { src: /dev/disk/by-id/ata-TOSHIBA_HDWE150_X676KEWNF57D-part1, path: "{{ disk_mount_parent }}/{{ disk_mount_folder }}2", fstype: xfs, opts: "defaults", passno: 2 }
   - { src: /dev/disk/by-id/ata-TOSHIBA_DT01ACA300_54GYH94GS-part1, path: "{{ disk_mount_parent }}/{{ disk_mount_folder }}3", fstype: xfs, opts: "defaults", passno: 2 }
   - { src: /dev/disk/by-id/ata-WDC_WD80EFAX-68KNBN0_VAJANS1L-part1, path: "{{ disk_mount_parent }}/{{ disk_mount_folder }}4", fstype: btrfs, opts: "defaults", passno: 2 }
   - { src: /dev/disk/by-id/ata-WDC_WD60EFRX-68L0BN1_WD-WX11DA7701KY-part1, path: "{{ disk_mount_parent }}/{{ disk_mount_folder }}5", fstype: btrfs, opts: "defaults", passno: 2 }
   - { src: /dev/disk/by-id/ata-ST8000DM004-2CX188_ZR11A34D-part1, path: "{{ disk_mount_parent }}/{{ disk_mount_folder }}6", fstype: xfs, opts: "defaults", passno: 2 }
   - { src: /dev/disk/by-id/ata-ST8000DM004-2CX188_ZR11GTNF-part1, path: "{{ disk_mount_parent }}/{{ disk_mount_folder }}7", fstype: xfs, opts: "defaults", passno: 2 }
-  - { src: /dev/disk/by-id/ata-TOSHIBA_HDWR180_X180A0R0FBLG-part1, path: "{{ disk_mount_parent }}/{{ disk_mount_folder }}8", fstype: xfs, opts: "defaults", passno: 2 }
+  - { src: /dev/disk/by-id/ata-WDC_WD80EAZZ-00BKLB0_WD-CA1BEVEK-part1, path: "{{ disk_mount_parent }}/{{ disk_mount_folder }}8", fstype: xfs, opts: "defaults", passno: 2 }
   - { src: /dev/disk/by-id/ata-WDC_WD80EFAX-68KNBN0_VAJAKAUL-part1, path: "{{ disk_mount_parent }}/parity1", fstype: btrfs, opts: "defaults", passno: 2 }
   - { src: /dev/disk/by-id/ata-WDC_WD80EFAX-68KNBN0_VAJAJMKL-part1, path: "{{ disk_mount_parent }}/parity2", fstype: btrfs, opts: "defaults", passno: 2 }
   - { src: "{{ disk_mount_parent }}/{{ disk_mount_folder }}*", path: "{{ media_data_path }}", fstype: fuse.mergerfs, opts: "defaults,allow_other,use_ino,cache.files=partial,dropcacheonclose=true,category.create=mfs,moveonenospc=true,minfreespace=20G,fsname=Media"}
