@@ -464,6 +464,11 @@ services:
       - $CONTAINER_APPDATA_DIR/qbittorrent:/config
       - $DATA_DIR:/data
     network_mode: "service:wireguard"
+    deploy:
+      resources:
+          limits:
+            cpus: 0.50
+            memory: 4096M
     depends_on:
       - wireguard
     security_opt:
