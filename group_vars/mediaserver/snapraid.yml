@@ -47,6 +47,7 @@ snapraid_config_excludes:
   - /Music/unsorted/
   - /.config/plex/
   - "*.!sync"
+  - "*.!qB"
 
 snapraid_runner_email_address: "{{ admin_email_address }}"
 snapraid_runner_gmail_pass: "{{ admin_email_password }}"

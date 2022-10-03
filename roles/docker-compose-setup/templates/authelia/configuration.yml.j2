@@ -30,7 +30,6 @@ totp:
 #  integration_key: ABCDEF
 #  # This secret can also be set using the env variables AUTHELIA_DUO_API_SECRET_KEY_FILE
 #  secret_key: # use docker secret file instead AUTHELIA_DUO_API_SECRET_KEY_FILE
-
 authentication_backend:
   password_reset:
     disable: true
@@ -53,8 +52,9 @@ session:
   # This secret can also be set using the env variables AUTHELIA_SESSION_SECRET_FILE
   # Used a different secret, but the same site as jwt_secret above.
   # secret: SECRET_GOES_HERE # use docker secret file instead AUTHELIA_SESSION_SECRET_FILE
-  expiration: 3600 # 1 hour
-  inactivity: 300 # 5 minutes
+  expiration: 2h
+  inactivity: 30m
+  remember_me_duration: 7d
   domain: {{ domain_name }} # Should match whatever your root protected domain is
 
 # Optional. Can improve performance on a busy system. If not enabled, session info is stored in memory.
