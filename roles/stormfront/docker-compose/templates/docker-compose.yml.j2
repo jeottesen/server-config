@@ -395,31 +395,6 @@ services:
       - "traefik.http.services.qbittorrent-public-svc.loadbalancer.server.port=8080"
       - "traefik.http.services.qbittorrent-public-svc.loadbalancer.passhostheader=false"
 
-  qbittorrent-temp:
-    <<: *common-keys-apps # See EXTENSION FIELDS at the top
-    image: lscr.io/linuxserver/qbittorrent
-    container_name: qbittorrent-temp
-    restart: unless-stopped
-    environment:
-      <<: *default-tz-puid-pgid
-      #WEBUI_PORT=8080
-    volumes:
-      - $CONTAINER_APPDATA_DIR/qbittorrent-temp:/config
-      - $DOWNLOADS_DIR/temp:/downloads
-    labels:
-      - "traefik.enable=true"
-      ### QBittorent Router
-      - "traefik.http.routers.qbittorrent-temp-rtr.rule=Host(`qbt.$DOMAIN_NAME`) && PathPrefix(`/temp`)"
-      - "traefik.http.middlewares.qb-temp-redirect.redirectregex.regex=^(.*)/temp$$"
-      - "traefik.http.middlewares.qb-temp-redirect.redirectregex.replacement=$$1/temp/"
-      - "traefik.http.middlewares.qb-temp-strip.stripprefix.prefixes=/temp/"
-      ## Middlewares
-      - "traefik.http.routers.qbittorrent-temp-rtr.middlewares=qb-temp-strip,qb-temp-redirect,qb-headers@file,chain-authelia@file"
-      ## HTTP Services
-      - "traefik.http.routers.qbittorrent-temp-rtr.service=qbittorrent-temp-svc"
-      - "traefik.http.services.qbittorrent-temp-svc.loadbalancer.server.port=8080"
-      - "traefik.http.services.qbittorrent-temp-svc.loadbalancer.passhostheader=false"
-
   {# jackett:
     <<: *common-keys-apps # See EXTENSION FIELDS at the top
     image: lscr.io/linuxserver/jackett
@@ -441,35 +416,6 @@ services:
       - "traefik.http.services.jackett-svc.loadbalancer.server.port=9117" #}
 
   ############################# Media
-
-  # Jellyfin - Media Server
-  jellyfin:
-    <<: *common-keys-apps # See EXTENSION FIELDS at the top
-    image: jellyfin/jellyfin:latest
-    container_name: jellyfin
-    #devices:
-    #  - /dev/dri:/dev/dri # for harware transcoding
-    #ports:
-    #  - "8096:8096"
-    #  - "8920:8920" # Emby also uses same port if running both
-    environment:
-      <<: *default-tz-puid-pgid
-      UMASK_SET: 066
-    volumes:
-      - $CONTAINER_APPDATA_DIR/jellyfin:/config
-      - $CONTAINER_APPDATA_DIR/jellyfin/metadata:/config/metadata
-      - $DOWNLOADS_DIR:/data
-    labels:
-      - "traefik.enable=true"
-      ## HTTP Router
-      - "traefik.http.routers.jellyfin-rtr.entryPoints=https"
-      - "traefik.http.routers.jellyfin-rtr.rule=Host(`media.$DOMAIN_NAME`)"
-      ## Middlewares
-      - "traefik.http.routers.jellyfin-rtr.middlewares=chain-authelia@file"
-      ## HTTP Services
-      - "traefik.http.routers.jellyfin-rtr.service=jellyfin-svc"
-      - "traefik.http.services.jellyfin-svc.loadbalancer.server.port=8096"
-      - "traefik.http.services.jellyfin-svc.loadBalancer.passHostHeader=true"
 
   {# sonarr:
     <<: *common-keys-apps # See EXTENSION FIELDS at the top
