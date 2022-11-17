@@ -30,24 +30,6 @@
     dest: "{{ traefik_directory }}/plugins-local/AddMissingHeaders"
     version: v1.0.0
 
-- name: Set guacamole container folder permissions
-  file:
-    dest: "{{ container_appdata_path }}/guacamole"
-    owner: "root"
-    group: "root"
-    mode: "u+rwX,g-rw,o-rw"
-    recurse: yes
-  become: yes
-
-- name: Set guacamole postgress container folder permissions
-  file:
-    dest: "{{ container_appdata_path }}/guacamole/postgress"
-    owner: "103"
-    group: "105"
-    mode: "u+rwX,g-rw,o-rw"
-    recurse: yes
-  become: yes
-
 - name: Create docker-compose.yml file
   template:
     src: docker-compose.yml.j2
