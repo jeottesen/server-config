@@ -37,5 +37,8 @@
       tags: ssh
     - name: common/update-all-packages
       become: yes
+    - name: grog.package
+      tags: packages
     - name: common/iptables
       tags: iptables
+    #- { role: viasite-ansible.zsh, zsh_user: "{{ primary_user }}" }

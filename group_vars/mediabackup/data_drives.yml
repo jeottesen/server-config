@@ -1,0 +1,18 @@
+
+backup_data_path: /data
+
+backup_mount_parent: /bak_merge
+backup_disk_mount_folder: "bak_disk"
+backup_mount_merge: "{{ backup_mount_parent }}/merge"
+
+# # mergerfs role
+fstab_disks:
+  # Backup
+  - { src: /dev/disk/by-id/ata-ST18000NM000J-2TV103_ZR52QNV0-part1, path: "{{ backup_mount_parent }}/{{ backup_disk_mount_folder }}1", fstype: xfs, opts: "defaults", passno: 2  }
+  - { src: /dev/disk/by-id/ata-ST18000NM000J-2TV103_ZR52QWBM-part1, path: "{{ backup_mount_parent }}/{{ backup_disk_mount_folder }}2", fstype: xfs, opts: "defaults", passno: 2  }
+  - { src: /dev/disk/by-id/ata-ST18000NM000J-2TV103_ZR5B83ZK-part1, path: "{{ backup_mount_parent }}/{{ backup_disk_mount_folder }}3", fstype: xfs, opts: "defaults", passno: 2  }
+  # - { src: /dev/disk/by-id/ata-ST18000NM000J-2TV103_ZR5CBALN-part1, path: "{{ backup_mount_parent }}/parity", fstype: xfs, opts: "defaults", passno: 2  }
+  #bdisk mount
+  - { src: "{{ backup_mount_parent }}/{{ backup_disk_mount_folder }}*", path: "{{ backup_mount_merge }}", fstype: fuse.mergerfs, opts: "defaults,allow_other,use_ino,cache.files=partial,dropcacheonclose=true,category.create=mfs,moveonenospc=true,minfreespace=20G,fsname=BackupMerge"}
+  # backup mount
+  - { src: "{{ backup_mount_merge }}/disk*", path: "{{ backup_data_path }}", fstype: fuse.mergerfs, opts: "defaults,allow_other,use_ino,cache.files=partial,dropcacheonclose=true,category.create=mfs,moveonenospc=true,minfreespace=20G,fsname=Backup"}

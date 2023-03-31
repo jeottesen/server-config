@@ -17,6 +17,6 @@
       table: '{{ item.table|default(omit) }}'
     with_items: '{{ iptables_custom_rules }}'
     when: iptables_custom_rules|length > 0
-  notify:
-    - Save iptables config
-    - Restart docker service
+    notify:
+      - Save iptables config
+      - Restart docker service

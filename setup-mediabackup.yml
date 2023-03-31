@@ -1,0 +1,23 @@
+---
+
+- import_playbook: setup-common.yml
+  vars:
+    limit_hosts: mediabackup
+
+- name: Setup mediabackup server
+  hosts: mediabackup
+  become: yes
+  roles:
+    - name: grog.package
+      tags: packages
+    - name: mediaserver/mergerfs
+      tags: mergerfs
+    - name: mediaserver/snapraid
+      tags: snapraid
+    - name: mediaserver/samba
+      tags: samba
+    #   tags: docker-compose
+    # - name: mediaserver/data-folders
+    #   tags: folders
+    # - name: email-setup
+    #   tags: email

@@ -1,9 +1,9 @@
 # grog.package role
 package_list:
   - "{{ required_packages }}" # stored in group_vars/all/vars.yml
-  - name: pip # required for docker management
   - name: smartmontools
   - name: nfs-kernel-server
   - name: xfsprogs
 
-host_ip: "{{ vault_host_ip }}"
+primary_user: bak
+primary_group: bak

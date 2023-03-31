@@ -12,7 +12,7 @@
     passno: "{{ item.passno | default('0') }}"
     state: mounted
   loop: "{{ fstab_disks }}"
-  become: yes
+  become: true
   when: item.src is defined and
         item.path is defined and
         item.fstype is defined

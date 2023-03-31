@@ -1,0 +1,43 @@
+# ironicbadger.ansible_role_snapraid
+snapraid_install: false
+snapraid_runner: true
+
+snapraid_data_disks:
+  - path: "{{ backup_mount_parent }}/{{ backup_mount_folder }}1"
+    content: true
+  - path: "{{ backup_mount_parent }}/{{ backup_mount_folder }}2"
+    content: true
+  - path: "{{ backup_mount_parent }}/{{ backup_mount_folder }}3"
+    content: true
+snapraid_parity_disks:
+  - path: "{{ backup_mount_parent }}/parity"
+    content: false
+
+snapraid_content_files:
+  - /var/snapraid.content
+
+snapraid_config_excludes:
+  - "*.unrecoverable"
+  - /tmp/
+  - /lost+found/
+  - "*.bak"
+  - .AppleDouble
+  - ._AppleDouble
+  - .DS_Store
+  - .Thumbs.db
+  - .fseventsd
+  - .Spotlight-V100
+  - .TemporaryItems
+  - .Trashes
+  - .AppleDB
+  - /Torrents/incomplete/
+  - /Torrents/watch/
+  - /Music/unsorted/
+  - /.config/plex/
+  - "*.!sync"
+  - "*.!qB"
+
+snapraid_runner_email_address: "{{ admin_email_address }}"
+snapraid_runner_gmail_pass: "{{ admin_email_password }}"
+#snapraid_runner_email_sendon: "error"
+snapraid_runner_short: false

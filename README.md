@@ -20,6 +20,10 @@ Command to initialize a server:<br />
 Command to generate a hashed Authelia password:<br />
 `docker run authelia/authelia:latest authelia hash-password -- 'YOUR_PA$$WORD'`
 
+## For server first setup
+Set `ansible_become_method='su'` in `hosts.ini`.
+run the playbook command with the `--ask-pass` flag.
+
 ## Docker Folder Structure
 The docker folder is located in the users home directory.
 
