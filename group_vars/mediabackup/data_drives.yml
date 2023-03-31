@@ -11,8 +11,8 @@ fstab_disks:
   - { src: /dev/disk/by-id/ata-ST18000NM000J-2TV103_ZR52QNV0-part1, path: "{{ backup_mount_parent }}/{{ backup_disk_mount_folder }}1", fstype: xfs, opts: "defaults", passno: 2  }
   - { src: /dev/disk/by-id/ata-ST18000NM000J-2TV103_ZR52QWBM-part1, path: "{{ backup_mount_parent }}/{{ backup_disk_mount_folder }}2", fstype: xfs, opts: "defaults", passno: 2  }
   - { src: /dev/disk/by-id/ata-ST18000NM000J-2TV103_ZR5B83ZK-part1, path: "{{ backup_mount_parent }}/{{ backup_disk_mount_folder }}3", fstype: xfs, opts: "defaults", passno: 2  }
-  # - { src: /dev/disk/by-id/ata-ST18000NM000J-2TV103_ZR5CBALN-part1, path: "{{ backup_mount_parent }}/parity", fstype: xfs, opts: "defaults", passno: 2  }
+  - { src: /dev/disk/by-id/ata-ST18000NM000J-2TV103_ZR5CBALN-part1, path: "{{ backup_mount_parent }}/parity", fstype: xfs, opts: "defaults", passno: 2  }
   #bdisk mount
-  - { src: "{{ backup_mount_parent }}/{{ backup_disk_mount_folder }}*", path: "{{ backup_mount_merge }}", fstype: fuse.mergerfs, opts: "defaults,allow_other,use_ino,cache.files=partial,dropcacheonclose=true,category.create=mfs,moveonenospc=true,minfreespace=20G,fsname=BackupMerge"}
+  - { src: "{{ backup_mount_parent }}/{{ backup_disk_mount_folder }}*", path: "{{ backup_mount_merge }}", fstype: fuse.mergerfs, opts: "defaults,allow_other,use_ino,cache.files=partial,dropcacheonclose=true,category.create=mfs,moveonenospc=true,minfreespace=20G,fsname=BackupMerge,x-systemd.requires-mounts-for={{ backup_mount_parent }}/{{ backup_disk_mount_folder }}1,x-systemd.requires-mounts-for={{ backup_mount_parent }}/{{ backup_disk_mount_folder }}2,x-systemd.requires-mounts-for={{ backup_mount_parent }}/{{ backup_disk_mount_folder }}3"}
   # backup mount
-  - { src: "{{ backup_mount_merge }}/disk*", path: "{{ backup_data_path }}", fstype: fuse.mergerfs, opts: "defaults,allow_other,use_ino,cache.files=partial,dropcacheonclose=true,category.create=mfs,moveonenospc=true,minfreespace=20G,fsname=Backup"}
+  - { src: "{{ backup_mount_merge }}/disk*", path: "{{ backup_data_path }}", fstype: fuse.mergerfs, opts: "defaults,x-systemd.requires-mounts-for={{ backup_mount_merge }},allow_other,use_ino,cache.files=partial,dropcacheonclose=true,category.create=mfs,moveonenospc=true,minfreespace=20G,fsname=Backup"}
