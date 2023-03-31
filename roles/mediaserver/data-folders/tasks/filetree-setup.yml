@@ -9,10 +9,10 @@
   when: new_folder.state == "directory"
 
 - name: Set permissions and owner for all files
-  become: yes
+  become: true
   file:
     path: "{{ disk_folder.path }}"
     owner: "{{ primary_user }}"
     group: "{{ primary_group }}"
     mode: u=rwX,g=rwX,o=rwX
-    recurse: yes
+    recurse: true

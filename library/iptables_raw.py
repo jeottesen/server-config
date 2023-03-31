@@ -124,7 +124,7 @@ EXAMPLES = '''
 - iptables_raw:
     name: default_rules
     weight: 10
-    keep_unmanaged: no
+    keep_unmanaged: false
     rules: |
       -A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
       -A INPUT -i lo -j ACCEPT

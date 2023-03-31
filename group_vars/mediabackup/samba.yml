@@ -55,6 +55,6 @@ samba__shares:
   'data':
     path: '{{ backup_data_path }}'
     comment: 'Offsite backup of mediaserver'
-    read only: yes
-    guest ok: yes
+    read only: true
+    guest ok: true
     force user: nobody

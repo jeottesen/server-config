@@ -6,7 +6,7 @@
 
 - name: Setup Mediaserver
   hosts: mediaserver
-  become: yes
+  become: true
   roles:
     - name: grog.package
       tags: packages
@@ -25,7 +25,7 @@
     - name: mediaserver/samba
       tags: samba
     - name: mediaserver/docker-compose
-      become: no
+      become: false
       tags: docker-compose
     - name: mediaserver/data-folders
       tags: folders
@@ -34,7 +34,7 @@
 
 - name: Configure mediaserver
   hosts: mediaserver
-  become: yes
+  become: true
   roles:
     - name: mediaserver/cron-backup
       vars:
@@ -48,7 +48,7 @@
     - name: Add the /usr/bin and /usr/sbin folders to the cron PATH needed for smartctl
       cron:
         name: PATH
-        env: yes
+        env: true
         job: /usr/bin:/bin:/usr/bin:/usr/sbin
       tags: cron
     - name: Snapraid SMART emails

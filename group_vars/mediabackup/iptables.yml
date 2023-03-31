@@ -34,4 +34,4 @@ iptables_custom_rules:
 
 # By default this role deletes all iptables rules which are not managed by Ansible.
 # Set this to 'yes', if you want the role to keep unmanaged rules.
-iptables_keep_unmanaged: no
+iptables_keep_unmanaged: false

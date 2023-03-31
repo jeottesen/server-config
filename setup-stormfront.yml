@@ -6,7 +6,7 @@
 
 - name: Setup Stormfront
   hosts: stormfront
-  become: yes
+  become: true
   roles:
     - name: grog.package
       tags: packages
@@ -14,14 +14,14 @@
     - name: geerlingguy.docker
       tags: docker
     - name: stormfront/docker-compose
-      become: no
+      become: false
       tags: docker-compose
     # - name: email-setup
     #   tags: email
 
 - name: Setup secondary user
   hosts: stormfront
-  become: yes
+  become: true
   tags: create-secondary-user
   tasks:
     - name: Create group {{ secondary_group }}
@@ -44,7 +44,7 @@
 
 - name: Setup share folder
   hosts: stormfront
-  become: yes
+  become: true
   tags: setup-share
   tasks:
     - name: Create share dir
@@ -53,15 +53,15 @@
         owner: "{{ primary_user }}"
         group: "{{ primary_group }}"
         mode: '0777'
-        recurse: yes
+        recurse: true
         state: directory
     - name: Sets default ACL share folder
       ansible.posix.acl:
         path: /home/share
         etype: mask
         permissions: rwX
-        recursive: yes
-        default: yes
+        recursive: true
+        default: true
         state: present
     - name: create directory symlinks
       file:

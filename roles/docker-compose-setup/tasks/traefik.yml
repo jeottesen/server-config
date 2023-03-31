@@ -11,14 +11,14 @@
   copy:
     content: ""
     dest: "{{ traefik_directory }}/acme/acme.json"
-    force: no
+    force: false
     mode: '0600'
 
 - name: Ensure 'traefik/traefik.log' exists
   copy:
     content: ""
     dest: "{{ traefik_directory }}/traefik.log"
-    force: no
+    force: false
     mode: '0700'
 
 - name: Create trafick rules dir

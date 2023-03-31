@@ -23,7 +23,7 @@
   apt:
     name: nvidia-docker2
     state: present
-    update_cache: yes
+    update_cache: true
   notify: restart docker
 
 - name: Modify config file to fix issue with debian 11

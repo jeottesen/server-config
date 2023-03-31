@@ -17,19 +17,19 @@
       name: "{{ item.user }}"
       groups: "{{ item.group }}"
       state: present
-      append: yes
+      append: true
     loop: "{{ sudo_users }}"
 
   - name: Assure sudo users created and sudo capable
     user:
       name: "{{ item.user }}"
       groups: sudo
-      append: yes
+      append: true
     loop: "{{ sudo_users }}"
     notify: Reset open ssh sessions
 
     # become root to install and setup sudo
-    become: yes
+    become: true
     become_method: su
     become_user: root
     when: ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu'

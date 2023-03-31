@@ -1,6 +1,6 @@
 ---
 - name: Docker Compose setup
-  become: yes
+  become: true
   block:
   - include: secrets.yml
   - include: traefik.yml
@@ -34,7 +34,7 @@
       dest: "{{ container_appdata_path }}/filebrowser/filebrowser.db"
       owner: "{{ primary_user }}"
       group: "{{ primary_group }}"
-      force: no
+      force: false
       mode: '0600'
 
   - name: install docker pip modules
@@ -54,8 +54,8 @@
   #     owner: "{{ primary_user }}"
   #     group: "{{ primary_group }}"
   #     mode: "u+rwX,g-rw,o-rw"
-  #     recurse: yes
-  #   become: yes
+  #     recurse: true
+  #   become: true
   #   with_items: "{{ files_to_change.files }}"
 
   tags: compose-setup

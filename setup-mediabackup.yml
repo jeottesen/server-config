@@ -6,7 +6,7 @@
 
 - name: Setup mediabackup server
   hosts: mediabackup
-  become: yes
+  become: true
   roles:
     - name: grog.package
       tags: packages
@@ -19,5 +19,5 @@
     #   tags: docker-compose
     # - name: mediaserver/data-folders
     #   tags: folders
-    # - name: email-setup
-    #   tags: email
+    - name: email-setup
+      tags: email

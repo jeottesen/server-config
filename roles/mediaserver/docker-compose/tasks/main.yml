@@ -45,6 +45,6 @@
 - name: Pull and start docker-compose configuration
   community.docker.docker_compose:
     project_src: "{{ docker_compose_file }}"
-    remove_orphans: yes
-    pull: yes
+    remove_orphans: true
+    pull: true
     state: present

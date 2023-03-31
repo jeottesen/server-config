@@ -27,7 +27,7 @@
   roles:
     - name: common/debian-sudo
     - name: common/add-ssh-keys
-      become: yes
+      become: true
       tags: ssh
     - name: devsec.hardening.ssh_hardening #
       vars:
@@ -36,7 +36,7 @@
         #sshd_authenticationmethods: publickey password
       tags: ssh
     - name: common/update-all-packages
-      become: yes
+      become: true
     - name: grog.package
       tags: packages
     - name: common/iptables
