@@ -31,6 +31,6 @@
   template:
     src: mail.rc.j2
     dest: "/home/{{ primary_user }}/.mailrc"
-    owner: jeremy
-    group: jeremy
+    owner: "{{ primary_user }}"
+    group: "{{ primary_group }}"
     mode: 0600

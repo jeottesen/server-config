@@ -32,7 +32,8 @@
     - name: email-setup
       tags: email
 
-- name: Configure mediaserver
+      # TODO Refactor to it's own thing to reduce duplicate code in setup-mediabackup.yml
+- name: Configure mediaserver CRON jobs
   hosts: mediaserver
   become: true
   roles:
