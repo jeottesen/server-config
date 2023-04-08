@@ -1,0 +1,11 @@
+# Disk mounts need to be listed individually. Uncomment when it is time to backup.
+nfs_exports: [ "/data    *(rw,sync,subtree_check,fsid=12643)" #,
+              #  "/merge/disk1    *(rw,sync,subtree_check)",
+              #  "/merge/disk2    *(rw,sync,subtree_check)",
+              #  "/merge/disk3    *(rw,sync,subtree_check)",
+              #  "/merge/disk4    *(rw,sync,subtree_check)",
+              #  "/merge/disk5    *(rw,sync,subtree_check)",
+              #  "/merge/disk6    *(rw,sync,subtree_check)",
+              #  "/merge/disk7    *(rw,sync,subtree_check)",
+              #  "/merge/disk8    *(rw,sync,subtree_check)" 
+              ]

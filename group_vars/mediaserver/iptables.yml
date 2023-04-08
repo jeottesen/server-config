@@ -38,6 +38,11 @@ iptables_custom_rules:
       -A TCP -p tcp -m state --state NEW -m tcp -m multiport --dports 32400,3005,8096,8324,32469 -j ACCEPT
       -A UDP -p udp -m udp -m multiport --dports 1900,32410:32414 -j ACCEPT
     state: present
+  - name: nfs # 'iptables_custom_rules_' will be prepended to this
+    rules: |
+      -A TCP -p tcp -m state --state NEW -m tcp -m multiport --dports 111,2049,24655:24659 -m state --state NEW,ESTABLISHED -j ACCEPT
+      -A UDP -p udp -m udp -m multiport --dports 111,2049,24655:24659 -m state --state NEW,ESTABLISHED -j ACCEPT
+    state: present
 
 # NOTE: 'name', 'rules' and 'state' are required, others are optional.
 

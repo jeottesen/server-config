@@ -1,0 +1,9 @@
+---
+nfs_exports: []
+
+nfs_rpcbind_state: started
+nfs_rpcbind_enabled: true
+
+nfs_incoming_port: 24655
+nfs_outgoing_port: 24656
+nfs_rpcmountdopts_port: 24657
