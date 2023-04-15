@@ -7,3 +7,10 @@ package_list:
 
 primary_user: bak
 primary_group: bak
+
+mgmt_user: "{{ vault_mgmt_user }}"
+mgmt_group: "{{ vault_mgmt_user }}"
+mgmt_user_pass_encoded: "{{ vault_mgmt_user_pass_encoded }}"
+mgmt_user_puid: 1001
+mgmt_user_guid: 1001
+mgmt_user_ssh_identity_key: "{{ vault_mgmt_user_ssh_identity_key }}"
