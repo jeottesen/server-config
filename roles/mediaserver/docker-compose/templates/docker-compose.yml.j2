@@ -291,36 +291,39 @@ services:
       DDNSR53_ROUTE53_RECORDSSET_2_NAME: authelia.$DOMAIN_NAME
       DDNSR53_ROUTE53_RECORDSSET_2_TYPE: A
       DDNSR53_ROUTE53_RECORDSSET_2_TTL: 300
-      DDNSR53_ROUTE53_RECORDSSET_3_NAME: plex.$DOMAIN_NAME
+      DDNSR53_ROUTE53_RECORDSSET_3_NAME: login.$DOMAIN_NAME
       DDNSR53_ROUTE53_RECORDSSET_3_TYPE: A
       DDNSR53_ROUTE53_RECORDSSET_3_TTL: 300
-      DDNSR53_ROUTE53_RECORDSSET_4_NAME: qbt.$DOMAIN_NAME
+      DDNSR53_ROUTE53_RECORDSSET_4_NAME: plex.$DOMAIN_NAME
       DDNSR53_ROUTE53_RECORDSSET_4_TYPE: A
       DDNSR53_ROUTE53_RECORDSSET_4_TTL: 300
-      DDNSR53_ROUTE53_RECORDSSET_5_NAME: files.$DOMAIN_NAME
+      DDNSR53_ROUTE53_RECORDSSET_5_NAME: qbt.$DOMAIN_NAME
       DDNSR53_ROUTE53_RECORDSSET_5_TYPE: A
       DDNSR53_ROUTE53_RECORDSSET_5_TTL: 300
-      DDNSR53_ROUTE53_RECORDSSET_6_NAME: tautulli.$DOMAIN_NAME
+      DDNSR53_ROUTE53_RECORDSSET_6_NAME: files.$DOMAIN_NAME
       DDNSR53_ROUTE53_RECORDSSET_6_TYPE: A
       DDNSR53_ROUTE53_RECORDSSET_6_TTL: 300
-      DDNSR53_ROUTE53_RECORDSSET_7_NAME: sonarr.$DOMAIN_NAME
+      DDNSR53_ROUTE53_RECORDSSET_7_NAME: tautulli.$DOMAIN_NAME
       DDNSR53_ROUTE53_RECORDSSET_7_TYPE: A
       DDNSR53_ROUTE53_RECORDSSET_7_TTL: 300
-      DDNSR53_ROUTE53_RECORDSSET_8_NAME: radarr.$DOMAIN_NAME
+      DDNSR53_ROUTE53_RECORDSSET_8_NAME: sonarr.$DOMAIN_NAME
       DDNSR53_ROUTE53_RECORDSSET_8_TYPE: A
       DDNSR53_ROUTE53_RECORDSSET_8_TTL: 300
-      DDNSR53_ROUTE53_RECORDSSET_9_NAME: jackett.$DOMAIN_NAME
+      DDNSR53_ROUTE53_RECORDSSET_9_NAME: radarr.$DOMAIN_NAME
       DDNSR53_ROUTE53_RECORDSSET_9_TYPE: A
       DDNSR53_ROUTE53_RECORDSSET_9_TTL: 300
-      DDNSR53_ROUTE53_RECORDSSET_10_NAME: index.$DOMAIN_NAME
+      DDNSR53_ROUTE53_RECORDSSET_10_NAME: jackett.$DOMAIN_NAME
       DDNSR53_ROUTE53_RECORDSSET_10_TYPE: A
       DDNSR53_ROUTE53_RECORDSSET_10_TTL: 300
-      DDNSR53_ROUTE53_RECORDSSET_11_NAME: foundry.$DOMAIN_NAME
+      DDNSR53_ROUTE53_RECORDSSET_11_NAME: index.$DOMAIN_NAME
       DDNSR53_ROUTE53_RECORDSSET_11_TYPE: A
       DDNSR53_ROUTE53_RECORDSSET_11_TTL: 300
-      DDNSR53_ROUTE53_RECORDSSET_12_NAME: crafty.$DOMAIN_NAME
+      DDNSR53_ROUTE53_RECORDSSET_12_NAME: foundry.$DOMAIN_NAME
       DDNSR53_ROUTE53_RECORDSSET_12_TYPE: A
       DDNSR53_ROUTE53_RECORDSSET_12_TTL: 300
+      DDNSR53_ROUTE53_RECORDSSET_13_NAME: crafty.$DOMAIN_NAME
+      DDNSR53_ROUTE53_RECORDSSET_13_TYPE: A
+      DDNSR53_ROUTE53_RECORDSSET_13_TTL: 300
     restart: always
 
   {# # Traefik Whoami - a simple page to help debug headers and routing
@@ -504,15 +507,6 @@ services:
       ## HTTP Services
       - "traefik.http.routers.qbittorrent-rtr.service=qbittorrent-svc"
       - "traefik.http.services.qbittorrent-svc.loadbalancer.server.port=8080"
-       ### QBittorent-vault Router
-      ## HTTP Routers
-      - "traefik.http.routers.qbittorrent-vault-rtr.entrypoints=https"
-      - "traefik.http.routers.qbittorrent-vault-rtr.rule=Host(`qbtv.$DOMAIN_NAME`)"
-      ## Middlewares
-      - "traefik.http.routers.qbittorrent-vault-rtr.middlewares=chain-authelia@file"
-      ## HTTP Services
-      - "traefik.http.routers.qbittorrent-vault-rtr.service=qbittorrent-vault-svc"
-      - "traefik.http.services.qbittorrent-vault-svc.loadbalancer.server.port=8081"
 
   qbittorrent:
     restart: always
@@ -536,31 +530,6 @@ services:
     security_opt:
       - no-new-privileges:true
     # traefik labels under wireguard
-
-  qbittorrent-vault:
-    restart: always
-    image: lscr.io/linuxserver/qbittorrent
-    container_name: qbittorrent-vault
-    restart: unless-stopped
-    environment:
-      <<: *default-tz-puid-pgid
-      WEBUI_PORT: 8081
-    volumes:
-      - $CONTAINER_APPDATA_DIR/qbittorrent-vault:/config
-      - $DATA_DIR:/data
-    network_mode: "service:wireguard"
-    deploy:
-      resources:
-          limits:
-            cpus: 0.50
-            memory: 4096M
-    depends_on:
-      - wireguard
-    security_opt:
-      - no-new-privileges:true
-    # traefik labels under wireguard
-
-
 
   jackett:
     <<: *common-keys-apps # See EXTENSION FIELDS at the top
