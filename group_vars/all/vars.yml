@@ -14,16 +14,6 @@ docker_users:
 compose_puid: "{{ primary_user_puid }}"
 compose_guid: "{{ primary_user_guid }}"
 
-required_packages:
-  - name: acl
-  - name: vim
-  - name: zsh
-  - name: rsync
-  - name: rclone
-  - name: git
-  - name: iptables-persistent
-  - name: screen
-
 docker_compose_version: "v2.9.0"
 docker_package_state: latest
 

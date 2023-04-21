@@ -1,6 +1,12 @@
 # grog.package role
 package_list:
-  - "{{ required_packages }}" # stored in group_vars/all/vars.yml
+  required_packages:
+  - name: vim
+  - name: zsh
+  - name: rsync
+  - name: git
+  - name: iptables-persistent
+  - name: screen
   - name: pip # required for docker management
 
 primary_user: jotaro

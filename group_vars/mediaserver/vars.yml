@@ -1,6 +1,14 @@
 # grog.package role
 package_list:
-  - "{{ required_packages }}" # stored in group_vars/all/vars.yml
+  required_packages:
+  - name: acl
+  - name: vim
+  - name: zsh
+  - name: rsync
+  - name: rclone
+  - name: git
+  - name: iptables-persistent
+  - name: screen
   - name: pip # required for docker management
   - name: smartmontools
   - name: nfs-kernel-server

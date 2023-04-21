@@ -36,5 +36,3 @@
         #sshd_authenticationmethods: publickey password
       tags: ssh
     - name: common/update-all-packages
-    - name: grog.package
-      tags: packages
