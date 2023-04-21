@@ -2,9 +2,9 @@
 - name: Docker Compose setup
   become: true
   block:
-  - include: secrets.yml
-  - include: traefik.yml
-  - include: authelia.yml
+  - include_tasks: secrets.yml
+  - include_tasks: traefik.yml
+  - include_tasks: authelia.yml
 
   - name: Create docker-gc-exclude dir
     file:

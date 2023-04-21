@@ -10,6 +10,8 @@
   roles:
     - name: grog.package
       tags: packages
+    - name: common/iptables
+      tags: iptables
     - name: mediaserver/mergerfs
       tags: mergerfs
     - name: mediaserver/snapraid

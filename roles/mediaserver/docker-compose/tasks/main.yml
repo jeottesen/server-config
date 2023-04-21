@@ -8,7 +8,7 @@
     authelia_logo_file: "files/assets/logo.png"
     authelia_favicon_file: "files/assets/favicon.ico"
 
-- include: wireguard.yml
+- include_tasks: wireguard.yml
 
 - name: Create mediaserver secrets
   include_role:

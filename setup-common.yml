@@ -29,16 +29,12 @@
     - name: common/add-ssh-keys
       become: true
       tags: ssh
-    - name: devsec.hardening.ssh_hardening #
+    - name: devsec.hardening.ssh_hardening
       vars:
         ssh_allow_tcp_forwarding: "yes"
         #ssh_server_password_login: true
         #sshd_authenticationmethods: publickey password
       tags: ssh
     - name: common/update-all-packages
-      become: true
     - name: grog.package
       tags: packages
-    - name: common/iptables
-      tags: iptables
-    #- { role: viasite-ansible.zsh, zsh_user: "{{ primary_user }}" }
