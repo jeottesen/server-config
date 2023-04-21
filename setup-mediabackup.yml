@@ -20,7 +20,7 @@
       tags: samba
     - name: mediabackup/wireguard-client
       tags: wireguard
-    - name: email-setup
+    - name: common/email-setup
       tags: email
 
 # TODO Refactor to it's own thing to reduce duplicate code in setup-mediaserver.yml

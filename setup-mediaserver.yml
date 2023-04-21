@@ -33,7 +33,7 @@
       tags: docker-compose
     - name: mediaserver/data-folders
       tags: folders
-    - name: email-setup
+    - name: common/email-setup
       tags: email
 
       # TODO Refactor to it's own thing to reduce duplicate code in setup-mediabackup.yml

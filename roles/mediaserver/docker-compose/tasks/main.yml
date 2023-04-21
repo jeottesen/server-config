@@ -2,7 +2,7 @@
 
 - name: Setup docker-compose-files
   include_role:
-    name: docker-compose-setup
+    name: common/docker-compose-setup
     public: "yes"
   vars:
     authelia_logo_file: "files/assets/logo.png"
@@ -12,14 +12,14 @@
 
 - name: Create mediaserver secrets
   include_role:
-    name: docker-compose-setup
+    name: common/docker-compose-setup
     tasks_from: "secrets.yml"
   vars:
     secrets_template_folder: "templates/mediaserver-secrets"
 
 - name: Create mediaserver traefik rules
   include_role:
-    name: docker-compose-setup
+    name: common/docker-compose-setup
     tasks_from: "traefik.yml"
   vars:
     traefik_rules_dir: "templates/mediaserver-traefik/rules"
