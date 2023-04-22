@@ -14,7 +14,7 @@ docker_users:
 compose_puid: "{{ primary_user_puid }}"
 compose_guid: "{{ primary_user_guid }}"
 
-docker_compose_version: "v2.9.0"
+docker_compose_version: "v2.17.2"
 docker_package_state: latest
 
 # ssh hardening

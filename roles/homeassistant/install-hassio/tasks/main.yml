@@ -1,0 +1,70 @@
+---
+
+# Update and install packages for hassio and docker  ------------------------ #
+- name: Update all packages to their latest version
+  apt:
+    name: "*"
+    state: latest
+    update_cache: yes
+
+- name: Remove dependencies that are no longer required
+  apt:
+    autoremove: yes
+
+- name: install packages for hassio and docker
+  apt:
+    name: "{{ item }}"
+    state: latest
+  with_items:
+    - ca-certificates
+    - gnupg
+    - apparmor 
+    - jq
+    - wget
+    - curl
+    - udisks2
+    - libglib2.0-bin
+    - network-manager
+    - dbus
+    - systemd-journal-remote
+
+# Install docker ------------------------------------------------------------- #
+- name: Add Docker GPG apt Key
+  apt_key:
+    url: https://download.docker.com/linux/debian/gpg
+    state: present
+
+- name: Add Docker Repository
+  apt_repository:
+    repo: "deb https://download.docker.com/linux/debian/ {{ ansible_distribution_release }} stable"
+    state: present
+
+- name: Update apt and install docker-ce
+  apt:
+    name: "{{ item }}"
+    state: latest
+    update_cache: true
+  with_items:
+    - docker-ce
+    - docker-ce-cli
+    - containerd.io
+    - docker-buildx-plugin
+    - docker-compose-plugin
+
+- name: Set docker cgroup to v1
+  lineinfile:
+    backup: true
+    backrefs: true
+    path: /etc/default/grub
+    regexp: '^GRUB_CMDLINE_LINUX_DEFAULT="systemd.unified_cgroup_hierarchy=(false|1) quiet"$'
+    line: 'GRUB_CMDLINE_LINUX_DEFAULT="systemd.unified_cgroup_hierarchy=0 quiet"'
+  notify: update grub
+
+# Install hassio ------------------------------------------------------------- #
+- name: Install hassio OS Agent
+  ansible.builtin.apt:
+    deb: "{{ os_agent_deb_path }}"
+
+- name: Install hassio supervised installer
+  ansible.builtin.apt:
+    deb: "{{ supervised_installer_deb_path }}"
