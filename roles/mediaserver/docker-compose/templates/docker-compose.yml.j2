@@ -422,8 +422,8 @@ services:
     container_name: unifi-controller
     environment:
       <<: *default-tz-puid-pgid
-      MEM_LIMIT: 1024M #optional
-      MEM_STARTUP: 1024M #optional
+      MEM_LIMIT: 1024 #optional
+      MEM_STARTUP: 1024 #optional
     volumes:
       - $CONTAINER_APPDATA_DIR/unifi:/config
     ports:
