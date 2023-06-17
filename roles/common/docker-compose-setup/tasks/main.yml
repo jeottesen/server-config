@@ -9,9 +9,9 @@
   - name: Create docker-gc-exclude dir
     file:
       path: "{{ container_appdata_path }}/docker-gc/"
-      owner: "{{ primary_user }}"
-      group: "{{ primary_group }}"
-      mode: '0700'
+      owner: "{{ docker_user }}"
+      group: "{{ docker_group }}"
+      mode: 0700
       state: "directory"
 
   - name: Setup docker-gc-exclude
@@ -23,39 +23,23 @@
   - name: Create docker-gc-exclude dir
     file:
       path: "{{ container_appdata_path }}/filebrowser"
-      owner: "{{ primary_user }}"
-      group: "{{ primary_group }}"
-      mode: '0700'
+      owner: "{{ docker_user }}"
+      group: "{{ docker_group }}"
+      mode: 0700
       state: "directory"
 
   - name: Create empty filebrowser.db file
     copy:
       content: ""
       dest: "{{ container_appdata_path }}/filebrowser/filebrowser.db"
-      owner: "{{ primary_user }}"
-      group: "{{ primary_group }}"
+      owner: "{{ docker_user }}"
+      group: "{{ docker_group }}"
       force: false
-      mode: '0600'
+      mode: 0600
 
   - name: install docker pip modules
     pip:
       name: docker-compose
       state: present
-
-  # - name: Find container appdata folders, exclude guacamole
-  #   find:
-  #     paths: "{{ container_appdata_path }}"
-  #     excludes: 'guacamole'
-  #   register: files_to_change
-
-  # - name: Set container folder user permissions
-  #   file:
-  #     dest: "{{ item }}"
-  #     owner: "{{ primary_user }}"
-  #     group: "{{ primary_group }}"
-  #     mode: "u+rwX,g-rw,o-rw"
-  #     recurse: true
-  #   become: true
-  #   with_items: "{{ files_to_change.files }}"
 
   tags: compose-setup

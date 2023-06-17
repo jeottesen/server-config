@@ -17,5 +17,5 @@
     dest: '/etc/samba/smb.conf'
     owner: 'root'
     group: 'root'
-    mode: '0644'
+    mode: 0644
   notify: [ 'Check samba config' ]

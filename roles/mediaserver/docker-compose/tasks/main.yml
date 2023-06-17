@@ -1,50 +1,57 @@
 ---
 
-- name: Setup docker-compose-files
-  include_role:
-    name: common/docker-compose-setup
-    public: "yes"
-  vars:
-    authelia_logo_file: "files/assets/logo.png"
-    authelia_favicon_file: "files/assets/favicon.ico"
+- name: Setup mediaserver docker-compose
+  become: true
+  block:
+  - name: Setup docker-compose-files
+    include_role:
+      name: common/docker-compose-setup
+      public: "yes"
+    vars:
+      authelia_logo_file: "files/assets/logo.png"
+      authelia_favicon_file: "files/assets/favicon.ico"
 
-- include_tasks: wireguard.yml
+  - include_tasks: wireguard.yml
 
-- name: Create mediaserver secrets
-  include_role:
-    name: common/docker-compose-setup
-    tasks_from: "secrets.yml"
-  vars:
-    secrets_template_folder: "templates/mediaserver-secrets"
+  - name: Create mediaserver secrets
+    include_role:
+      name: common/docker-compose-setup
+      tasks_from: "secrets.yml"
+    vars:
+      secrets_template_folder: "templates/mediaserver-secrets"
 
-- name: Create mediaserver traefik rules
-  include_role:
-    name: common/docker-compose-setup
-    tasks_from: "traefik.yml"
-  vars:
-    traefik_rules_dir: "templates/mediaserver-traefik/rules"
+  - name: Create mediaserver traefik rules
+    include_role:
+      name: common/docker-compose-setup
+      tasks_from: "traefik.yml"
+    vars:
+      traefik_rules_dir: "templates/mediaserver-traefik/rules"
 
-- name: Add Traefik middleware plugin for default header
-  git:
-    repo: https://github.com/jerrywoo96/AddMissingHeaders.git
-    dest: "{{ traefik_directory }}/plugins-local/AddMissingHeaders"
-    version: v1.0.0
+  - name: Add Traefik middleware plugin for default header
+    git:
+      repo: https://github.com/jerrywoo96/AddMissingHeaders.git
+      dest: "{{ traefik_directory }}/plugins-local/AddMissingHeaders"
+      version: v1.0.0
 
-- name: Create docker-compose.yml file
-  template:
-    src: docker-compose.yml.j2
-    dest: "{{ docker_compose_file }}/docker-compose.yml"
-    mode: 0600
+  - name: Create docker-compose.yml file
+    template:
+      src: docker-compose.yml.j2
+      dest: "{{ docker_dir }}/docker-compose.yml"
+      owner: "{{ docker_user }}"
+      group: "{{ docker_group }}"
+      mode: 0600
 
-- name: Create docker-compose env file
-  template:
-    src: .env.j2
-    dest: "{{ docker_compose_file }}/.env"
-    mode: 0600
+  - name: Create docker-compose env file
+    template:
+      src: .env.j2
+      dest: "{{ docker_dir }}/.env"
+      owner: "{{ docker_user }}"
+      group: "{{ docker_group }}"
+      mode: 0600
 
-- name: Pull and start docker-compose configuration
-  community.docker.docker_compose:
-    project_src: "{{ docker_compose_file }}"
-    remove_orphans: true
-    pull: true
-    state: present
+  - name: Pull and start docker-compose configuration
+    community.docker.docker_compose:
+      project_src: "{{ docker_dir }}"
+      remove_orphans: true
+      pull: true
+      state: present

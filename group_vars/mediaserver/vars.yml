@@ -1,6 +1,5 @@
 # grog.package role
 package_list:
-  required_packages:
   - name: acl
   - name: vim
   - name: zsh

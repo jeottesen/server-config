@@ -509,7 +509,6 @@ services:
       - "traefik.http.services.qbittorrent-svc.loadbalancer.server.port=8080"
 
   qbittorrent:
-    restart: always
     image: lscr.io/linuxserver/qbittorrent
     container_name: qbittorrent
     restart: unless-stopped
@@ -523,7 +522,7 @@ services:
     deploy:
       resources:
           limits:
-            cpus: 0.50
+            cpus: "0.50"
             memory: 4096M
     depends_on:
       - wireguard

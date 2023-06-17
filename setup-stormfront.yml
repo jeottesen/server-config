@@ -50,7 +50,7 @@
         path: /home/share
         owner: "{{ primary_user }}"
         group: "{{ primary_group }}"
-        mode: '0777'
+        mode: 0777
         recurse: true
         state: directory
     - name: Sets default ACL share folder
