@@ -20,6 +20,13 @@ networks:
 # Common environment values
 x-environment: &default-tz-puid-pgid
   TZ: $TZ
+  USER_ID: 0
+  GROUP_ID: 0
+  PUID: 0
+  PGID: 0
+
+x-primary-environment: &primary-tz-puid-pgid
+  TZ: $TZ
   USER_ID: $PUID
   GROUP_ID: $PGID
   PUID: $PUID
@@ -300,7 +307,7 @@ services:
     image: linuxserver/muximux
     container_name: muximux
     environment:
-      <<: *default-tz-puid-pgid
+      <<: *primary-tz-puid-pgid
     volumes:
       - '$CONTAINER_APPDATA_DIR/muximux:/config'
     labels:
@@ -322,7 +329,7 @@ services:
     container_name: qbittorrent
     restart: unless-stopped
     environment:
-      <<: *default-tz-puid-pgid
+      <<: *primary-tz-puid-pgid
       #WEBUI_PORT=8080
     volumes:
       - $CONTAINER_APPDATA_DIR/qbittorrent:/config
@@ -345,7 +352,7 @@ services:
     container_name: qbittorrent-books
     restart: unless-stopped
     environment:
-      <<: *default-tz-puid-pgid
+      <<: *primary-tz-puid-pgid
       #WEBUI_PORT=8080
     ports:
       - 51911:51911
@@ -374,7 +381,7 @@ services:
     container_name: qbittorrent-public
     restart: unless-stopped
     environment:
-      <<: *default-tz-puid-pgid
+      <<: *primary-tz-puid-pgid
       #WEBUI_PORT=8080
     volumes:
       - $CONTAINER_APPDATA_DIR/qbittorrent-public:/config
@@ -474,7 +481,7 @@ services:
       - $USER_DIR:/srv/
       - /home/share:/home/share
     environment:
-      <<: *default-tz-puid-pgid
+      <<: *primary-tz-puid-pgid
       FB_NOAUTH: noauth
     labels:
       - "traefik.enable=true"
@@ -536,7 +543,7 @@ services:
       ## HTTP Services
       - "traefik.http.routers.muximux-$SECONDARY_USER-rtr.service=muximux-$SECONDARY_USER-svc"
       - "traefik.http.services.muximux-$SECONDARY_USER-svc.loadbalancer.server.port=80"
-
+{# 
   qbittorrent-{{ secondary_user }}:
     <<: *common-keys-apps # See EXTENSION FIELDS at the top
     image: lscr.io/linuxserver/qbittorrent
@@ -559,7 +566,7 @@ services:
       ## HTTP Services
       - "traefik.http.routers.qbittorrent-$SECONDARY_USER-rtr.service=qbittorrent-$SECONDARY_USER-svc"
       - "traefik.http.services.qbittorrent-$SECONDARY_USER-svc.loadbalancer.server.port=8080"
-      - "traefik.http.services.qbittorrent-$SECONDARY_USER-svc.loadbalancer.passhostheader=false"
+      - "traefik.http.services.qbittorrent-$SECONDARY_USER-svc.loadbalancer.passhostheader=false" #}
 
   # File Browser - Explorer
   filebrowser-{{ secondary_user }}:

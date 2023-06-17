@@ -24,6 +24,13 @@ networks:
 # Common environment values
 x-environment: &default-tz-puid-pgid
   TZ: $TZ
+  USER_ID:  0
+  GROUP_ID: 0
+  PUID: 0
+  PGID: 0
+
+x-environment: &primary-tz-puid-pgid
+  TZ: $TZ
   USER_ID:  $PUID
   GROUP_ID: $PGID
   PUID: $PUID
@@ -343,33 +350,6 @@ services:
       - "traefik.http.routers.whoami-rtr.service=whoami-svc"
       - "traefik.http.services.whoami-svc.loadbalancer.server.port=80" #}
 
-
-  {# # Portainer - WebUI for Containers
-  portainer:
-    <<: *common-keys-core # See EXTENSION FIELDS at the top
-    container_name: portainer
-    image: portainer/portainer-ce:latest
-    # command: -H unix:///var/run/docker.sock # # Use Docker Socket Proxy instead for improved security
-    command: -H tcp://socket-proxy:2375
-    networks:
-      - proxies
-      - socket_proxy
-    volumes:
-      # - /var/run/docker.sock:/var/run/docker.sock:ro # # Use Docker Socket Proxy instead for improved security
-      - $CONTAINER_APPDATA_DIR/portainer/data:/data # Change to local directory if you want to save/transfer config locally
-    environment:
-      - TZ=$TZ
-    labels:
-      - "traefik.enable=true"
-      ## HTTP Routers
-      - "traefik.http.routers.portainer-rtr.entrypoints=https"
-      - "traefik.http.routers.portainer-rtr.rule=Host(`portainer.$DOMAIN_NAME`)"
-      ## Middlewares
-      - "traefik.http.routers.portainer-rtr.middlewares=chain-authelia@file"
-      ## HTTP Services
-      - "traefik.http.routers.portainer-rtr.service=portainer-svc"
-      - "traefik.http.services.portainer-svc.loadbalancer.server.port=9000" #}
-
   # Autoindex - Simple Directory Index
   autoindex:
     <<: *common-keys-apps # See EXTENSION FIELDS at the top
@@ -400,7 +380,7 @@ services:
     volumes:
       - $CONTAINER_APPDATA_DIR/organizr:/config
     environment:
-      <<: *default-tz-puid-pgid
+      <<: *primary-tz-puid-pgid
       fpm: "true" #true or false | using true will provide better performance
       branch: v2-master #v2-master or #v2-develop
     labels:
@@ -458,7 +438,7 @@ services:
     volumes:
       - $CONTAINER_APPDATA_DIR/speedtest:/config
     environment:
-      <<: *default-tz-puid-pgid
+      <<: *primary-tz-puid-pgid
       OOKLA_EULA_GDPR: "true"
     logging:
       driver: "json-file"
@@ -565,9 +545,9 @@ services:
       VERSION: latest
       NVIDIA_VISIBLE_DEVICES: ALL
     volumes:
-      - '$CONTAINER_APPDATA_DIR/plex/config:/config'
+      - '$USER_DIR/plex/config:/config'
+      - '$USER_DIR/plex/transcode:/transcode'
       - '$DATA_DIR:/data:ro'
-      - '$CONTAINER_APPDATA_DIR/plex/transcode:/transcode'
 
   tautulli:
     <<: *common-keys-apps # See EXTENSION FIELDS at the top
@@ -795,31 +775,6 @@ services:
       ## HTTP Services
       - "traefik.http.routers.filebrowser-rtr.service=filebrowser-svc"
       - "traefik.http.services.filebrowser-svc.loadbalancer.server.port=80"
-
-  {# # Guacamole - Remote desktop, SSH, on Telnet on any HTML5 Browser
-  # Create all databases and tables first
-  guacamole:
-    <<: *common-keys-apps # See EXTENSION FIELDS at the top
-    image: maxwaldorf/guacamole
-    container_name: guacamole
-    # ports:
-    #   - "8080:8080"
-    volumes:
-      - '$CONTAINER_APPDATA_DIR/guacamole/:/config'
-    environment:
-      <<: *default-tz-puid-pgid
-      EXTENSIONS: auth-header
-    labels:
-      - "traefik.enable=true"
-      ## HTTP Routers
-      - "traefik.http.routers.guacamole-rtr.entrypoints=https"
-      - "traefik.http.routers.guacamole-rtr.rule=Host(`guac.$DOMAIN_NAME`)"
-      ## Middlewares
-      - "traefik.http.routers.guacamole-rtr.middlewares=chain-authelia@file"
-      ## HTTP Services
-      - "traefik.http.routers.guacamole-rtr.service=guacamole-svc"
-      - "traefik.http.services.guacamole-svc.loadbalancer.server.port=8080" #}
-
 
   {# # qDirStat - Directory Statistics
   qdirstat:
