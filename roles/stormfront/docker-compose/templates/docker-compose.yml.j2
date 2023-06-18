@@ -400,7 +400,7 @@ services:
       ## HTTP Services
       - "traefik.http.routers.qbittorrent-public-rtr.service=qbittorrent-public-svc"
       - "traefik.http.services.qbittorrent-public-svc.loadbalancer.server.port=8080"
-      - "traefik.http.services.qbittorrent-public-svc.loadbalancer.passhostheader=false"
+      - "traefik.http.services.qbittorrent-public-svc.loadbalancer.passhostheader=false" 
 
   {# jackett:
     <<: *common-keys-apps # See EXTENSION FIELDS at the top
@@ -542,8 +542,8 @@ services:
       - "traefik.http.routers.muximux-$SECONDARY_USER-rtr.middlewares=chain-authelia@file"
       ## HTTP Services
       - "traefik.http.routers.muximux-$SECONDARY_USER-rtr.service=muximux-$SECONDARY_USER-svc"
-      - "traefik.http.services.muximux-$SECONDARY_USER-svc.loadbalancer.server.port=80"
-{# 
+      - "traefik.http.services.muximux-$SECONDARY_USER-svc.loadbalancer.server.port=80" 
+
   qbittorrent-{{ secondary_user }}:
     <<: *common-keys-apps # See EXTENSION FIELDS at the top
     image: lscr.io/linuxserver/qbittorrent
@@ -566,7 +566,7 @@ services:
       ## HTTP Services
       - "traefik.http.routers.qbittorrent-$SECONDARY_USER-rtr.service=qbittorrent-$SECONDARY_USER-svc"
       - "traefik.http.services.qbittorrent-$SECONDARY_USER-svc.loadbalancer.server.port=8080"
-      - "traefik.http.services.qbittorrent-$SECONDARY_USER-svc.loadbalancer.passhostheader=false" #}
+      - "traefik.http.services.qbittorrent-$SECONDARY_USER-svc.loadbalancer.passhostheader=false"
 
   # File Browser - Explorer
   filebrowser-{{ secondary_user }}:
