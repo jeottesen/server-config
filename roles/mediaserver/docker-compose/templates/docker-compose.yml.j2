@@ -858,21 +858,20 @@ services:
   # Crafty Controller - Minecraft server manager
   crafty-web:
     <<: *common-keys-apps # See EXTENSION FIELDS at the top
-    image: shawly/crafty-web
+    image: registry.gitlab.com/crafty-controller/crafty-4:latest
     container_name: crafty
     environment:
-      <<: *default-tz-puid-pgid
-      INSTALL_JAVA8: "true"
-      INSTALL_JAVA11: "true"
-      INSTALL_JAVA17: "true"
+      <<: *primary-tz-puid-pgid
     ports:
-      - "25565-25570:25565-25570/tcp"
-      - "25565-25570:25565-25570/udp"
-      #- "8000:8000"
+      - "8123:8123" # DYNMAP
+      - "19132:19132/udp" # BEDROCK
+      - "25500-25600:25500-25600" # MC SERV PORT RANGE
     volumes:
-      - "$CONTAINER_APPDATA_DIR/crafty/database:/crafty_db:rw"
-      - "$CONTAINER_APPDATA_DIR/crafty/backups:/crafty_web/backups:rw"
-      - "$CONTAINER_APPDATA_DIR/crafty/minecraft:/var/opt/minecraft"
+      - "$USER_DIR/minecraft/backups:/crafty/backups"
+      - "$USER_DIR/minecraft/logs:/crafty/logs"
+      - "$USER_DIR/minecraft/servers:/crafty/servers"
+      - "$USER_DIR/minecraft/config:/crafty/app/config"
+      - "$USER_DIR/minecraft/import:/crafty/import"
     labels:
       - "traefik.enable=true"
       ## HTTP Routers
@@ -884,7 +883,7 @@ services:
       ## HTTP Services
       - "traefik.http.routers.crafty-rtr.service=crafty-svc"
       - "traefik.http.services.crafty-svc.loadbalancer.server.scheme=https"
-      - "traefik.http.services.crafty-svc.loadbalancer.server.port=8000"
+      - "traefik.http.services.crafty-svc.loadbalancer.server.port=8443"
 
   {# # Don't Starve Server - server for Don't Starve Together
   dst-server:
