@@ -22,14 +22,14 @@ networks:
 # More Info on how to use this: https://github.com/htpcBeginner/docker-traefik/pull/228
 
 # Common environment values
-x-environment: &default-tz-puid-pgid
+x-default-environment: &default-tz-puid-pgid
   TZ: $TZ
   USER_ID:  0
   GROUP_ID: 0
   PUID: 0
   PGID: 0
 
-x-environment: &primary-tz-puid-pgid
+x-primary-environment: &primary-tz-puid-pgid
   TZ: $TZ
   USER_ID:  $PUID
   GROUP_ID: $PGID
@@ -541,13 +541,33 @@ services:
     container_name: plex
     runtime: nvidia
     environment:
-      <<: *default-tz-puid-pgid
+      <<: *primary-tz-puid-pgid
       VERSION: latest
       NVIDIA_VISIBLE_DEVICES: ALL
     volumes:
       - '$USER_DIR/plex/config:/config'
       - '$USER_DIR/plex/transcode:/transcode'
       - '$DATA_DIR:/data:ro'
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+
+  # Audio and Subtitle manager for Plex
+  pasta:
+    <<: *common-keys-apps # See EXTENSION FIELDS at the top
+    image: cglatot/pasta
+    container_name: pasta
+    environment:
+      <<: *default-tz-puid-pgid
+    labels:
+      - "traefik.enable=true"
+      ## HTTP Routers
+      - "traefik.http.routers.pasta-rtr.entrypoints=https"
+      - "traefik.http.routers.pasta-rtr.rule=Host(`pasta.$DOMAIN_NAME`)"
+      ## Middlewares
+      - "traefik.http.routers.pasta-rtr.middlewares=chain-authelia@file"
+      ## HTTP Services
+      - "traefik.http.routers.pasta-rtr.service=pasta-svc"
+      - "traefik.http.services.pasta-svc.loadbalancer.server.port=80"
 
   tautulli:
     <<: *common-keys-apps # See EXTENSION FIELDS at the top
@@ -557,7 +577,7 @@ services:
       <<: *default-tz-puid-pgid
     volumes:
       - '$CONTAINER_APPDATA_DIR/tautulli:/config'
-      - '$CONTAINER_APPDATA_DIR/plex/config/Library/Application Support/Plex Media Server/Logs/:/logs'
+      - '$USER_DIR/plex/config/Library/Application Support/Plex Media Server/Logs/:/logs'
     labels:
       - "traefik.enable=true"
       ## HTTP Routers
@@ -881,6 +901,21 @@ services:
       - "$CONTAINER_APPDATA_DIR/dst-server/:/data:rw" #}
 
   ############################# MAINTENANCE
+
+  watchtower:
+    image: containrrr/watchtower
+    container_name: watchtower
+    networks:
+      - socket_proxy
+    environment:
+      DOCKER_HOST: "tcp://socket-proxy:2375"
+      WATCHTOWER_LABEL_ENABLE: "true"
+      WATCHTOWER_CLEANUP: "true"
+      WATCHTOWER_INCLUDE_STOPPED: "true"
+      WATCHTOWER_REVIVE_STOPPED: "true"
+      WATCHTOWER_LOG_LEVEL: "info"
+      WATCHTOWER_POLL_INTERVAL: "30"
+      WATCHTOWER_TIMEOUT: "10s"
 
   # Docker-GC - Automatic Docker Garbage Collection
   # Create docker-gc-exclude file
