@@ -551,6 +551,17 @@ services:
     labels:
       - "com.centurylinklabs.watchtower.enable=true"
 
+  plexautolanguages:
+    <<: *common-keys-apps
+    image: remirigal/plex-auto-languages:latest
+    container_name: plexautolanguages
+    environment:
+      <<: *default-tz-puid-pgid
+      PLEX_URL: "http://$HOST_IP:32400"
+      PLEX_TOKEN: $PLEX_TOKEN
+    volumes:
+      - '$CONTAINER_APPDATA_DIR/plexautolanguages:/config'
+
   # Audio and Subtitle manager for Plex
   pasta:
     <<: *common-keys-apps # See EXTENSION FIELDS at the top
