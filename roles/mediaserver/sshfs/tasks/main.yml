@@ -1,0 +1,29 @@
+- name: Install sshfs
+  package:
+    name: sshfs
+    state: present
+
+- name: create folder for remote access ssh file
+  file:
+    path: "/root/.ssh/"
+    owner: "root"
+    group: "root"
+    mode: 0700
+    state: "directory"
+
+- name: add remote access file for volume
+  copy:
+    src: files/vault/id_remote
+    dest: "/root/.ssh/id_ed25519"
+    owner: "root"
+    group: "root"
+    mode: 0600
+
+- name: mount sshfs to /remote
+  mount:
+    src: "{{ sshfs_source }}"
+    path: "{{ sshfs_path }}"
+    fstype: "fuse.sshfs"
+    opts: "allow_other,_netdev"
+    passno: "0"
+    state: mounted

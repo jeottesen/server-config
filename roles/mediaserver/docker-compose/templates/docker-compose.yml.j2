@@ -679,6 +679,7 @@ services:
     volumes:
       - '$CONTAINER_APPDATA_DIR/tv-sonarr:/config'
       - '$DATA_DIR:/data'
+      - "/remote:/remote"
       - "/etc/localtime:/etc/localtime:ro"
     labels:
       - "traefik.enable=true"
@@ -700,6 +701,7 @@ services:
     volumes:
       - '$CONTAINER_APPDATA_DIR/radarr:/config'
       - '$DATA_DIR:/data'
+      - "/remote:/remote"
       - "/etc/localtime:/etc/localtime:ro"
     labels:
       - "traefik.enable=true"

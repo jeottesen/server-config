@@ -21,6 +21,9 @@ primary_group: jeremy
 
 domain_name: "{{ base_domain_name }}"
 
+sshfs_source: "{{ vault_sshfs_source}}"
+sshfs_path: "/remote"
+
 # Foundry VTT
 foundry_admin_key: "{{ vault_foundry_admin_key }}"
 foundry_password:  "{{ vault_foundry_password }}"

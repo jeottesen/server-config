@@ -1,0 +1,2 @@
+sshfs_source: "user@host:/remote/path"
+sshfs_path: "/local/path"

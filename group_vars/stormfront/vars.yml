@@ -27,6 +27,8 @@ secondary_dns_ipv6: 2620:fe::9
 
 stormfront_sub_domain: "{{ vault_stormfront_sub_domain }}"
 
+remote_ssh_identity_key: "{{ vault_remote_ssh_identity_key }}"
+
 # override the base domain name
 domain_name: "{{ stormfront_sub_domain }}.{{ base_domain_name }}"
 

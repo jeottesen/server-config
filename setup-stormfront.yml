@@ -71,3 +71,13 @@
       loop:
         - "{{ primary_user }}"
         - "{{ secondary_user }}"
+
+- name: Setup remote fileshare ssh access
+  hosts: stormfront
+  become: true
+  tags: setup-remote
+  tasks:
+    - name: Add "remote_fileshare" ssh key to authorized keys on host
+      authorized_key:
+        user: "{{ ssh_user }}"
+        key: "{{ remote_ssh_identity_key }}"

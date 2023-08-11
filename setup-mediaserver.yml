@@ -28,6 +28,8 @@
       tags: samba
     - name: common/nfs-server
       tags: nfs
+    - name: mediaserver/sshfs
+      tags: sshfs
     - name: mediaserver/docker-compose
       become: false
       tags: docker-compose
