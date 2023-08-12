@@ -515,7 +515,7 @@ services:
     image: lscr.io/linuxserver/jackett
     container_name: jackett
     environment:
-      <<: *default-tz-puid-pgid
+      <<: *primary-tz-puid-pgid
       AUTO_UPDATE: "true" #optional
     volumes:
       - $CONTAINER_APPDATA_DIR/jackett:/config
@@ -654,7 +654,7 @@ services:
     image: lscr.io/linuxserver/sonarr
     container_name: anime-sonarr
     environment:
-      <<: *default-tz-puid-pgid
+      <<: *primary-tz-puid-pgid
     volumes:
       - '$CONTAINER_APPDATA_DIR/anime-sonarr:/config'
       - '$DATA_DIR:/data'
@@ -675,11 +675,12 @@ services:
     image: lscr.io/linuxserver/sonarr
     container_name: tv-sonarr
     environment:
-      <<: *default-tz-puid-pgid
+      <<: *primary-tz-puid-pgid
     volumes:
       - '$CONTAINER_APPDATA_DIR/tv-sonarr:/config'
       - '$DATA_DIR:/data'
-      - "/remote:/remote:ro"
+      - "/remote/complete:/remote/complete"
+      - "/remote/watch:/remote/watch"
       - "/etc/localtime:/etc/localtime:ro"
     labels:
       - "traefik.enable=true"
@@ -697,11 +698,12 @@ services:
     image: lscr.io/linuxserver/radarr
     container_name: radarr
     environment:
-      <<: *default-tz-puid-pgid
+      <<: *primary-tz-puid-pgid
     volumes:
       - '$CONTAINER_APPDATA_DIR/radarr:/config'
       - '$DATA_DIR:/data'
-      - "/remote:/remote:ro"
+      - "/remote/complete:/remote/complete"
+      - "/remote/watch:/remote/watch"
       - "/etc/localtime:/etc/localtime:ro"
     labels:
       - "traefik.enable=true"
