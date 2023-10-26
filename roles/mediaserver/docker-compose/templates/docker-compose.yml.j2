@@ -794,10 +794,11 @@ services:
     environment:
       <<: *default-tz-puid-pgid
     # Override the default entrypoint so configuration commands can be run on startup
+    # Old Command: /filebrowser config set --auth.method=proxy --auth.header=Remote-User
     entrypoint: ["sh", -c]
     command:
       - |
-        /filebrowser config set --auth.method=proxy --auth.header=Remote-User
+        /filebrowser config set --auth.method=json
         /filebrowser
     labels:
       - "traefik.enable=true"
