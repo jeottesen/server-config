@@ -52,3 +52,4 @@ route53_region: us-west-1
 route53_zone_id: "{{ vault_route53_zone_id }}"
 
 plex_token: "{{ secret_plex_token }}"
+sonarr_api_key: "{{ secret_sonarr_api_key }}"

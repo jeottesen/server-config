@@ -348,7 +348,7 @@ services:
 
   qbittorrent-books:
     <<: *common-keys-apps # See EXTENSION FIELDS at the top
-    image: lscr.io/linuxserver/qbittorrent
+    image: lscr.io/linuxserver/qbittorrent:4.5.5
     container_name: qbittorrent-books
     restart: unless-stopped
     environment:
