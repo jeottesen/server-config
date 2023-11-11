@@ -37,25 +37,36 @@ x-primary-environment: &primary-tz-puid-pgid
   PGID: $PGID
 
 # Proxy Network and Security
-x-network-and-security: &network-and-security
+x-network: &network
   networks:
     - proxies
+
+x-network-vpn: &network-vpn
+  network_mode: "service:wireguard"
+  depends_on:
+    - wireguard
+
+x-security: &security
   security_opt:
     - no-new-privileges:true
 
 # Keys common to some of the services
 x-common-keys-core: &common-keys-core
-  <<: *network-and-security
+  <<: [*network, *security]
   restart: always
-  # profiles:
-  # - basic
+
+x-common-keys-core-vpn: &common-keys-core-vpn
+  <<: [*network-vpn, *security]
+  restart: always
 
 # Keys common to some of the dependent services/apps
 x-common-keys-apps: &common-keys-apps
-  <<: *network-and-security
+  <<: [*network, *security]
   restart: unless-stopped
-  # profiles:
-  # - apps
+
+x-common-keys-apps-vpn: &common-keys-apps-vpn
+  <<: [*network-vpn, *security]
+  restart: unless-stopped
 
 secrets:
   foundry_config:
@@ -467,7 +478,6 @@ services:
     container_name: wireguard
     cap_add:
       - NET_ADMIN
-      - SYS_MODULE
     environment:
       <<: *default-tz-puid-pgid
     volumes:
@@ -487,27 +497,40 @@ services:
       ## HTTP Services
       - "traefik.http.routers.qbittorrent-rtr.service=qbittorrent-svc"
       - "traefik.http.services.qbittorrent-svc.loadbalancer.server.port=8080"
+      ### TV Sonarr Router
+      ## HTTP Routers
+      - "traefik.http.routers.tv-sonarr-rtr.entrypoints=https"
+      - "traefik.http.routers.tv-sonarr-rtr.rule=Host(`sonarr.$DOMAIN_NAME`) && PathPrefix(`/tv`)"
+      ## Middlewares
+      - "traefik.http.routers.tv-sonarr-rtr.middlewares=chain-authelia@file"
+      ## HTTP Services
+      - "traefik.http.routers.tv-sonarr-rtr.service=tv-sonarr-svc"
+      - "traefik.http.services.tv-sonarr-svc.loadbalancer.server.port=8989"
+      ### Radarr Router
+      ## HTTP Routers
+      - "traefik.http.routers.radarr-rtr.entrypoints=https"
+      - "traefik.http.routers.radarr-rtr.rule=Host(`radarr.$DOMAIN_NAME`)"
+      ## Middlewares
+      - "traefik.http.routers.radarr-rtr.middlewares=chain-authelia@file"
+      ## HTTP Services
+      - "traefik.http.routers.radarr-rtr.service=radarr-svc"
+      - "traefik.http.services.radarr-svc.loadbalancer.server.port=7878"
 
   qbittorrent:
+    <<: *common-keys-apps-vpn
     image: lscr.io/linuxserver/qbittorrent
     container_name: qbittorrent
-    restart: unless-stopped
     environment:
       <<: *default-tz-puid-pgid
       #WEBUI_PORT=8080
     volumes:
       - $CONTAINER_APPDATA_DIR/qbittorrent:/config
       - $DATA_DIR:/data
-    network_mode: "service:wireguard"
     deploy:
       resources:
           limits:
             cpus: "0.50"
             memory: 4096M
-    depends_on:
-      - wireguard
-    security_opt:
-      - no-new-privileges:true
     # traefik labels under wireguard
 
   jackett:
@@ -649,7 +672,7 @@ services:
     security_opt:
       - no-new-privileges:true #}
 
-  unpackerr:
+  {# unpackerr:
     <<: *common-keys-apps # See EXTENSION FIELDS at the top
     image: golift/unpackerr
     container_name: unpackerr
@@ -657,9 +680,8 @@ services:
       # You need at least this one volume mapped so Unpackerr can find your files to extract.
       # Make sure this matches your Starr apps; the folder mount (/downloads or /data) should be identical.
       - '$CONTAINER_APPDATA_DIR/unpackerr:/config'
-      - '$DATA_DIR:/data'
       - '/remote/complete:/remote/complete'
-    #user: '${PUID}:${PGID}'
+    user: '$PUID:$PGID'
     # What you see below are defaults for this compose. You only need to modify things specific to your environment.
     # Remove apps and feature configs you do not use or need. 
     # ie. Remove all lines that begin with UN_CMDHOOK, UN_WEBHOOK, UN_FOLDER, UN_WEBSERVER, and other apps you do not use.
@@ -677,13 +699,21 @@ services:
       UN_FILE_MODE: '0644'
       UN_DIR_MODE: '0755'
       # TV-Sonarr Config
-      UN_SONARR_0_URL: 'http://tv-sonarr:8989'
+      UN_SONARR_0_URL: 'http://wireguard:8989'
       UN_SONARR_0_API_KEY: $SONARR_API_KEY
-      UN_SONARR_0_PATHS_0: '/remote/complete'
+      UN_SONARR_0_PATHS_0: '/remote/complete/'
       UN_SONARR_0_PROTOCOLS: 'torrent'
       UN_SONARR_0_TIMEOUT: '10s'
       UN_SONARR_0_DELETE_ORIG: 'false'
-      UN_SONARR_0_DELETE_DELAY: '120m'
+      UN_SONARR_0_DELETE_DELAY: '480m'
+      # Radarr Config
+      UN_RADARR_0_URL: 'http://wireguard:7878'
+      UN_RADARR_0_API_KEY: $RADARR_API_KEY
+      UN_RADARR_0_PATHS_0: '/remote/complete/'
+      UN_RADARR_0_PROTOCOLS: 'torrent'
+      UN_RADARR_0_TIMEOUT: '10s'
+      UN_RADARR_0_DELETE_ORIG: 'false'
+      UN_RADARR_0_DELETE_DELAY: '480m' #}
 
   anime-sonarr:
     <<: *common-keys-apps # See EXTENSION FIELDS at the top
@@ -707,7 +737,7 @@ services:
       - "traefik.http.services.anime-sonarr-svc.loadbalancer.server.port=8989"
 
   tv-sonarr:
-    <<: *common-keys-apps # See EXTENSION FIELDS at the top
+    <<: *common-keys-apps-vpn # See EXTENSION FIELDS at the top
     image: lscr.io/linuxserver/sonarr
     container_name: tv-sonarr
     environment:
@@ -715,22 +745,13 @@ services:
     volumes:
       - '$CONTAINER_APPDATA_DIR/tv-sonarr:/config'
       - '$DATA_DIR:/data'
-      - "/remote/complete:/remote/complete"
-      - "/remote/watch:/remote/watch"
+      - "/remote/complete/tv:/remote/complete/"
+      - "/remote/watch/tv:/remote/watch/"
       - "/etc/localtime:/etc/localtime:ro"
-    labels:
-      - "traefik.enable=true"
-      ## HTTP Routers
-      - "traefik.http.routers.tv-sonarr-rtr.entrypoints=https"
-      - "traefik.http.routers.tv-sonarr-rtr.rule=Host(`sonarr.$DOMAIN_NAME`) && PathPrefix(`/tv`)"
-      ## Middlewares
-      - "traefik.http.routers.tv-sonarr-rtr.middlewares=chain-authelia@file"
-      ## HTTP Services
-      - "traefik.http.routers.tv-sonarr-rtr.service=tv-sonarr-svc"
-      - "traefik.http.services.tv-sonarr-svc.loadbalancer.server.port=8989"
+      #Traefik labels under wireguard
 
   radarr:
-    <<: *common-keys-apps # See EXTENSION FIELDS at the top
+    <<: *common-keys-apps-vpn # See EXTENSION FIELDS at the top
     image: lscr.io/linuxserver/radarr
     container_name: radarr
     environment:
@@ -738,19 +759,10 @@ services:
     volumes:
       - '$CONTAINER_APPDATA_DIR/radarr:/config'
       - '$DATA_DIR:/data'
-      - "/remote/complete:/remote/complete"
-      - "/remote/watch:/remote/watch"
+      - "/remote/complete/movies:/remote/complete/"
+      - "/remote/watch/movies:/remote/watch/"
       - "/etc/localtime:/etc/localtime:ro"
-    labels:
-      - "traefik.enable=true"
-      ## HTTP Routers
-      - "traefik.http.routers.radarr-rtr.entrypoints=https"
-      - "traefik.http.routers.radarr-rtr.rule=Host(`radarr.$DOMAIN_NAME`)"
-      ## Middlewares
-      - "traefik.http.routers.radarr-rtr.middlewares=chain-authelia@file"
-      ## HTTP Services
-      - "traefik.http.routers.radarr-rtr.service=radarr-svc"
-      - "traefik.http.services.radarr-svc.loadbalancer.server.port=7878"
+      #Traefik labels under wireguard
 
   {# # Lidarr - Music Management
   # Set url_base in lidarr settings if using PathPrefix
@@ -819,23 +831,13 @@ services:
   # docker-compose run filebrowser config cat
   filebrowser:
     <<: *common-keys-apps # See EXTENSION FIELDS at the top
-    image: filebrowser/filebrowser:v2
+    image: filebrowser/filebrowser
     container_name: filebrowser
-    #ports:
-    #  - "$FILEBROWSER_PORT:80"
+    user: $PUID:$PGID
     volumes:
-      - '$CONTAINER_APPDATA_DIR/filebrowser/filebrowser.db:/database.db'
-      - /data/:/srv/data:ro
-      - $USER_DIR:/srv/home
+      - /data/:/srv/:ro
     environment:
-      <<: *default-tz-puid-pgid
-    # Override the default entrypoint so configuration commands can be run on startup
-    # Old Command: /filebrowser config set --auth.method=proxy --auth.header=Remote-User
-    entrypoint: ["sh", -c]
-    command:
-      - |
-        /filebrowser config set --auth.method=json
-        /filebrowser
+      FB_NOAUTH: noauth
     labels:
       - "traefik.enable=true"
       ## HTTP Routers

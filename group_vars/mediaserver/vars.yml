@@ -53,3 +53,4 @@ route53_zone_id: "{{ vault_route53_zone_id }}"
 
 plex_token: "{{ secret_plex_token }}"
 sonarr_api_key: "{{ secret_sonarr_api_key }}"
+radarr_api_key: "{{ secret_radarr_api_key }}"
