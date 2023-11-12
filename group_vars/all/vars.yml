@@ -30,3 +30,6 @@ alternate_email_address: "{{ vault_alternate_email_address }}"
 email_password_url_encoded: "{{ vault_admin_email_password }}"
 
 base_domain_name: "{{ vault_base_domain_name }}"
+
+sonarr_api_key: "{{ secret_sonarr_api_key }}"
+radarr_api_key: "{{ secret_radarr_api_key }}"

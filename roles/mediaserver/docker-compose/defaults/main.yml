@@ -1,0 +1,3 @@
+---
+radarr_url: "http://wireguard:7878"
+appdata_templates_source: "../templates/appdata/"

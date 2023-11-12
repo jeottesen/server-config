@@ -32,6 +32,26 @@
       repo: https://github.com/jerrywoo96/AddMissingHeaders.git
       dest: "{{ traefik_directory }}/plugins-local/AddMissingHeaders"
       version: v1.0.0
+  
+  - name: Ensure appdata directory structure exists
+    file:
+      path: '{{ container_appdata_path }}/{{ item.path }}'
+      state: directory
+      owner: "{{ docker_user }}"
+      group: "{{ docker_group }}"
+      mode: 0770
+    with_filetree: '{{ appdata_templates_source }}'
+    when: item.state == 'directory'
+
+  - name: Ensure files are populated from appdata templates
+    template:
+      src: '{{ item.src }}'
+      dest: '{{ container_appdata_path }}/{{ item.path | regex_replace("\.j2$", "") }}'
+      owner: "{{ docker_user }}"
+      group: "{{ docker_group }}"
+      mode: 0660
+    with_filetree: '{{ appdata_templates_source }}'
+    when: item.state == 'file'
 
   - name: Create docker-compose.yml file
     template:
