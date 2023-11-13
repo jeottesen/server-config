@@ -715,8 +715,7 @@ services:
     volumes:
       - '$CONTAINER_APPDATA_DIR/tv-sonarr:/config'
       - '$DATA_DIR:/data'
-      - "/remote/complete/tv:/remote/complete/"
-      - "/remote/watch/tv:/remote/watch/"
+      - "/remote/complete:/downloads/complete"
       - "/etc/localtime:/etc/localtime:ro"
       #Traefik labels under wireguard
 
@@ -729,8 +728,7 @@ services:
     volumes:
       - '$CONTAINER_APPDATA_DIR/radarr:/config'
       - '$DATA_DIR:/data'
-      - "/remote/complete/movies:/remote/complete/"
-      - "/remote/watch/movies:/remote/watch/"
+      - "/remote/complete:/downloads/complete"
       - "/etc/localtime:/etc/localtime:ro"
       #Traefik labels under wireguard
 
