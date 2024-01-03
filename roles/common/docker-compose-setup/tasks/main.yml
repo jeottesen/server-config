@@ -32,8 +32,8 @@
     copy:
       content: ""
       dest: "{{ container_appdata_path }}/filebrowser/filebrowser.db"
-      owner: "{{ docker_user }}"
-      group: "{{ docker_group }}"
+      owner: "{{ primary_user }}"
+      group: "{{ primary_group }}"
       force: false
       mode: 0600
 

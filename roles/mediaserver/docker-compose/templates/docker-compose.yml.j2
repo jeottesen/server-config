@@ -473,7 +473,8 @@ services:
   # Wireguard - VPN Client for other services
   # Command to test if connected: docker exec -it qbittorrent curl -w "\n" ifconfig.me
   wireguard:
-    <<: *common-keys-core # See EXTENSION FIELDS at the top
+    <<: *security
+    restart: always
     image: ghcr.io/linuxserver/wireguard
     container_name: wireguard
     cap_add:
@@ -486,6 +487,9 @@ services:
     sysctls:
       - net.ipv4.conf.all.src_valid_mark=1
     # Traefik routers must be connected to this service in order to route correctly
+    networks:
+      proxies:
+        ipv4_address: 10.17.100.100
     labels:
       - "traefik.enable=true"
       ### QBittorent Router
@@ -715,7 +719,7 @@ services:
     volumes:
       - '$CONTAINER_APPDATA_DIR/tv-sonarr:/config'
       - '$DATA_DIR:/data'
-      - "/remote/complete:/downloads/complete"
+      - "/remote/default/complete:/downloads/complete"
       - "/etc/localtime:/etc/localtime:ro"
       #Traefik labels under wireguard
 
@@ -728,7 +732,7 @@ services:
     volumes:
       - '$CONTAINER_APPDATA_DIR/radarr:/config'
       - '$DATA_DIR:/data'
-      - "/remote/complete:/downloads/complete"
+      - "/remote/default/complete:/downloads/complete"
       - "/etc/localtime:/etc/localtime:ro"
       #Traefik labels under wireguard
 
@@ -794,9 +798,11 @@ services:
   ############################# Utilites
 
   # File Browser - Explorer
-  # The following commands need to be ran manually configure proxy auth the first time.
-  # docker-compose run filebrowser config
-  # docker-compose run filebrowser config cat
+  # The following commands need to be ran manually the first time.
+  # touch filebrowser.db
+  # chown $PUID:$PGID filebrowser/
+  # For guest account with noauth
+  # docker compose run filebrowser users update 1 --username=guest --perm.admin=false --perm.execute=false --perm.create=false --perm.rename=false --perm.modify=false --perm.delete=false -perm.share=false --lockPassword
   filebrowser:
     <<: *common-keys-apps # See EXTENSION FIELDS at the top
     image: filebrowser/filebrowser
@@ -804,6 +810,8 @@ services:
     user: $PUID:$PGID
     volumes:
       - /data/:/srv/:ro
+      - $CONTAINER_APPDATA_DIR/filebrowser/filebrowser.db:/database/filebrowser.db
+      - $CONTAINER_APPDATA_DIR/filebrowser/.filebrowser.json:/.filebrowser.json
     environment:
       FB_NOAUTH: noauth
     labels:

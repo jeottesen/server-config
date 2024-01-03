@@ -24,6 +24,6 @@
     src: "{{ sshfs_source }}"
     path: "{{ sshfs_path }}"
     fstype: "fuse.sshfs"
-    opts: "allow_other,_netdev,reconnect"
+    opts: "allow_other,_netdev,reconnect,auto_cache,no_readahead"
     passno: "0"
     state: mounted
