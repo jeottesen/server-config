@@ -442,20 +442,16 @@ services:
       - "traefik.http.services.unifi-svc.loadbalancer.server.port=8443"
 
   # Speedtest tracker - Runs a speedtest check every hour and graphs the results
-  speedtest:
+  speedtest-tracker:
     <<: *common-keys-core
-    container_name: speedtest
-    image: ghcr.io/alexjustesen/speedtest-tracker:latest
+    container_name: speedtest-tracker
+    image: lscr.io/linuxserver/speedtest-tracker:latest
     volumes:
       - $CONTAINER_APPDATA_DIR/speedtest:/config
     environment:
       <<: *primary-tz-puid-pgid
-      OOKLA_EULA_GDPR: "true"
-    logging:
-      driver: "json-file"
-      options:
-        max-file: "10"
-        max-size: "200k"
+      DB_CONNECTION: "sqlite"
+      PUBLIC_DASHBOARD: "true"
     labels:
       - "traefik.enable=true"
       ## HTTP Routers
