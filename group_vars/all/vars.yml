@@ -31,5 +31,6 @@ email_password_url_encoded: "{{ vault_admin_email_password }}"
 
 base_domain_name: "{{ vault_base_domain_name }}"
 
-sonarr_api_key: "{{ secret_sonarr_api_key }}"
-radarr_api_key: "{{ secret_radarr_api_key }}"
+sonarr_api_key: "{{ vault_sonarr_api_key }}"
+radarr_api_key: "{{ vault_radarr_api_key }}"
+traefik_auth_key: "{{ vault_traefik_auth_key }}"

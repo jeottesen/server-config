@@ -37,6 +37,7 @@ primary_user_htpass: "{{vault_home_primary_user_htpass }}"
 oauth_client_id: "{{ vault_oauth_client_id }}"
 oauth_client_secret: "{{ vault_oauth_client_secret }}"
 forward_auth_secret: "{{ vault_forward_auth_secret }}"
+oauth_whitelist: "{{ vault_oauth_whitelist }}"
 
 #Authelia
 authelia_users: "{{ vault_authelia_users }}"
@@ -52,3 +53,20 @@ route53_region: us-west-1
 route53_zone_id: "{{ vault_route53_zone_id }}"
 
 plex_token: "{{ secret_plex_token }}"
+
+sub_domains: ["whoami",
+              "oauth",
+              "authelia",
+              "login",
+              "plex",
+              "qbt",
+              "files",
+              "tautulli",
+              "sonarr",
+              "radarr",
+              "jackett",
+              "index",
+              "unifi",
+              "foundry",
+              "crafty"]
+      

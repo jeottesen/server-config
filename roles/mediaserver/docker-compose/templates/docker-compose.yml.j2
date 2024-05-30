@@ -73,8 +73,8 @@ secrets:
     file: $DOCKER_DIR/secrets/foundry-config.json
   #htpasswd:
   #  file: $DOCKER_DIR/secrets/htpasswd
-  #traefik_forward_auth:
-  #  file: $DOCKER_DIR/secrets/traefik_forward_auth
+  oauth_secrets:
+    file: $DOCKER_DIR/secrets/oauth_secrets
   authelia_jwt_secret:
     file: $DOCKER_DIR/secrets/authelia_jwt_secret
   authelia_session_secret:
@@ -167,8 +167,6 @@ services:
       - --accessLog.filePath=/traefik.log
       - --accessLog.bufferingSize=100 # Configuring a buffer of 100 lines
       - --accessLog.filters.statusCodes=400-499
-      - --experimental.plugins.AddMissingHeaders.moduleName=github.com/jerrywoo96/AddMissingHeaders
-      - --experimental.plugins.AddMissingHeaders.version=v1.0.0
       - --providers.docker=true
       # - --providers.docker.endpoint=unix:///var/run/docker.sock # Use Docker Socket Proxy instead for improved security
       - --providers.docker.endpoint=tcp://socket-proxy:2375
@@ -178,8 +176,8 @@ services:
       - --entrypoints.https.http.tls.options=tls-opts@file
       # Add route53 as default certresolver for all services. Also enables TLS and no need to specify on individual services
       - --entrypoints.https.http.tls.certresolver=route53
-      # - --entrypoints.https.http.tls.domains[0].main=$DOMAIN_NAME
-      # - --entrypoints.https.http.tls.domains[0].sans=*.$DOMAIN_NAME
+      - --entrypoints.https.http.tls.domains[0].main=$DOMAIN_NAME
+      - --entrypoints.https.http.tls.domains[0].sans=*.$DOMAIN_NAME
       - --providers.docker.network=docker_proxies
       - --providers.docker.swarmMode=false
       - --providers.file.directory=/rules # Load dynamic configuration from one or more .toml or .yml files in a directory
@@ -190,8 +188,6 @@ services:
       - --certificatesResolvers.route53.acme.storage=/acme.json
       - --certificatesResolvers.route53.acme.dnsChallenge.provider=route53
       - --certificatesResolvers.route53.acme.dnsChallenge.delayBeforeCheck=90 # To delay DNS check and reduce LE hitrate
-      # Disable SSL verification on backend
-      - "--serverstransport.insecureskipverify=true"
     networks:
       proxies:
           ipv4_address: 10.17.100.200
@@ -249,8 +245,39 @@ services:
       ## Middlewares
       #- "traefik.http.routers.traefik-rtr.middlewares=chain-no-auth@file" # For No Authentication
       #- "traefik.http.routers.traefik-rtr.middlewares=chain-auth-basic@file" # For Basic HTTP Authentication
-      #- "traefik.http.routers.traefik-rtr.middlewares=chain-oauth@file" # For Google OAuth
-      - "traefik.http.routers.traefik-rtr.middlewares=chain-authelia@file" # For Authelia Authentication
+      - "traefik.http.routers.traefik-rtr.middlewares=chain-oauth@file" # For Google OAuth
+      #- "traefik.http.routers.traefik-rtr.middlewares=chain-authelia@file" # For Authelia Authentication
+
+  # Google OAuth - Single Sign On using OAuth 2.0
+  oauth:
+    container_name: oauth
+    image: thomseddon/traefik-forward-auth:latest
+    <<: *common-keys-core # See EXTENSION FIELDS at the top
+    environment:
+      CONFIG: /config
+      COOKIE_DOMAIN: $DOMAIN_NAME
+      INSECURE_COOKIE: "false"
+      AUTH_HOST: oauth.$DOMAIN_NAME
+      URL_PATH: /_oauth
+      LOG_LEVEL: warn # set to trace while testing bypass rules
+      LOG_FORMAT: text
+      LIFETIME: 86400 # 1 day
+      DEFAULT_ACTION: auth
+      DEFAULT_PROVIDER: google
+    secrets:
+      - source: oauth_secrets
+        target: /config
+    labels:
+      - "traefik.enable=true"
+      # HTTP Routers
+      - "traefik.http.routers.oauth-rtr.tls=true"
+      - "traefik.http.routers.oauth-rtr.entrypoints=https"
+      - "traefik.http.routers.oauth-rtr.rule=Host(`oauth.$DOMAIN_NAME`)"
+      # Middlewares
+      - "traefik.http.routers.oauth-rtr.middlewares=chain-oauth@file"
+      # HTTP Services
+      - "traefik.http.routers.oauth-rtr.service=oauth-svc"
+      - "traefik.http.services.oauth-svc.loadbalancer.server.port=4181"
 
   # Authelia (Lite) - Self-Hosted Single Sign-On and Two-Factor Authentication
   authelia:
@@ -292,6 +319,7 @@ services:
   ddns-route53:
     image: crazymax/ddns-route53:latest
     container_name: ddns-route53
+    <<: *common-keys-core
     environment:
       <<: *default-tz-puid-pgid
       SCHEDULE: "*/30 * * * *"
@@ -303,48 +331,13 @@ services:
       DDNSR53_ROUTE53_RECORDSSET_0_NAME: $DOMAIN_NAME
       DDNSR53_ROUTE53_RECORDSSET_0_TYPE: A
       DDNSR53_ROUTE53_RECORDSSET_0_TTL: 300
-      DDNSR53_ROUTE53_RECORDSSET_1_NAME: oauth.$DOMAIN_NAME
-      DDNSR53_ROUTE53_RECORDSSET_1_TYPE: A
-      DDNSR53_ROUTE53_RECORDSSET_1_TTL: 300
-      DDNSR53_ROUTE53_RECORDSSET_2_NAME: authelia.$DOMAIN_NAME
-      DDNSR53_ROUTE53_RECORDSSET_2_TYPE: A
-      DDNSR53_ROUTE53_RECORDSSET_2_TTL: 300
-      DDNSR53_ROUTE53_RECORDSSET_3_NAME: login.$DOMAIN_NAME
-      DDNSR53_ROUTE53_RECORDSSET_3_TYPE: A
-      DDNSR53_ROUTE53_RECORDSSET_3_TTL: 300
-      DDNSR53_ROUTE53_RECORDSSET_4_NAME: plex.$DOMAIN_NAME
-      DDNSR53_ROUTE53_RECORDSSET_4_TYPE: A
-      DDNSR53_ROUTE53_RECORDSSET_4_TTL: 300
-      DDNSR53_ROUTE53_RECORDSSET_5_NAME: qbt.$DOMAIN_NAME
-      DDNSR53_ROUTE53_RECORDSSET_5_TYPE: A
-      DDNSR53_ROUTE53_RECORDSSET_5_TTL: 300
-      DDNSR53_ROUTE53_RECORDSSET_6_NAME: files.$DOMAIN_NAME
-      DDNSR53_ROUTE53_RECORDSSET_6_TYPE: A
-      DDNSR53_ROUTE53_RECORDSSET_6_TTL: 300
-      DDNSR53_ROUTE53_RECORDSSET_7_NAME: tautulli.$DOMAIN_NAME
-      DDNSR53_ROUTE53_RECORDSSET_7_TYPE: A
-      DDNSR53_ROUTE53_RECORDSSET_7_TTL: 300
-      DDNSR53_ROUTE53_RECORDSSET_8_NAME: sonarr.$DOMAIN_NAME
-      DDNSR53_ROUTE53_RECORDSSET_8_TYPE: A
-      DDNSR53_ROUTE53_RECORDSSET_8_TTL: 300
-      DDNSR53_ROUTE53_RECORDSSET_9_NAME: radarr.$DOMAIN_NAME
-      DDNSR53_ROUTE53_RECORDSSET_9_TYPE: A
-      DDNSR53_ROUTE53_RECORDSSET_9_TTL: 300
-      DDNSR53_ROUTE53_RECORDSSET_10_NAME: jackett.$DOMAIN_NAME
-      DDNSR53_ROUTE53_RECORDSSET_10_TYPE: A
-      DDNSR53_ROUTE53_RECORDSSET_10_TTL: 300
-      DDNSR53_ROUTE53_RECORDSSET_11_NAME: index.$DOMAIN_NAME
-      DDNSR53_ROUTE53_RECORDSSET_11_TYPE: A
-      DDNSR53_ROUTE53_RECORDSSET_11_TTL: 300
-      DDNSR53_ROUTE53_RECORDSSET_12_NAME: foundry.$DOMAIN_NAME
-      DDNSR53_ROUTE53_RECORDSSET_12_TYPE: A
-      DDNSR53_ROUTE53_RECORDSSET_12_TTL: 300
-      DDNSR53_ROUTE53_RECORDSSET_13_NAME: crafty.$DOMAIN_NAME
-      DDNSR53_ROUTE53_RECORDSSET_13_TYPE: A
-      DDNSR53_ROUTE53_RECORDSSET_13_TTL: 300
-    restart: always
+{% for sub in sub_domains %}
+      DDNSR53_ROUTE53_RECORDSSET_{{ loop.index }}_NAME: {{ sub }}.$DOMAIN_NAME
+      DDNSR53_ROUTE53_RECORDSSET_{{ loop.index }}_TYPE: A
+      DDNSR53_ROUTE53_RECORDSSET_{{ loop.index }}_TTL: 300
+{% endfor %}
 
-  {# # Traefik Whoami - a simple page to help debug headers and routing
+  # Traefik Whoami - a simple page to help debug headers and routing
   whoami:
     <<: *common-keys-apps
     image: "traefik/whoami"
@@ -354,12 +347,10 @@ services:
       - "traefik.http.routers.whoami-rtr.entrypoints=https"
       - "traefik.http.routers.whoami-rtr.rule=Host(`whoami.$DOMAIN_NAME`)"
       ## Middlewares
-      - "traefik.http.middlewares.anon-user.plugin.AddMissingHeaders.requestheaders.Remote-User=guest"
-      #- "traefik.http.middlewares.anon-user.headers.customrequestheaders.Remote-User=guest"
-      - "traefik.http.routers.whoami-rtr.middlewares=chain-authelia@file,anon-user"
+      - "traefik.http.routers.whoami-rtr.middlewares=chain-oauth@file"
       ## HTTP Services
       - "traefik.http.routers.whoami-rtr.service=whoami-svc"
-      - "traefik.http.services.whoami-svc.loadbalancer.server.port=80" #}
+      - "traefik.http.services.whoami-svc.loadbalancer.server.port=80"
 
   # Autoindex - Simple Directory Index
   autoindex:
@@ -400,8 +391,6 @@ services:
       - "traefik.http.routers.organizr-rtr.entrypoints=https"
       - "traefik.http.routers.organizr-rtr.rule=Host(`$DOMAIN_NAME`,`www.$DOMAIN_NAME`, `login.$DOMAIN_NAME`)"
       ## Middlewares
-      #- "traefik.http.middlewares.default-guest-user.plugin.AddMissingHeaders.requestheaders.Remote-User=guest"
-      #- "traefik.http.routers.organizr-rtr.middlewares=chain-authelia@file,default-guest-user"
       - "traefik.http.routers.organizr-rtr.middlewares=chain-authelia@file"
       ## HTTP Services
       - "traefik.http.routers.organizr-rtr.service=organizr-svc"
@@ -507,12 +496,19 @@ services:
       - "traefik.http.routers.tv-sonarr-rtr.service=tv-sonarr-svc"
       - "traefik.http.services.tv-sonarr-svc.loadbalancer.server.port=8989"
       ### Radarr Router
+      # HTTP Routers Auth Bypass
+      - "traefik.http.routers.radarr-rtr-bypass.entrypoints=https"
+      - "traefik.http.routers.radarr-rtr-bypass.rule=Host(`radarr.$DOMAIN_NAME`) && Headers(`Traefik-Auth-Key`, `$TRAEFIK_AUTH_KEY`)" # Bypass Auth for LunaSea on iOS
+      - "traefik.http.routers.radarr-rtr-bypass.priority=100"
       ## HTTP Routers
       - "traefik.http.routers.radarr-rtr.entrypoints=https"
       - "traefik.http.routers.radarr-rtr.rule=Host(`radarr.$DOMAIN_NAME`)"
+      - "traefik.http.routers.radarr-rtr.priority=99"
       ## Middlewares
+      - "traefik.http.routers.radarr-rtr-bypass.middlewares=chain-no-auth@file"
       - "traefik.http.routers.radarr-rtr.middlewares=chain-authelia@file"
       ## HTTP Services
+      - "traefik.http.routers.radarr-rtr-bypass.service=radarr-svc"
       - "traefik.http.routers.radarr-rtr.service=radarr-svc"
       - "traefik.http.services.radarr-svc.loadbalancer.server.port=7878"
 
@@ -816,7 +812,6 @@ services:
       - "traefik.http.routers.filebrowser-rtr.entrypoints=https"
       - "traefik.http.routers.filebrowser-rtr.rule=Host(`files.$DOMAIN_NAME`)"
       ## Middlewares
-      #- "traefik.http.middlewares.default-guest-user.plugin.AddMissingHeaders.requestheaders.Remote-User=guest"
       - "traefik.http.routers.filebrowser-rtr.middlewares=chain-authelia@file" # ,default-guest-user"
       ## HTTP Services
       - "traefik.http.routers.filebrowser-rtr.service=filebrowser-svc"
