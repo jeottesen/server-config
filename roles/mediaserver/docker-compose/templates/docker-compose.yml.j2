@@ -244,7 +244,7 @@ services:
       #- "traefik.http.routers.ping.service=ping@internal"
       ## Middlewares
       #- "traefik.http.routers.traefik-rtr.middlewares=chain-no-auth@file" # For No Authentication
-      #- "traefik.http.routers.traefik-rtr.middlewares=chain-auth-basic@file" # For Basic HTTP Authentication
+      #- "traefik.http.routers.traefik-rtr.middlewares=chain-auth-basic@file" # For Basic HTTP Authentication      
       - "traefik.http.routers.traefik-rtr.middlewares=chain-oauth@file" # For Google OAuth
       #- "traefik.http.routers.traefik-rtr.middlewares=chain-authelia@file" # For Authelia Authentication
 
@@ -279,7 +279,7 @@ services:
       - "traefik.http.routers.oauth-rtr.service=oauth-svc"
       - "traefik.http.services.oauth-svc.loadbalancer.server.port=4181"
 
-  # Authelia (Lite) - Self-Hosted Single Sign-On and Two-Factor Authentication
+  {# # Authelia (Lite) - Self-Hosted Single Sign-On and Two-Factor Authentication
   authelia:
     <<: *common-keys-core # See EXTENSION FIELDS at the top
     container_name: authelia
@@ -314,7 +314,7 @@ services:
       - "traefik.http.routers.authelia-rtr.middlewares=chain-authelia@file"
       ## HTTP Services
       - "traefik.http.routers.authelia-rtr.service=authelia-svc"
-      - "traefik.http.services.authelia-svc.loadbalancer.server.port=9091"
+      - "traefik.http.services.authelia-svc.loadbalancer.server.port=9091" #}
   
   ddns-route53:
     image: crazymax/ddns-route53:latest
@@ -337,20 +337,23 @@ services:
       DDNSR53_ROUTE53_RECORDSSET_{{ loop.index }}_TTL: 300
 {% endfor %}
 
-  # Traefik Whoami - a simple page to help debug headers and routing
+  {# # Traefik Whoami - a simple page to help debug headers and routing
   whoami:
     <<: *common-keys-apps
     image: "traefik/whoami"
     container_name: "whoami"
     labels:
       - "traefik.enable=true"
+      - "traefik.http.routers.whoami-login-rtr.entrypoints=https"
+      - "traefik.http.routers.whoami-login-rtr.rule=Host(`whoami.$DOMAIN_NAME`)"
       - "traefik.http.routers.whoami-rtr.entrypoints=https"
-      - "traefik.http.routers.whoami-rtr.rule=Host(`whoami.$DOMAIN_NAME`)"
+      - "traefik.http.routers.whoami-rtr.rule=Host(`whoami.$DOMAIN_NAME`) && {{ allow_admin_rule }}"
       ## Middlewares
+      - "traefik.http.routers.whoami-login-rtr.middlewares=chain-oauth@file,back-to-home@file"
       - "traefik.http.routers.whoami-rtr.middlewares=chain-oauth@file"
       ## HTTP Services
       - "traefik.http.routers.whoami-rtr.service=whoami-svc"
-      - "traefik.http.services.whoami-svc.loadbalancer.server.port=80"
+      - "traefik.http.services.whoami-svc.loadbalancer.server.port=80" #}
 
   # Autoindex - Simple Directory Index
   autoindex:
@@ -391,7 +394,7 @@ services:
       - "traefik.http.routers.organizr-rtr.entrypoints=https"
       - "traefik.http.routers.organizr-rtr.rule=Host(`$DOMAIN_NAME`,`www.$DOMAIN_NAME`, `login.$DOMAIN_NAME`)"
       ## Middlewares
-      - "traefik.http.routers.organizr-rtr.middlewares=chain-authelia@file"
+      - "traefik.http.routers.organizr-rtr.middlewares=chain-oauth@file"
       ## HTTP Services
       - "traefik.http.routers.organizr-rtr.service=organizr-svc"
       - "traefik.http.services.organizr-svc.loadbalancer.server.port=80"
@@ -423,12 +426,13 @@ services:
       - "traefik.http.routers.unifi-rtr.entrypoints=https"
       - "traefik.http.routers.unifi-rtr.rule=Host(`unifi.$DOMAIN_NAME`)"
       ## Middlewares
-      - "traefik.http.routers.unifi-rtr.middlewares=chain-authelia@file"
+      - "traefik.http.routers.unifi-rtr.middlewares=chain-oauth@file"
       ## HTTP Services
       - "traefik.http.routers.unifi-rtr.service=unifi-svc"
       - "traefik.http.services.unifi-svc.loadbalancer.passHostHeader=true"
       - "traefik.http.services.unifi-svc.loadbalancer.server.scheme=https"
       - "traefik.http.services.unifi-svc.loadbalancer.server.port=8443"
+      - "traefik.http.services.unifi-svc.loadbalancer.serversTransport=isv-transport@file"
 
   # Speedtest tracker - Runs a speedtest check every hour and graphs the results
   speedtest-tracker:
@@ -447,7 +451,7 @@ services:
       - "traefik.http.routers.speedtest-rtr.entrypoints=https"
       - "traefik.http.routers.speedtest-rtr.rule=Host(`speedtest.$DOMAIN_NAME`)"
       ## Middlewares
-      - "traefik.http.routers.speedtest-rtr.middlewares=chain-authelia@file"
+      - "traefik.http.routers.speedtest-rtr.middlewares=chain-oauth@file"
       ## HTTP Services
       - "traefik.http.routers.speedtest-rtr.service=speedtest-svc"
       - "traefik.http.services.speedtest-svc.loadbalancer.server.scheme=https"
@@ -482,7 +486,7 @@ services:
       - "traefik.http.routers.qbittorrent-rtr.entrypoints=https"
       - "traefik.http.routers.qbittorrent-rtr.rule=Host(`qbt.$DOMAIN_NAME`)"
       ## Middlewares
-      - "traefik.http.routers.qbittorrent-rtr.middlewares=chain-authelia@file"
+      - "traefik.http.routers.qbittorrent-rtr.middlewares=chain-oauth@file"
       ## HTTP Services
       - "traefik.http.routers.qbittorrent-rtr.service=qbittorrent-svc"
       - "traefik.http.services.qbittorrent-svc.loadbalancer.server.port=8080"
@@ -491,7 +495,7 @@ services:
       - "traefik.http.routers.tv-sonarr-rtr.entrypoints=https"
       - "traefik.http.routers.tv-sonarr-rtr.rule=Host(`sonarr.$DOMAIN_NAME`) && PathPrefix(`/tv`)"
       ## Middlewares
-      - "traefik.http.routers.tv-sonarr-rtr.middlewares=chain-authelia@file"
+      - "traefik.http.routers.tv-sonarr-rtr.middlewares=chain-oauth@file"
       ## HTTP Services
       - "traefik.http.routers.tv-sonarr-rtr.service=tv-sonarr-svc"
       - "traefik.http.services.tv-sonarr-svc.loadbalancer.server.port=8989"
@@ -506,7 +510,7 @@ services:
       - "traefik.http.routers.radarr-rtr.priority=99"
       ## Middlewares
       - "traefik.http.routers.radarr-rtr-bypass.middlewares=chain-no-auth@file"
-      - "traefik.http.routers.radarr-rtr.middlewares=chain-authelia@file"
+      - "traefik.http.routers.radarr-rtr.middlewares=chain-oauth@file"
       ## HTTP Services
       - "traefik.http.routers.radarr-rtr-bypass.service=radarr-svc"
       - "traefik.http.routers.radarr-rtr.service=radarr-svc"
@@ -544,11 +548,15 @@ services:
     labels:
       - "traefik.enable=true"
       ## HTTP Routers
+      - "traefik.http.routers.jackett-login-rtr.entrypoints=https"
+      - "traefik.http.routers.jackett-login-rtr.rule=Host(`jackett.$DOMAIN_NAME`)"
       - "traefik.http.routers.jackett-rtr.entrypoints=https"
-      - "traefik.http.routers.jackett-rtr.rule=Host(`jackett.$DOMAIN_NAME`)"
+      - "traefik.http.routers.jackett-rtr.rule=Host(`jackett.$DOMAIN_NAME`) && {{ allow_admin_rule }}"
       ## Middlewares
-      - "traefik.http.routers.jackett-rtr.middlewares=chain-authelia@file"
+      - "traefik.http.routers.jackett-login-rtr.middlewares=chain-oauth@file,back-to-home@file"
+      - "traefik.http.routers.jackett-rtr.middlewares=chain-oauth@file"
       ## HTTP Services
+      - "traefik.http.routers.jackett-login-rtr.service=oauth-svc"
       - "traefik.http.routers.jackett-rtr.service=jackett-svc"
       - "traefik.http.services.jackett-svc.loadbalancer.server.port=9117"
 
@@ -597,7 +605,7 @@ services:
       - "traefik.http.routers.pasta-rtr.entrypoints=https"
       - "traefik.http.routers.pasta-rtr.rule=Host(`pasta.$DOMAIN_NAME`)"
       ## Middlewares
-      - "traefik.http.routers.pasta-rtr.middlewares=chain-authelia@file"
+      - "traefik.http.routers.pasta-rtr.middlewares=chain-oauth@file"
       ## HTTP Services
       - "traefik.http.routers.pasta-rtr.service=pasta-svc"
       - "traefik.http.services.pasta-svc.loadbalancer.server.port=80"
@@ -617,7 +625,7 @@ services:
       - "traefik.http.routers.tautulli-rtr.entrypoints=https"
       - "traefik.http.routers.tautulli-rtr.rule=Host(`tautulli.$DOMAIN_NAME`)"
       ## Middlewares
-      - "traefik.http.routers.tautulli-rtr.middlewares=chain-authelia@file"
+      - "traefik.http.routers.tautulli-rtr.middlewares=chain-oauth@file"
       ## HTTP Services
       - "traefik.http.routers.tautulli-rtr.service=tautulli-svc"
       - "traefik.http.services.tautulli-svc.loadbalancer.server.port=8181"
@@ -697,7 +705,7 @@ services:
       - "traefik.http.routers.anime-sonarr-rtr.entrypoints=https"
       - "traefik.http.routers.anime-sonarr-rtr.rule=Host(`sonarr.$DOMAIN_NAME`) && PathPrefix(`/anime`)"
       ## Middlewares
-      - "traefik.http.routers.anime-sonarr-rtr.middlewares=chain-authelia@file"
+      - "traefik.http.routers.anime-sonarr-rtr.middlewares=chain-oauth@file"
       ## HTTP Services
       - "traefik.http.routers.anime-sonarr-rtr.service=anime-sonarr-svc"
       - "traefik.http.services.anime-sonarr-svc.loadbalancer.server.port=8989"
@@ -754,7 +762,7 @@ services:
       - "traefik.http.routers.lidarr-rtr.priority=99"
       ## Middlewares
       #- "traefik.http.routers.lidarr-rtr-bypass.middlewares=chain-no-auth@file"
-      - "traefik.http.routers.lidarr-rtr.middlewares=chain-authelia@file"
+      - "traefik.http.routers.lidarr-rtr.middlewares=chain-oauth@file"
       ## HTTP Services
       - "traefik.http.routers.lidarr-rtr.service=lidarr-svc"
       #- "traefik.http.routers.lidarr-rtr-bypass.service=lidarr-svc"
@@ -782,7 +790,7 @@ services:
       - "traefik.http.routers.readarr-rtr.entrypoints=https"
       - "traefik.http.routers.readarr-rtr.rule=Host(`readarr.$DOMAIN_NAME`)"
       ## Middlewares
-      - "traefik.http.routers.readarr-rtr.middlewares=chain-authelia@file"
+      - "traefik.http.routers.readarr-rtr.middlewares=chain-oauth@file"
       ## HTTP Services
       - "traefik.http.routers.readarr-rtr.service=readarr-svc"
       - "traefik.http.services.readarr-svc.loadbalancer.server.port=8787" #}
@@ -812,7 +820,7 @@ services:
       - "traefik.http.routers.filebrowser-rtr.entrypoints=https"
       - "traefik.http.routers.filebrowser-rtr.rule=Host(`files.$DOMAIN_NAME`)"
       ## Middlewares
-      - "traefik.http.routers.filebrowser-rtr.middlewares=chain-authelia@file" # ,default-guest-user"
+      - "traefik.http.routers.filebrowser-rtr.middlewares=chain-oauth@file" # ,default-guest-user"
       ## HTTP Services
       - "traefik.http.routers.filebrowser-rtr.service=filebrowser-svc"
       - "traefik.http.services.filebrowser-svc.loadbalancer.server.port=80"
@@ -839,7 +847,7 @@ services:
       - "traefik.http.routers.qdirstat-rtr.entrypoints=https"
       - "traefik.http.routers.qdirstat-rtr.rule=Host(`qdirstat.$DOMAIN_NAME`)"
       ## Middlewares
-      - "traefik.http.routers.qdirstat-rtr.middlewares=chain-authelia@file"
+      - "traefik.http.routers.qdirstat-rtr.middlewares=chain-oauth@file"
       ## HTTP Services
       - "traefik.http.routers.qdirstat-rtr.service=qdirstat-svc"
       - "traefik.http.services.qdirstat-svc.loadbalancer.server.port=5800" #}
@@ -900,7 +908,7 @@ services:
       - "traefik.http.routers.crafty-rtr.rule=Host(`crafty.$DOMAIN_NAME`)"
       - "traefik.http.routers.crafty-rtr.tls=true"
       ## Middlewares
-      - "traefik.http.routers.crafty-rtr.middlewares=chain-authelia@file"
+      - "traefik.http.routers.crafty-rtr.middlewares=chain-oauth@file"
       ## HTTP Services
       - "traefik.http.routers.crafty-rtr.service=crafty-svc"
       - "traefik.http.services.crafty-svc.loadbalancer.server.scheme=https"

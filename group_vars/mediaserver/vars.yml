@@ -54,9 +54,11 @@ route53_zone_id: "{{ vault_route53_zone_id }}"
 
 plex_token: "{{ secret_plex_token }}"
 
+allow_admin_rule: "{{ vault_allow_admin_rule }}"
+
 sub_domains: ["whoami",
               "oauth",
-              "authelia",
+              "vm",
               "login",
               "plex",
               "qbt",

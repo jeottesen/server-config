@@ -92,3 +92,8 @@ http:
           X-Frame-Options: SAMEORIGIN
           Referer: ""
           Origin: ""
+
+    back-to-home:
+      redirectregex:
+        regex: ".*"
+        replacement: "https://{{ domain_name }}"
