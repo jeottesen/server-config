@@ -113,6 +113,7 @@ services:
     ports:
       - 51820:51820/udp
       - 48650:48650 # QBittorrent
+      - 51911:51911 # QBittorrent Books
     networks:
       proxies:
         ipv4_address: 10.18.100.100
@@ -360,15 +361,14 @@ services:
       - "traefik.http.services.qbittorrent-svc.loadbalancer.server.port=8080"
 
   qbittorrent-books:
-    <<: *common-keys-apps # See EXTENSION FIELDS at the top
+    <<: *common-keys-apps-vpn # See EXTENSION FIELDS at the top
     image: lscr.io/linuxserver/qbittorrent:4.5.5
     container_name: qbittorrent-books
-    restart: unless-stopped
+    networks:
+      proxies:
+        ipv4_address: 10.18.100.102
     environment:
       <<: *primary-tz-puid-pgid
-      #WEBUI_PORT=8080
-    ports:
-      - 51911:51911
     volumes:
       - $CONTAINER_APPDATA_DIR/qbittorrent-books:/config
       - $DOWNLOADS_DIR/books:/downloads
@@ -466,7 +466,7 @@ services:
       UN_PARALLEL: '1'
       UN_FILE_MODE: '0644'
       UN_DIR_MODE: '0755'
-      # TV-Sonarr Config
+      # Sonarr Config
       UN_SONARR_0_URL: 'http://10.13.13.3:8989'
       UN_SONARR_0_API_KEY: $SONARR_API_KEY
       UN_SONARR_0_PATHS_0: '/downloads/complete/'
@@ -482,48 +482,6 @@ services:
       UN_RADARR_0_TIMEOUT: '10s'
       UN_RADARR_0_DELETE_ORIG: 'false'
       UN_RADARR_0_DELETE_DELAY: '480m'
-
-  {# sonarr:
-    <<: *common-keys-apps # See EXTENSION FIELDS at the top
-    image: lscr.io/linuxserver/sonarr
-    container_name: sonarr
-    environment:
-      <<: *default-tz-puid-pgid
-    volumes:
-      - '$CONTAINER_APPDATA_DIR/tv-sonarr:/config'
-      - '$DATA_DIR:/data'
-      - "/etc/localtime:/etc/localtime:ro"
-    labels:
-      - "traefik.enable=true"
-      ## HTTP Routers
-      - "traefik.http.routers.tv-sonarr-rtr.entrypoints=https"
-      - "traefik.http.routers.tv-sonarr-rtr.rule=Host(`sonarr.$DOMAIN_NAME`) && PathPrefix(`/tv`)"
-      ## Middlewares
-      - "traefik.http.routers.tv-sonarr-rtr.middlewares=chain-authelia@file"
-      ## HTTP Services
-      - "traefik.http.routers.tv-sonarr-rtr.service=tv-sonarr-svc"
-      - "traefik.http.services.tv-sonarr-svc.loadbalancer.server.port=8989" #}
-
-  {# radarr:
-    <<: *common-keys-apps # See EXTENSION FIELDS at the top
-    image: lscr.io/linuxserver/radarr
-    container_name: radarr
-    environment:
-      <<: *default-tz-puid-pgid
-    volumes:
-      - '$CONTAINER_APPDATA_DIR/radarr:/config'
-      - '$DATA_DIR:/data'
-      - "/etc/localtime:/etc/localtime:ro"
-    labels:
-      - "traefik.enable=true"
-      ## HTTP Routers
-      - "traefik.http.routers.radarr-rtr.entrypoints=https"
-      - "traefik.http.routers.radarr-rtr.rule=Host(`radarr.$DOMAIN_NAME`)"
-      ## Middlewares
-      - "traefik.http.routers.radarr-rtr.middlewares=chain-authelia@file"
-      ## HTTP Services
-      - "traefik.http.routers.radarr-rtr.service=radarr-svc"
-      - "traefik.http.services.radarr-svc.loadbalancer.server.port=7878" #}
 
   ############################# Utilites
 

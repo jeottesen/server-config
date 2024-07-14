@@ -73,8 +73,6 @@ secrets:
     file: $DOCKER_DIR/secrets/foundry-config.json
   #htpasswd:
   #  file: $DOCKER_DIR/secrets/htpasswd
-  oauth_secrets:
-    file: $DOCKER_DIR/secrets/oauth_secrets
   authelia_jwt_secret:
     file: $DOCKER_DIR/secrets/authelia_jwt_secret
   authelia_session_secret:
@@ -250,23 +248,20 @@ services:
 
   # Google OAuth - Single Sign On using OAuth 2.0
   oauth:
-    container_name: oauth
-    image: thomseddon/traefik-forward-auth:latest
     <<: *common-keys-core # See EXTENSION FIELDS at the top
+    image: ghcr.io/jordemort/traefik-forward-auth:latest
+    container_name: oauth
     environment:
-      CONFIG: /config
+      PROVIDERS_GOOGLE_CLIENT_ID: "{{ oauth_client_id }}"
+      PROVIDERS_GOOGLE_CLIENT_SECRET: "{{ oauth_client_secret }}"
+      SECRET: "{{ forward_auth_secret }}"
+      LOGOUT_REDIRECT: $DOMAIN_NAME
       COOKIE_DOMAIN: $DOMAIN_NAME
-      INSECURE_COOKIE: "false"
       AUTH_HOST: oauth.$DOMAIN_NAME
-      URL_PATH: /_oauth
-      LOG_LEVEL: warn # set to trace while testing bypass rules
-      LOG_FORMAT: text
       LIFETIME: 86400 # 1 day
-      DEFAULT_ACTION: auth
-      DEFAULT_PROVIDER: google
-    secrets:
-      - source: oauth_secrets
-        target: /config
+      INSECURE_COOKIE: "false"
+      LOG_LEVEL: info
+      WHITELIST: {% for email in oauth_whitelist %}{{ email }},{% endfor %}{{ admin_email_address }}
     labels:
       - "traefik.enable=true"
       # HTTP Routers
@@ -456,6 +451,7 @@ services:
       - "traefik.http.routers.speedtest-rtr.service=speedtest-svc"
       - "traefik.http.services.speedtest-svc.loadbalancer.server.scheme=https"
       - "traefik.http.services.speedtest-svc.loadbalancer.server.port=443"
+      - "traefik.http.services.speedtest-svc.loadbalancer.serversTransport=isv-transport@file"
 
   ############################# Downloaders
 
@@ -482,23 +478,35 @@ services:
     labels:
       - "traefik.enable=true"
       ### QBittorent Router
+      ## HTTP Routers Auth Bypass
+      - "traefik.http.routers.qbittorrent-rtr-bypass.entrypoints=https"
+      - "traefik.http.routers.qbittorrent-rtr-bypass.rule=Host(`qbt.$DOMAIN_NAME`) && Headers(`Traefik-Auth-Key`, `$TRAEFIK_AUTH_KEY`)" # Bypass Auth for LunaSea on iOS
+      - "traefik.http.routers.qbittorrent-rtr-bypass.priority=100"
       ## HTTP Routers
       - "traefik.http.routers.qbittorrent-rtr.entrypoints=https"
       - "traefik.http.routers.qbittorrent-rtr.rule=Host(`qbt.$DOMAIN_NAME`)"
+      - "traefik.http.routers.qbittorrent-rtr.priority=99"
       ## Middlewares
       - "traefik.http.routers.qbittorrent-rtr.middlewares=chain-oauth@file"
       ## HTTP Services
+      - "traefik.http.routers.qbittorrent-rtr-bypass.service=qbittorrent-svc"
       - "traefik.http.routers.qbittorrent-rtr.service=qbittorrent-svc"
       - "traefik.http.services.qbittorrent-svc.loadbalancer.server.port=8080"
       ### TV Sonarr Router
+      ## HTTP Routers Auth Bypass
+      - "traefik.http.routers.sonarr-rtr-bypass.entrypoints=https"
+      - "traefik.http.routers.sonarr-rtr-bypass.rule=Host(`sonarr.$DOMAIN_NAME`) && Headers(`Traefik-Auth-Key`, `$TRAEFIK_AUTH_KEY`)" # Bypass Auth for LunaSea on iOS
+      - "traefik.http.routers.sonarr-rtr-bypass.priority=100"
       ## HTTP Routers
-      - "traefik.http.routers.tv-sonarr-rtr.entrypoints=https"
-      - "traefik.http.routers.tv-sonarr-rtr.rule=Host(`sonarr.$DOMAIN_NAME`) && PathPrefix(`/tv`)"
+      - "traefik.http.routers.sonarr-rtr.entrypoints=https"
+      - "traefik.http.routers.sonarr-rtr.rule=Host(`sonarr.$DOMAIN_NAME`)"
+      - "traefik.http.routers.sonarr-rtr.priority=99"
       ## Middlewares
-      - "traefik.http.routers.tv-sonarr-rtr.middlewares=chain-oauth@file"
+      - "traefik.http.routers.sonarr-rtr.middlewares=chain-oauth@file"
       ## HTTP Services
-      - "traefik.http.routers.tv-sonarr-rtr.service=tv-sonarr-svc"
-      - "traefik.http.services.tv-sonarr-svc.loadbalancer.server.port=8989"
+      - "traefik.http.routers.sonarr-rtr-bypass.service=sonarr-svc"
+      - "traefik.http.routers.sonarr-rtr.service=sonarr-svc"
+      - "traefik.http.services.sonarr-svc.loadbalancer.server.port=8989"
       ### Radarr Router
       # HTTP Routers Auth Bypass
       - "traefik.http.routers.radarr-rtr-bypass.entrypoints=https"
@@ -515,13 +523,27 @@ services:
       - "traefik.http.routers.radarr-rtr-bypass.service=radarr-svc"
       - "traefik.http.routers.radarr-rtr.service=radarr-svc"
       - "traefik.http.services.radarr-svc.loadbalancer.server.port=7878"
+      ### Readarr Router
+      - "traefik.http.routers.readarr-rtr-bypass.entrypoints=https"
+      - "traefik.http.routers.readarr-rtr-bypass.rule=Host(`readarr.$DOMAIN_NAME`) && Headers(`Traefik-Auth-Key`, `$TRAEFIK_AUTH_KEY`)" # Bypass Auth for LunaSea on iOS
+      - "traefik.http.routers.readarr-rtr-bypass.priority=100"
+      ## HTTP Routers Auth
+      - "traefik.http.routers.readarr-rtr.entrypoints=https"
+      - "traefik.http.routers.readarr-rtr.rule=Host(`readarr.$DOMAIN_NAME`)"
+      - "traefik.http.routers.readarr-rtr.priority=99"
+      ## Middlewares
+      - "traefik.http.routers.readarr-rtr.middlewares=chain-oauth@file"
+      ## HTTP Services
+      - "traefik.http.routers.readarr-rtr-bypass.service=readarr-svc"
+      - "traefik.http.routers.readarr-rtr.service=readarr-svc"
+      - "traefik.http.services.readarr-svc.loadbalancer.server.port=8787"
 
   qbittorrent:
     <<: *common-keys-apps-vpn
     image: lscr.io/linuxserver/qbittorrent
     container_name: qbittorrent
     environment:
-      <<: *default-tz-puid-pgid
+      <<: *primary-tz-puid-pgid
       #WEBUI_PORT=8080
     volumes:
       - $CONTAINER_APPDATA_DIR/qbittorrent:/config
@@ -575,8 +597,8 @@ services:
       VERSION: latest
       NVIDIA_VISIBLE_DEVICES: ALL
     volumes:
-      - '$USER_DIR/plex/config:/config'
-      - '$USER_DIR/plex/transcode:/transcode'
+      - '$PLEX_DIR/config:/config'
+      - '$PLEX_DIR/transcode:/transcode'
       - '$DATA_DIR:/data:ro'
     labels:
       - "com.centurylinklabs.watchtower.enable=true"
@@ -618,7 +640,7 @@ services:
       <<: *default-tz-puid-pgid
     volumes:
       - '$CONTAINER_APPDATA_DIR/tautulli:/config'
-      - '$USER_DIR/plex/config/Library/Application Support/Plex Media Server/Logs/:/logs'
+      - '$PLEX_DIR/config/Library/Application Support/Plex Media Server/Logs/:/logs'
     labels:
       - "traefik.enable=true"
       ## HTTP Routers
@@ -684,40 +706,17 @@ services:
     image: recyclarr/recyclarr
     container_name: recyclarr
     user: '0:0'
-    environment:
-      <<: *primary-tz-puid-pgid
     volumes:
       - $CONTAINER_APPDATA_DIR/recyclarr:/config
-    
-  anime-sonarr:
-    <<: *common-keys-apps # See EXTENSION FIELDS at the top
-    image: lscr.io/linuxserver/sonarr
-    container_name: anime-sonarr
-    environment:
-      <<: *primary-tz-puid-pgid
-    volumes:
-      - '$CONTAINER_APPDATA_DIR/anime-sonarr:/config'
-      - '$DATA_DIR:/data'
-      - "/etc/localtime:/etc/localtime:ro"
-    labels:
-      - "traefik.enable=true"
-      ## HTTP Routers
-      - "traefik.http.routers.anime-sonarr-rtr.entrypoints=https"
-      - "traefik.http.routers.anime-sonarr-rtr.rule=Host(`sonarr.$DOMAIN_NAME`) && PathPrefix(`/anime`)"
-      ## Middlewares
-      - "traefik.http.routers.anime-sonarr-rtr.middlewares=chain-oauth@file"
-      ## HTTP Services
-      - "traefik.http.routers.anime-sonarr-rtr.service=anime-sonarr-svc"
-      - "traefik.http.services.anime-sonarr-svc.loadbalancer.server.port=8989"
 
-  tv-sonarr:
+  sonarr:
     <<: *common-keys-apps-vpn # See EXTENSION FIELDS at the top
     image: lscr.io/linuxserver/sonarr
-    container_name: tv-sonarr
+    container_name: sonarr
     environment:
       <<: *primary-tz-puid-pgid
     volumes:
-      - '$CONTAINER_APPDATA_DIR/tv-sonarr:/config'
+      - '$CONTAINER_APPDATA_DIR/sonarr:/config'
       - '$DATA_DIR:/data'
       - "/remote/default/complete:/downloads/complete"
       - "/etc/localtime:/etc/localtime:ro"
@@ -735,6 +734,21 @@ services:
       - "/remote/default/complete:/downloads/complete"
       - "/etc/localtime:/etc/localtime:ro"
       #Traefik labels under wireguard
+
+  # Readarr - Books management
+  # Set url_base in readarr settings if using PathPrefix
+  readarr:
+    <<: *common-keys-apps-vpn # See EXTENSION FIELDS at the top
+    image: lscr.io/linuxserver/readarr:develop
+    container_name: readarr
+    environment:
+      <<: *primary-tz-puid-pgid
+    volumes:
+      - $CONTAINER_APPDATA_DIR/readarr:/config
+      - $DATA_DIR:/data
+      - "/remote/books/complete:/downloads/complete"
+      - "/etc/localtime:/etc/localtime:ro"
+    #Traefik labels under wireguard
 
   {# # Lidarr - Music Management
   # Set url_base in lidarr settings if using PathPrefix
@@ -768,32 +782,6 @@ services:
       #- "traefik.http.routers.lidarr-rtr-bypass.service=lidarr-svc"
       - "traefik.http.services.lidarr-svc.loadbalancer.server.port=8686" #}
 
-  {# # Readarr - Books management
-  # Set url_base in readarr settings if using PathPrefix
-  readarr:
-    <<: *common-keys-apps # See EXTENSION FIELDS at the top
-    image: hotio/readarr:nightly
-    container_name: readarr
-    # ports:
-    #  - "$READARR_PORT:8787"
-    volumes:
-      - $CONTAINER_APPDATA_DIR/readarr:/config
-      - $DATA_DIR:/data
-      - "/etc/localtime:/etc/localtime:ro"
-    environment:
-      <<: *default-tz-puid-pgid
-      UMASK: 002
-      #ARGS: ""
-    labels:
-      - "traefik.enable=true"
-      ## HTTP Routers Auth
-      - "traefik.http.routers.readarr-rtr.entrypoints=https"
-      - "traefik.http.routers.readarr-rtr.rule=Host(`readarr.$DOMAIN_NAME`)"
-      ## Middlewares
-      - "traefik.http.routers.readarr-rtr.middlewares=chain-oauth@file"
-      ## HTTP Services
-      - "traefik.http.routers.readarr-rtr.service=readarr-svc"
-      - "traefik.http.services.readarr-svc.loadbalancer.server.port=8787" #}
 
   ############################# Utilites
 
@@ -913,6 +901,7 @@ services:
       - "traefik.http.routers.crafty-rtr.service=crafty-svc"
       - "traefik.http.services.crafty-svc.loadbalancer.server.scheme=https"
       - "traefik.http.services.crafty-svc.loadbalancer.server.port=8443"
+      - "traefik.http.services.crafty-svc.loadbalancer.serversTransport=isv-transport@file"
 
   {# # Don't Starve Server - server for Don't Starve Together
   dst-server:

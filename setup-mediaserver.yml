@@ -48,7 +48,15 @@
         backup_cron_name: "docker-backup"
         backup_name_prepend: "docker"
         backup_destination: "{{ media_data_path }}/.config/backups"
-        backup_source: "/home/{{ primary_user }}/docker"
+        backup_source: "{{ docker_dir }}"
+        backup_max_age_days: '7'
+      tags: cron
+    - name: mediaserver/cron-backup
+      vars:
+        backup_cron_name: "plex-backup"
+        backup_name_prepend: "plex"
+        backup_destination: "{{ media_data_path }}/.config/backups"
+        backup_source: "{{ plex_dir }}"
         backup_max_age_days: '7'
       tags: cron
   tasks:
