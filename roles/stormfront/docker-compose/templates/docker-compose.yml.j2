@@ -1,5 +1,4 @@
 # {{ ansible_managed }}
-
 version: "3.8"
 
 networks:
@@ -112,8 +111,9 @@ services:
       - /lib/modules:/lib/modules
     ports:
       - 51820:51820/udp
-      - 48650:48650 # QBittorrent
-      - 51911:51911 # QBittorrent Books
+      - 48650:48650 # QBittorrent Public
+      - 48651:48651 # QBittorrent Private
+      - 48652:48652 # QBittorrent Books
     networks:
       proxies:
         ipv4_address: 10.18.100.100
@@ -315,256 +315,17 @@ services:
       - "traefik.http.routers.authelia-rtr.service=authelia-svc"
       - "traefik.http.services.authelia-svc.loadbalancer.server.port=9091"
 
-  muximux:
-    <<: *common-keys-core
-    image: linuxserver/muximux
-    container_name: muximux
-    environment:
-      <<: *primary-tz-puid-pgid
-    volumes:
-      - '$CONTAINER_APPDATA_DIR/muximux:/config'
-    labels:
-      - "traefik.enable=true"
-      ## HTTP Routers
-      - "traefik.http.routers.muximux-rtr.entrypoints=https"
-      - "traefik.http.routers.muximux-rtr.rule=Host(`$DOMAIN_NAME`)"
-      ## Middlewares
-      - "traefik.http.routers.muximux-rtr.middlewares=chain-authelia@file"
-      ## HTTP Services
-      - "traefik.http.routers.muximux-rtr.service=muximux-svc"
-      - "traefik.http.services.muximux-svc.loadbalancer.server.port=80"
-
-  ############################# Downloaders
-
-  qbittorrent:
-    <<: *common-keys-apps-vpn # See EXTENSION FIELDS at the top
-    image: lscr.io/linuxserver/qbittorrent
-    container_name: qbittorrent
-    networks:
-      proxies:
-        ipv4_address: 10.18.100.101
-    environment:
-      <<: *primary-tz-puid-pgid
-    volumes:
-      - $CONTAINER_APPDATA_DIR/qbittorrent:/config
-      - $DOWNLOADS_DIR/default:/downloads
-    labels:
-      - "traefik.enable=true"
-      ### QBittorent Router
-      ## HTTP Routers
-      - "traefik.http.routers.qbittorrent-rtr.entrypoints=https"
-      - "traefik.http.routers.qbittorrent-rtr.rule=Host(`qbt.$DOMAIN_NAME`)"
-      ## Middlewares
-      - "traefik.http.routers.qbittorrent-rtr.middlewares=chain-authelia@file"
-      ## HTTP Services
-      - "traefik.http.routers.qbittorrent-rtr.service=qbittorrent-svc"
-      - "traefik.http.services.qbittorrent-svc.loadbalancer.server.port=8080"
-
-  qbittorrent-books:
-    <<: *common-keys-apps-vpn # See EXTENSION FIELDS at the top
-    image: lscr.io/linuxserver/qbittorrent:4.5.5
-    container_name: qbittorrent-books
-    networks:
-      proxies:
-        ipv4_address: 10.18.100.102
-    environment:
-      <<: *primary-tz-puid-pgid
-    volumes:
-      - $CONTAINER_APPDATA_DIR/qbittorrent-books:/config
-      - $DOWNLOADS_DIR/books:/downloads
-    labels:
-      - "traefik.enable=true"
-      ### QBittorent Router
-      ## HTTP Routers
-      - "traefik.http.routers.qbittorrent-books-rtr.entrypoints=https"
-      - "traefik.http.routers.qbittorrent-books-rtr.rule=Host(`qbt.$DOMAIN_NAME`) && PathPrefix(`/books`)"
-      - "traefik.http.middlewares.qb-books-redirect.redirectregex.regex=^(.*)/books$$"
-      - "traefik.http.middlewares.qb-books-redirect.redirectregex.replacement=$$1/books/"
-      - "traefik.http.middlewares.qb-books-strip.stripprefix.prefixes=/books/"
-      ## Middlewares
-      - "traefik.http.routers.qbittorrent-books-rtr.middlewares=qb-books-strip,qb-books-redirect,qb-headers@file,chain-authelia@file"
-      ## HTTP Services
-      - "traefik.http.routers.qbittorrent-books-rtr.service=qbittorrent-books-svc"
-      - "traefik.http.services.qbittorrent-books-svc.loadbalancer.server.port=8080"
-      - "traefik.http.services.qbittorrent-books-svc.loadbalancer.passhostheader=false"
-
-  qbittorrent-public:
-    <<: *common-keys-apps # See EXTENSION FIELDS at the top
-    image: lscr.io/linuxserver/qbittorrent
-    container_name: qbittorrent-public
-    restart: unless-stopped
-    environment:
-      <<: *primary-tz-puid-pgid
-      #WEBUI_PORT=8080
-    volumes:
-      - $CONTAINER_APPDATA_DIR/qbittorrent-public:/config
-      - $DOWNLOADS_DIR/public:/downloads
-    labels:
-      - "traefik.enable=true"
-      ### QBittorent Router
-      ## HTTP Routers
-      - "traefik.http.routers.qbittorrent-public-rtr.entrypoints=https"
-      - "traefik.http.routers.qbittorrent-public-rtr.rule=Host(`qbt.$DOMAIN_NAME`) && PathPrefix(`/public`)"
-      - "traefik.http.middlewares.qb-public-redirect.redirectregex.regex=^(.*)/public$$"
-      - "traefik.http.middlewares.qb-public-redirect.redirectregex.replacement=$$1/public/"
-      - "traefik.http.middlewares.qb-public-strip.stripprefix.prefixes=/public/"
-      ## Middlewares
-      - "traefik.http.routers.qbittorrent-public-rtr.middlewares=qb-public-strip,qb-public-redirect,qb-headers@file,chain-authelia@file"
-      ## HTTP Services
-      - "traefik.http.routers.qbittorrent-public-rtr.service=qbittorrent-public-svc"
-      - "traefik.http.services.qbittorrent-public-svc.loadbalancer.server.port=8080"
-      - "traefik.http.services.qbittorrent-public-svc.loadbalancer.passhostheader=false" 
-
-  {# jackett:
-    <<: *common-keys-apps # See EXTENSION FIELDS at the top
-    image: lscr.io/linuxserver/jackett
-    container_name: jackett
-    environment:
-      <<: *default-tz-puid-pgid
-      AUTO_UPDATE: "true" #optional
-    volumes:
-      - $CONTAINER_APPDATA_DIR/jackett:/config
-    labels:
-      - "traefik.enable=true"
-      ## HTTP Routers
-      - "traefik.http.routers.jackett-rtr.entrypoints=https"
-      - "traefik.http.routers.jackett-rtr.rule=Host(`jackett.$DOMAIN_NAME`)"
-      ## Middlewares
-      - "traefik.http.routers.jackett-rtr.middlewares=chain-authelia@file"
-      ## HTTP Services
-      - "traefik.http.routers.jackett-rtr.service=jackett-svc"
-      - "traefik.http.services.jackett-svc.loadbalancer.server.port=9117" #}
-
-  ############################# Media
-
-  unpackerr:
-    <<: *common-keys-apps-vpn # See EXTENSION FIELDS at the top
-    image: golift/unpackerr
-    container_name: unpackerr
-    volumes:
-      # You need at least this one volume mapped so Unpackerr can find your files to extract.
-      # Make sure this matches your Starr apps; the folder mount (/downloads or /data) should be identical.
-      - '$CONTAINER_APPDATA_DIR/unpackerr:/config'
-      - $DOWNLOADS_DIR/default/complete:/downloads/complete
-    user: '$PUID:$PGID'
-    network_mode: "service:wireguard"
-    depends_on:
-      - wireguard
-    # What you see below are defaults for this compose. You only need to modify things specific to your environment.
-    # Remove apps and feature configs you do not use or need. 
-    # ie. Remove all lines that begin with UN_CMDHOOK, UN_WEBHOOK, UN_FOLDER, UN_WEBSERVER, and other apps you do not use.
-    environment:
-      <<: *primary-tz-puid-pgid
-      # General config
-      UN_DEBUG: 'false'
-      UN_LOG_FILES: '10'
-      UN_LOG_FILE_MB: '10'
-      UN_INTERVAL: '2m'
-      UN_START_DELAY: '1m'
-      UN_RETRY_DELAY: '5m'
-      UN_MAX_RETRIES: '3'
-      UN_PARALLEL: '1'
-      UN_FILE_MODE: '0644'
-      UN_DIR_MODE: '0755'
-      # Sonarr Config
-      UN_SONARR_0_URL: 'http://10.13.13.3:8989'
-      UN_SONARR_0_API_KEY: $SONARR_API_KEY
-      UN_SONARR_0_PATHS_0: '/downloads/complete/'
-      UN_SONARR_0_PROTOCOLS: 'torrent'
-      UN_SONARR_0_TIMEOUT: '10s'
-      UN_SONARR_0_DELETE_ORIG: 'false'
-      UN_SONARR_0_DELETE_DELAY: '480m'
-      # Radarr Config
-      UN_RADARR_0_URL: 'http://10.13.13.3:7878'
-      UN_RADARR_0_API_KEY: $RADARR_API_KEY
-      UN_RADARR_0_PATHS_0: '/downloads/complete/'
-      UN_RADARR_0_PROTOCOLS: 'torrent'
-      UN_RADARR_0_TIMEOUT: '10s'
-      UN_RADARR_0_DELETE_ORIG: 'false'
-      UN_RADARR_0_DELETE_DELAY: '480m'
-
-  ############################# Utilites
-
-  # File Browser - Explorer
-  filebrowser:
-    <<: *common-keys-apps # See EXTENSION FIELDS at the top
-    image: filebrowser/filebrowser
-    container_name: filebrowser
-    volumes:
-      - $USER_DIR:/srv/
-      - /home/share:/home/share
-    environment:
-      <<: *primary-tz-puid-pgid
-      FB_NOAUTH: noauth
-    labels:
-      - "traefik.enable=true"
-      ## HTTP Routers
-      - "traefik.http.routers.filebrowser-rtr.entrypoints=https"
-      - "traefik.http.routers.filebrowser-rtr.rule=Host(`files.$DOMAIN_NAME`)"
-      ## Middlewares
-      - "traefik.http.routers.filebrowser-rtr.middlewares=chain-authelia@file"
-      ## HTTP Services
-      - "traefik.http.routers.filebrowser-rtr.service=filebrowser-svc"
-      - "traefik.http.services.filebrowser-svc.loadbalancer.server.port=80"
-
-  {# # qDirStat - Directory Statistics
-  qdirstat:
-    <<: *common-keys-apps # See EXTENSION FIELDS at the top
-    image: jlesage/qdirstat:latest
-    container_name: qdirstat
-    # ports:
-    #   - "$QDIRSTAT_PORT:5800"
-    volumes:
-      - $USER_DIR:/data/home:ro
-      - $CONTAINER_APPDATA_DIR/qdirstat/config:/config:rw
-    environment:
-      <<: *default-tz-puid-pgid
-      UMASK: 002
-      KEEP_APP_RUNNING: 1
-      CLEAN_TMP_DIR: 1
-      DISPLAY_WIDTH: 1600
-      DISPLAY_HEIGHT: 960
-    labels:
-      - "traefik.enable=true"
-      ## HTTP Routers
-      - "traefik.http.routers.qdirstat-rtr.entrypoints=https"
-      - "traefik.http.routers.qdirstat-rtr.rule=Host(`qdirstat.$DOMAIN_NAME`)"
-      ## Middlewares
-      - "traefik.http.routers.qdirstat-rtr.middlewares=chain-authelia@file"
-      ## HTTP Services
-      - "traefik.http.routers.qdirstat-rtr.service=qdirstat-svc"
-      - "traefik.http.services.qdirstat-svc.loadbalancer.server.port=5800"
-      - "traefik.http.services.qdirstat-svc.loadbalancer.passhostheader=false" #}
-
   ############################# $SECONDARY_USER
-
-  muximux-{{ secondary_user }}:
-    <<: *common-keys-core
-    image: linuxserver/muximux
-    container_name: muximux-$SECONDARY_USER
-    environment:
-      <<: *secondary-tz-puid-pgid
-    volumes:
-      - '$SECONDARY_CONTAINER_APPDATA_DIR/muximux-$SECONDARY_USER:/config'
-    labels:
-      - "traefik.enable=true"
-      ## HTTP Routers
-      - "traefik.http.routers.muximux-$SECONDARY_USER-rtr.entrypoints=https"
-      - "traefik.http.routers.muximux-$SECONDARY_USER-rtr.rule=Host(`$SECONDARY_USER.$DOMAIN_NAME`)"
-      ## Middlewares
-      - "traefik.http.routers.muximux-$SECONDARY_USER-rtr.middlewares=chain-authelia@file"
-      ## HTTP Services
-      - "traefik.http.routers.muximux-$SECONDARY_USER-rtr.service=muximux-$SECONDARY_USER-svc"
-      - "traefik.http.services.muximux-$SECONDARY_USER-svc.loadbalancer.server.port=80" 
 
   qbittorrent-{{ secondary_user }}:
     <<: *common-keys-apps # See EXTENSION FIELDS at the top
     image: lscr.io/linuxserver/qbittorrent
     container_name: qbittorrent-$SECONDARY_USER
-    restart: unless-stopped
     environment:
       <<: *secondary-tz-puid-pgid
       #WEBUI_PORT=8080
+    ports:
+      - 48660:48660 # QBittorrent Public
     volumes:
       - $SECONDARY_CONTAINER_APPDATA_DIR/qbittorrent-$SECONDARY_USER:/config
       - $SECONDARY_USER_DOWNLOADS_DIR/:/downloads
@@ -573,36 +334,13 @@ services:
       ### QBittorent Router
       ## HTTP Routers
       - "traefik.http.routers.qbittorrent-$SECONDARY_USER-rtr.entrypoints=https"
-      - "traefik.http.routers.qbittorrent-$SECONDARY_USER-rtr.rule=Host(`$SECONDARY_USER.qbt.$DOMAIN_NAME`)"
+      - "traefik.http.routers.qbittorrent-$SECONDARY_USER-rtr.rule=Host(`$SECONDARY_USER.$DOMAIN_NAME`)"
       ## Middlewares
       - "traefik.http.routers.qbittorrent-$SECONDARY_USER-rtr.middlewares=qb-headers@file,chain-authelia@file"
       ## HTTP Services
       - "traefik.http.routers.qbittorrent-$SECONDARY_USER-rtr.service=qbittorrent-$SECONDARY_USER-svc"
       - "traefik.http.services.qbittorrent-$SECONDARY_USER-svc.loadbalancer.server.port=8080"
       - "traefik.http.services.qbittorrent-$SECONDARY_USER-svc.loadbalancer.passhostheader=false"
-
-  # File Browser - Explorer
-  filebrowser-{{ secondary_user }}:
-    <<: *common-keys-apps # See EXTENSION FIELDS at the top
-    image: filebrowser/filebrowser
-    container_name: filebrowser-$SECONDARY_USER
-    volumes:
-      - $SECONDARY_USER_DIR:/srv/
-      - /home/share:/home/share
-    environment:
-      <<: *secondary-tz-puid-pgid
-      FB_NOAUTH: noauth
-    labels:
-      - "traefik.enable=true"
-      ## HTTP Routers
-      - "traefik.http.routers.filebrowser-$SECONDARY_USER-rtr.entrypoints=https"
-      - "traefik.http.routers.filebrowser-$SECONDARY_USER-rtr.rule=Host(`$SECONDARY_USER.files.$DOMAIN_NAME`)"
-      ## Middlewares
-      - "traefik.http.routers.filebrowser-$SECONDARY_USER-rtr.middlewares=chain-authelia@file"
-      ## HTTP Services
-      - "traefik.http.routers.filebrowser-$SECONDARY_USER-rtr.service=filebrowser-$SECONDARY_USER-svc"
-      - "traefik.http.services.filebrowser-$SECONDARY_USER-svc.loadbalancer.server.port=80"
-      - "traefik.http.services.filebrowser-$SECONDARY_USER-svc.loadbalancer.passhostheader=false"
 
   ############################# MAINTENANCE
 

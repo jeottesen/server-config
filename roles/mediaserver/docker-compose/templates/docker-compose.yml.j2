@@ -174,8 +174,8 @@ services:
       - --entrypoints.https.http.tls.options=tls-opts@file
       # Add route53 as default certresolver for all services. Also enables TLS and no need to specify on individual services
       - --entrypoints.https.http.tls.certresolver=route53
-      - --entrypoints.https.http.tls.domains[0].main=$DOMAIN_NAME
-      - --entrypoints.https.http.tls.domains[0].sans=*.$DOMAIN_NAME
+      # - --entrypoints.https.http.tls.domains[0].main=$DOMAIN_NAME
+      # - --entrypoints.https.http.tls.domains[0].sans=*.$DOMAIN_NAME
       - --providers.docker.network=docker_proxies
       - --providers.docker.swarmMode=false
       - --providers.file.directory=/rules # Load dynamic configuration from one or more .toml or .yml files in a directory
@@ -440,6 +440,7 @@ services:
       <<: *primary-tz-puid-pgid
       DB_CONNECTION: "sqlite"
       PUBLIC_DASHBOARD: "true"
+      SPEEDTEST_SCHEDULE: "0 0,12 * * *"
     labels:
       - "traefik.enable=true"
       ## HTTP Routers
@@ -477,22 +478,56 @@ services:
         ipv4_address: 10.17.100.100
     labels:
       - "traefik.enable=true"
-      ### QBittorent Router
+
+      ### Public QBittorent Routers
       ## HTTP Routers Auth Bypass
-      - "traefik.http.routers.qbittorrent-rtr-bypass.entrypoints=https"
-      - "traefik.http.routers.qbittorrent-rtr-bypass.rule=Host(`qbt.$DOMAIN_NAME`) && Headers(`Traefik-Auth-Key`, `$TRAEFIK_AUTH_KEY`)" # Bypass Auth for LunaSea on iOS
-      - "traefik.http.routers.qbittorrent-rtr-bypass.priority=100"
+      - "traefik.http.routers.qbt-public-rtr-bypass.entrypoints=https"
+      - "traefik.http.routers.qbt-public-rtr-bypass.rule=Host(`qbt.public.$DOMAIN_NAME`) && Headers(`Traefik-Auth-Key`, `$TRAEFIK_AUTH_KEY`)" # Bypass Auth for LunaSea on iOS
+      - "traefik.http.routers.qbt-public-rtr-bypass.priority=100"
       ## HTTP Routers
-      - "traefik.http.routers.qbittorrent-rtr.entrypoints=https"
-      - "traefik.http.routers.qbittorrent-rtr.rule=Host(`qbt.$DOMAIN_NAME`)"
-      - "traefik.http.routers.qbittorrent-rtr.priority=99"
+      - "traefik.http.routers.qbt-public-rtr.entrypoints=https"
+      - "traefik.http.routers.qbt-public-rtr.rule=Host(`qbt.public.$DOMAIN_NAME`)"
+      - "traefik.http.routers.qbt-public-rtr.priority=99"
       ## Middlewares
-      - "traefik.http.routers.qbittorrent-rtr.middlewares=chain-oauth@file"
+      - "traefik.http.routers.qbt-public-rtr.middlewares=chain-oauth@file"
       ## HTTP Services
-      - "traefik.http.routers.qbittorrent-rtr-bypass.service=qbittorrent-svc"
-      - "traefik.http.routers.qbittorrent-rtr.service=qbittorrent-svc"
-      - "traefik.http.services.qbittorrent-svc.loadbalancer.server.port=8080"
-      ### TV Sonarr Router
+      - "traefik.http.routers.qbt-public-rtr-bypass.service=qbt-public-svc"
+      - "traefik.http.routers.qbt-public-rtr.service=qbt-public-svc"
+      - "traefik.http.services.qbt-public-svc.loadbalancer.server.port=8080"
+
+      ### Private QBittorent Routers
+      ## HTTP Routers Auth Bypass
+      - "traefik.http.routers.qbt-private-rtr-bypass.entrypoints=https"
+      - "traefik.http.routers.qbt-private-rtr-bypass.rule=Host(`qbt.private.$DOMAIN_NAME`) && Headers(`Traefik-Auth-Key`, `$TRAEFIK_AUTH_KEY`)" # Bypass Auth for LunaSea on iOS
+      - "traefik.http.routers.qbt-private-rtr-bypass.priority=100"
+      ## HTTP Routers
+      - "traefik.http.routers.qbt-private-rtr.entrypoints=https"
+      - "traefik.http.routers.qbt-private-rtr.rule=Host(`qbt.private.$DOMAIN_NAME`)"
+      - "traefik.http.routers.qbt-private-rtr.priority=99"
+      ## Middlewares
+      - "traefik.http.routers.qbt-private-rtr.middlewares=chain-oauth@file"
+      ## HTTP Services
+      - "traefik.http.routers.qbt-private-rtr-bypass.service=qbt-private-svc"
+      - "traefik.http.routers.qbt-private-rtr.service=qbt-private-svc"
+      - "traefik.http.services.qbt-private-svc.loadbalancer.server.port=8081"
+
+      ### Books QBittorent Routers
+      ## HTTP Routers Auth Bypass
+      - "traefik.http.routers.qbt-books-rtr-bypass.entrypoints=https"
+      - "traefik.http.routers.qbt-books-rtr-bypass.rule=Host(`qbt.books.$DOMAIN_NAME`) && Headers(`Traefik-Auth-Key`, `$TRAEFIK_AUTH_KEY`)" # Bypass Auth for LunaSea on iOS
+      - "traefik.http.routers.qbt-books-rtr-bypass.priority=100"
+      ## HTTP Routers
+      - "traefik.http.routers.qbt-books-rtr.entrypoints=https"
+      - "traefik.http.routers.qbt-books-rtr.rule=Host(`qbt.books.$DOMAIN_NAME`)"
+      - "traefik.http.routers.qbt-books-rtr.priority=99"
+      ## Middlewares
+      - "traefik.http.routers.qbt-books-rtr.middlewares=chain-oauth@file"
+      ## HTTP Services
+      - "traefik.http.routers.qbt-books-rtr-bypass.service=qbt-books-svc"
+      - "traefik.http.routers.qbt-books-rtr.service=qbt-books-svc"
+      - "traefik.http.services.qbt-books-svc.loadbalancer.server.port=8082"
+
+      ### TV Sonarr Routers
       ## HTTP Routers Auth Bypass
       - "traefik.http.routers.sonarr-rtr-bypass.entrypoints=https"
       - "traefik.http.routers.sonarr-rtr-bypass.rule=Host(`sonarr.$DOMAIN_NAME`) && Headers(`Traefik-Auth-Key`, `$TRAEFIK_AUTH_KEY`)" # Bypass Auth for LunaSea on iOS
@@ -507,7 +542,8 @@ services:
       - "traefik.http.routers.sonarr-rtr-bypass.service=sonarr-svc"
       - "traefik.http.routers.sonarr-rtr.service=sonarr-svc"
       - "traefik.http.services.sonarr-svc.loadbalancer.server.port=8989"
-      ### Radarr Router
+
+      ### Radarr Routers
       # HTTP Routers Auth Bypass
       - "traefik.http.routers.radarr-rtr-bypass.entrypoints=https"
       - "traefik.http.routers.radarr-rtr-bypass.rule=Host(`radarr.$DOMAIN_NAME`) && Headers(`Traefik-Auth-Key`, `$TRAEFIK_AUTH_KEY`)" # Bypass Auth for LunaSea on iOS
@@ -523,7 +559,9 @@ services:
       - "traefik.http.routers.radarr-rtr-bypass.service=radarr-svc"
       - "traefik.http.routers.radarr-rtr.service=radarr-svc"
       - "traefik.http.services.radarr-svc.loadbalancer.server.port=7878"
-      ### Readarr Router
+      
+      ### Readarr Routers
+      # HTTP Routers Auth Bypass
       - "traefik.http.routers.readarr-rtr-bypass.entrypoints=https"
       - "traefik.http.routers.readarr-rtr-bypass.rule=Host(`readarr.$DOMAIN_NAME`) && Headers(`Traefik-Auth-Key`, `$TRAEFIK_AUTH_KEY`)" # Bypass Auth for LunaSea on iOS
       - "traefik.http.routers.readarr-rtr-bypass.priority=100"
@@ -538,16 +576,30 @@ services:
       - "traefik.http.routers.readarr-rtr.service=readarr-svc"
       - "traefik.http.services.readarr-svc.loadbalancer.server.port=8787"
 
-  qbittorrent:
+      ### Prowlarr Routers
+      ## HTTP Routers
+      - "traefik.http.routers.prowlarr-login-rtr.entrypoints=https"
+      - "traefik.http.routers.prowlarr-login-rtr.rule=Host(`prowlarr.$DOMAIN_NAME`)"
+      - "traefik.http.routers.prowlarr-rtr.entrypoints=https"
+      - "traefik.http.routers.prowlarr-rtr.rule=Host(`prowlarr.$DOMAIN_NAME`) && {{ allow_admin_rule }}"
+      ## Middlewares
+      - "traefik.http.routers.prowlarr-login-rtr.middlewares=chain-oauth@file,back-to-home@file"
+      - "traefik.http.routers.prowlarr-rtr.middlewares=chain-oauth@file"
+      ## HTTP Services
+      - "traefik.http.routers.prowlarr-login-rtr.service=oauth-svc"
+      - "traefik.http.routers.prowlarr-rtr.service=prowlarr-svc"
+      - "traefik.http.services.prowlarr-svc.loadbalancer.server.port=9696"
+
+  qbt-public:
     <<: *common-keys-apps-vpn
     image: lscr.io/linuxserver/qbittorrent
-    container_name: qbittorrent
+    container_name: qbt-public
     environment:
       <<: *primary-tz-puid-pgid
-      #WEBUI_PORT=8080
+      WEBUI_PORT: 8080
     volumes:
-      - $CONTAINER_APPDATA_DIR/qbittorrent:/config
-      - $DATA_DIR:/data
+      - $CONTAINER_APPDATA_DIR/qbt-public:/config
+      - $DATA_DIR/Torrents/public:$DATA_DIR/Torrents/public
     deploy:
       resources:
           limits:
@@ -555,32 +607,57 @@ services:
             memory: 4096M
     # traefik labels under wireguard
 
-  jackett:
-    <<: *common-keys-apps # See EXTENSION FIELDS at the top
-    image: lscr.io/linuxserver/jackett
-    container_name: jackett
+  qbt-private:
+    <<: *common-keys-apps-vpn
+    image: lscr.io/linuxserver/qbittorrent
+    container_name: qbt-private
     environment:
       <<: *primary-tz-puid-pgid
-      AUTO_UPDATE: "true" #optional
+      WEBUI_PORT: 8081
     volumes:
-      - $CONTAINER_APPDATA_DIR/jackett:/config
-    networks:
-      proxies:
-        ipv4_address: 10.17.100.101
-    labels:
-      - "traefik.enable=true"
-      ## HTTP Routers
-      - "traefik.http.routers.jackett-login-rtr.entrypoints=https"
-      - "traefik.http.routers.jackett-login-rtr.rule=Host(`jackett.$DOMAIN_NAME`)"
-      - "traefik.http.routers.jackett-rtr.entrypoints=https"
-      - "traefik.http.routers.jackett-rtr.rule=Host(`jackett.$DOMAIN_NAME`) && {{ allow_admin_rule }}"
-      ## Middlewares
-      - "traefik.http.routers.jackett-login-rtr.middlewares=chain-oauth@file,back-to-home@file"
-      - "traefik.http.routers.jackett-rtr.middlewares=chain-oauth@file"
-      ## HTTP Services
-      - "traefik.http.routers.jackett-login-rtr.service=oauth-svc"
-      - "traefik.http.routers.jackett-rtr.service=jackett-svc"
-      - "traefik.http.services.jackett-svc.loadbalancer.server.port=9117"
+      - $CONTAINER_APPDATA_DIR/qbt-private:/config
+      - $DATA_DIR/Torrents/private:$DATA_DIR/Torrents/private
+    deploy:
+      resources:
+          limits:
+            cpus: "0.50"
+            memory: 2048M
+    # traefik labels under wireguard
+
+  qbt-books:
+    <<: *common-keys-apps-vpn
+    image: lscr.io/linuxserver/qbittorrent
+    container_name: qbt-books
+    environment:
+      <<: *primary-tz-puid-pgid
+      WEBUI_PORT: 8082
+    volumes:
+      - $CONTAINER_APPDATA_DIR/qbt-books:/config
+      - $DATA_DIR/Torrents/books:$DATA_DIR/Torrents/books
+    deploy:
+      resources:
+          limits:
+            cpus: "0.50"
+            memory: 2048M
+    # traefik labels under wireguard
+
+  prowlarr:
+    <<: *common-keys-apps-vpn # See EXTENSION FIELDS at the top
+    image: ghcr.io/hotio/prowlarr
+    container_name: prowlarr
+    environment:
+      <<: *primary-tz-puid-pgid
+    volumes:
+      - $CONTAINER_APPDATA_DIR/prowlarr:/config
+    # traefik labels under wireguard
+
+  flaresolverr:
+    <<: *common-keys-apps-vpn # See EXTENSION FIELDS at the top
+    # DockerHub mirror flaresolverr/flaresolverr:latest
+    image: ghcr.io/flaresolverr/flaresolverr:latest
+    container_name: flaresolverr
+    environment:
+      <<: *primary-tz-puid-pgid
 
   ############################# Media
 
@@ -662,17 +739,11 @@ services:
         reservations:
           devices:
             - capabilities: [gpu]
-    #devices:
-    #  - /dev/dri:/dev/dri # for harware transcoding
-    ports:
-      #- "$JELLYFIN_PORT:8096"
-      - "8920:8920" # Emby also uses same port if running both
     environment:
       <<: *default-tz-puid-pgid
       UMASK_SET: 022
     volumes:
-      - $CONTAINER_APPDATA_DIR/jellyfin:/config
-      - $CONTAINER_APPDATA_DIR/jellyfin/metadata:/config/metadata
+      - $USER_DIR/jellyfin:/config
       - $DATA_DIR:/data:ro
       #- /dev/shm:/data/transcode # Offload transcoding to RAM if you have enough RAM
     labels:
@@ -718,7 +789,6 @@ services:
     volumes:
       - '$CONTAINER_APPDATA_DIR/sonarr:/config'
       - '$DATA_DIR:/data'
-      - "/remote/default/complete:/downloads/complete"
       - "/etc/localtime:/etc/localtime:ro"
       #Traefik labels under wireguard
 
@@ -731,7 +801,6 @@ services:
     volumes:
       - '$CONTAINER_APPDATA_DIR/radarr:/config'
       - '$DATA_DIR:/data'
-      - "/remote/default/complete:/downloads/complete"
       - "/etc/localtime:/etc/localtime:ro"
       #Traefik labels under wireguard
 
@@ -746,7 +815,6 @@ services:
     volumes:
       - $CONTAINER_APPDATA_DIR/readarr:/config
       - $DATA_DIR:/data
-      - "/remote/books/complete:/downloads/complete"
       - "/etc/localtime:/etc/localtime:ro"
     #Traefik labels under wireguard
 
@@ -781,6 +849,51 @@ services:
       - "traefik.http.routers.lidarr-rtr.service=lidarr-svc"
       #- "traefik.http.routers.lidarr-rtr-bypass.service=lidarr-svc"
       - "traefik.http.services.lidarr-svc.loadbalancer.server.port=8686" #}
+ 
+  unpackerr:
+    <<: *common-keys-apps # See EXTENSION FIELDS at the top
+    image: golift/unpackerr
+    container_name: unpackerr
+    volumes:
+      # You need at least this one volume mapped so Unpackerr can find your files to extract.
+      # Make sure this matches your Starr apps; the folder mount (/downloads or /data) should be identical.
+      - $CONTAINER_APPDATA_DIR/unpackerr:/config
+      - $DATA_DIR:/data
+    user: '$PUID:$PGID'
+    # What you see below are defaults for this compose. You only need to modify things specific to your environment.
+    # Remove apps and feature configs you do not use or need. 
+    # ie. Remove all lines that begin with UN_CMDHOOK, UN_WEBHOOK, UN_FOLDER, UN_WEBSERVER, and other apps you do not use.
+    environment:
+      <<: *primary-tz-puid-pgid
+      # General config
+      UN_DEBUG: 'false'
+      UN_LOG_FILES: '10'
+      UN_LOG_FILE_MB: '10'
+      UN_INTERVAL: '2m'
+      UN_START_DELAY: '1m'
+      UN_RETRY_DELAY: '5m'
+      UN_MAX_RETRIES: '3'
+      UN_PARALLEL: '1'
+      UN_FILE_MODE: '0666'
+      UN_DIR_MODE: '0777'
+      # Sonarr Config
+      UN_SONARR_0_URL: 'http://wireguard:8989'
+      UN_SONARR_0_API_KEY: $SONARR_API_KEY
+      UN_SONARR_0_PATHS_0: '/data/Torrents/private/complete/'
+      UN_SONARR_0_PATHS_1: '/data/Torrents/public/complete/'
+      UN_SONARR_0_PROTOCOLS: 'torrent'
+      UN_SONARR_0_TIMEOUT: '10s'
+      UN_SONARR_0_DELETE_ORIG: 'false'
+      UN_SONARR_0_DELETE_DELAY: '480m'
+      # Radarr Config
+      UN_RADARR_0_URL: 'http://wireguard:7878'
+      UN_RADARR_0_API_KEY: $RADARR_API_KEY
+      UN_RADARR_0_PATHS_0: '/data/Torrents/private/complete/'
+      UN_RADARR_0_PATHS_1: '/data/Torrents/public/complete/'
+      UN_RADARR_0_PROTOCOLS: 'torrent'
+      UN_RADARR_0_TIMEOUT: '10s'
+      UN_RADARR_0_DELETE_ORIG: 'false'
+      UN_RADARR_0_DELETE_DELAY: '480m'
 
 
   ############################# Utilites
