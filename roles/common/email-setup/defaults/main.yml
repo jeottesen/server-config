@@ -1,7 +1,6 @@
 ---
-
-email_user: "somthing"
-email_password_url_encoded: "somePassword"
+email_user: somthing
+email_password_url_encoded: somePassword
 
 email_smtp_host: smtp.gmail.com
 email_smtp_port: 587

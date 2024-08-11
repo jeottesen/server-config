@@ -1,11 +1,12 @@
+---
 - name: Reset open ssh sessions # Kills sessions ansible should log back in on next task
-  shell: "ps -ef | grep sshd | grep `whoami` | awk '{print \"kill -9\", $2}' | sh"
+  ansible.builtin.shell: ps -ef | grep sshd | grep `whoami` | awk '{print "kill -9", $2}' | sh
   async: 0
   poll: 0
   notify: Wait for server to come back
 
 - name: Wait for server to come back
-  wait_for:
-      host: "{{ inventory_hostname }}"
-      state: started
+  ansible.builtin.wait_for:
+    host: "{{ inventory_hostname }}"
+    state: started
   delegate_to: localhost

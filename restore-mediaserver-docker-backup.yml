@@ -1,24 +1,25 @@
+---
 - name: Restore Docker Backup
   hosts: mediaserver
   vars:
     backup_location: "{{ media_data_path }}/.config/backups"
-    restore_destination: "/" # tar files currently store the absolute path
+    restore_destination: / # tar files currently store the absolute path
   tasks:
     - name: Get files in a folder
-      find:
+      ansible.builtin.find:
         paths: "{{ backup_location }}"
-        patterns: '*.tar.gz'
+        patterns: "*.tar.gz"
       register: found_files
 
     - name: Get latest file
-      set_fact:
-        latest_file: "{{ found_files.files | sort(attribute='mtime',reverse=true) | first }}"
+      ansible.builtin.set_fact:
+        latest_file: "{{ found_files.files | sort(attribute='mtime', reverse=true) | first }}"
 
     - name: "Extract latest backup: '{{ latest_file.path }}'"
       ansible.builtin.unarchive:
         src: "{{ latest_file.path }}"
         dest: "{{ restore_destination }}"
         remote_src: true
-        #owner: "{{ primary_user }}"
-        #group: "{{ primary_user }}"
-        #mode: "u+rwXg+rX,o+,rX"
+        # owner: "{{ primary_user }}"
+        # group: "{{ primary_user }}"
+        # mode: "u+rwXg+rX,o+,rX"

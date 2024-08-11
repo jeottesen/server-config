@@ -1,5 +1,4 @@
 ---
-
 - import_playbook: setup-common.yml
   vars:
     limit_hosts: mediabackup
@@ -37,7 +36,7 @@
     - name: Snapraid SMART emails
       cron:
         name: snapraid scrub
-        job: "sudo snapraid smart | mail --subject='Snapraid SMART' {{ email_user }}+{{ ansible_hostname }}@gmail.com"
+        job: sudo snapraid smart | mail --subject='Snapraid SMART' {{ email_user }}+{{ ansible_hostname }}@gmail.com
         user: root
         weekday: "*"
         minute: "00"
@@ -62,7 +61,7 @@
         password: "{{ mgmt_user_pass_encoded }}"
         group: "{{ mgmt_group }}"
         uid: "{{ mgmt_user_puid }}"
-        shell: "/bin/bash"
+        shell: /bin/bash
         state: present
       tags: create-user
     - name: Add "{{ mgmt_user }}" ssh key to authorized keys on host

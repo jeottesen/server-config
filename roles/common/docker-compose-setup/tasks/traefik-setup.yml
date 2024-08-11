@@ -1,40 +1,40 @@
 ---
 - name: Create trafick acme dir
-  file:
+  ansible.builtin.file:
     path: "{{ traefik_directory }}/acme"
     owner: "{{ docker_user }}"
     group: "{{ docker_group }}"
-    mode: 0700
-    state: "directory"
+    mode: "0700"
+    state: directory
 
 - name: Ensure 'traefik/acme/acme.json' exists
-  copy:
+  ansible.builtin.copy:
     content: ""
     dest: "{{ traefik_directory }}/acme/acme.json"
     force: false
-    mode: 0600
+    mode: "0600"
 
 - name: Ensure 'traefik/traefik.log' exists
-  copy:
+  ansible.builtin.copy:
     content: ""
     dest: "{{ traefik_directory }}/traefik.log"
     force: false
-    mode: 0700
+    mode: "0700"
 
 - name: Create trafick rules dir
-  file:
+  ansible.builtin.file:
     path: "{{ traefik_directory }}/rules"
     owner: "{{ docker_user }}"
     group: "{{ docker_group }}"
-    mode: 0700
-    state: "directory"
+    mode: "0700"
+    state: directory
 
 - name: Create trafik rules
-  template:
+  ansible.builtin.template:
     src: "{{ item }}"
-    dest: "{{ traefik_directory }}/rules/{{ item | basename | regex_replace('.j2','') }}"
+    dest: "{{ traefik_directory }}/rules/{{ item | basename | regex_replace('.j2', '') }}"
     owner: "{{ docker_user }}"
     group: "{{ docker_group }}"
-    mode: 0600
+    mode: "0600"
   with_fileglob:
-   - "{{ traefik_rules_dir }}/*.j2"
+    - "{{ traefik_rules_dir }}/*.j2"

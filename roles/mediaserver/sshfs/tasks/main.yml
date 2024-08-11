@@ -1,29 +1,30 @@
+---
 - name: Install sshfs
-  package:
+  ansible.builtin.package:
     name: sshfs
     state: present
 
-- name: create folder for remote access ssh file
-  file:
-    path: "/root/.ssh/"
-    owner: "root"
-    group: "root"
-    mode: 0700
-    state: "directory"
+- name: Create folder for remote access ssh file
+  ansible.builtin.file:
+    path: /root/.ssh/
+    owner: root
+    group: root
+    mode: "0700"
+    state: directory
 
-- name: add remote access file for volume
-  copy:
+- name: Add remote access file for volume
+  ansible.builtin.copy:
     src: files/vault/id_remote
-    dest: "/root/.ssh/id_ed25519"
-    owner: "root"
-    group: "root"
-    mode: 0600
+    dest: /root/.ssh/id_ed25519
+    owner: root
+    group: root
+    mode: "0600"
 
-- name: mount sshfs to /remote
-  mount:
+- name: Mount sshfs to /remote
+  ansible.posix.mount:
     src: "{{ sshfs_source }}"
     path: "{{ sshfs_path }}"
-    fstype: "fuse.sshfs"
-    opts: "allow_other,_netdev,reconnect,auto_cache,no_readahead"
+    fstype: fuse.sshfs
+    opts: allow_other,_netdev,reconnect,auto_cache,no_readahead
     passno: "0"
     state: mounted

@@ -1,5 +1,4 @@
 ---
-
 - import_playbook: setup-common.yml
   vars:
     limit_hosts: stormfront
@@ -33,7 +32,7 @@
         password: "{{ secondary_user_pass }}"
         group: "{{ secondary_group }}"
         uid: "{{ secondary_user_puid }}"
-        shell: "/bin/bash"
+        shell: /bin/bash
         state: present
     - name: Add "{{ secondary_user }}" ssh key to authorized keys on host
       authorized_key:
@@ -50,7 +49,7 @@
         path: /home/share
         owner: "{{ primary_user }}"
         group: "{{ primary_group }}"
-        mode: 0777
+        mode: "0777"
         recurse: true
         state: directory
     - name: Sets default ACL share folder
@@ -63,8 +62,8 @@
         state: present
     - name: create directory symlinks
       file:
-        src: "/home/share"
-        dest: "/home/{{ item }}/share"
+        src: /home/share
+        dest: /home/{{ item }}/share
         owner: "{{ item }}"
         group: "{{ item }}"
         state: link

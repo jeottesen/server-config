@@ -1,14 +1,12 @@
 ---
-
 - name: Git checkout nvidia-patch
-  git:
-    repo: 'https://github.com/keylase/nvidia-patch.git'
+  ansible.builtin.git:
+    repo: https://github.com/keylase/nvidia-patch.git
     dest: /opt/nvidia-patch/
-  register: git_nvidia_patch
+    update: true
+    version: master
+  notify: [Run patch.sh script]
 
-- name: Run patch.sh script
-  command: "bash /opt/nvidia-patch/patch.sh"
-  when: git_nvidia_patch.changed
 
 # Commands for testing
 # docker run --gpus all --rm willprice/nvidia-ffmpeg \

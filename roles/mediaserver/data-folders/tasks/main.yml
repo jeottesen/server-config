@@ -1,7 +1,6 @@
 ---
-
 - name: Create and configure folder structure on every drive
-  include_tasks: filetree-setup.yml
+  ansible.builtin.include_tasks: filetree-setup.yml
   vars:
     template_folder: ../templates/data
   with_items: "{{ fstab_disks }}"

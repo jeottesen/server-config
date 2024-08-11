@@ -1,3 +1,4 @@
+---
 # https://docs.authelia.com/configuration/access-control.html
 authelia_access_control:
   default_policy: deny
@@ -5,27 +6,27 @@ authelia_access_control:
     # Rules applied to everyone
     - domain: authelia.{{ domain_name }}
       policy: bypass
-#    - domain: radarr.{{ domain_name }}
-#      policy: bypass
-#      subject: "group:admins"
-#      resources:
-#      - "^/api/.*$"
-#    - domain: "*.{{ domain_name }}"
-#      policy: one_factor
+    #    - domain: radarr.{{ domain_name }}
+    #      policy: bypass
+    #      subject: "group:admins"
+    #      resources:
+    #      - "^/api/.*$"
+    #    - domain: "*.{{ domain_name }}"
+    #      policy: one_factor
     - domain: "*.{{ domain_name }}"
-      subject: "group:admins"
+      subject: group:admins
       policy: one_factor
     - domain: "{{ domain_name }}"
-      subject: "group:admins"
+      subject: group:admins
       policy: one_factor
     - domain: "{{ secondary_user }}.qbt.{{ domain_name }}"
-      subject: "group:{{ secondary_user }}"
+      subject: group:{{ secondary_user }}
       policy: one_factor
     - domain: "{{ secondary_user }}.files.{{ domain_name }}"
-      subject: "group:{{ secondary_user }}"
+      subject: group:{{ secondary_user }}
       policy: one_factor
     - domain: "{{ secondary_user }}.{{ domain_name }}"
-      subject: "group:{{ secondary_user }}"
+      subject: group:{{ secondary_user }}
       policy: one_factor
 
 authelia_users: "{{ vault_authelia_users }}"

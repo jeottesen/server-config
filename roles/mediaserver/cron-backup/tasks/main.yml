@@ -1,34 +1,33 @@
 ---
-
-- name: "Make backup dir: {{ backup_destination }}"
-  file:
+- name: Make backup dir - {{ backup_destination }}"
+  ansible.builtin.file:
     path: "{{ backup_destination }}"
     state: directory
     mode: u=rwX,g=rwX,o=rwX
 
-- name: Add cron job for creating a tar backup {{ backup_cron_name  }}
-  cron:
+- name: Add cron job for creating a tar backup - {{ backup_cron_name }}
+  ansible.builtin.cron:
     name: "{{ backup_cron_name }}"
-    weekday: "{{ backup_cron_weekday | default ('*') }}"
-    minute: "{{ backup_cron_minute | default ('00') }}"
-    hour: "{{ backup_cron_hour | default ('00') }}"
+    weekday: "{{ backup_cron_weekday | default('*') }}"
+    minute: "{{ backup_cron_minute | default('00') }}"
+    hour: "{{ backup_cron_hour | default('00') }}"
     dom: "{{ backup_cron_dom | default('*') }}"
     job: "{{ backup_cron_job }}"
     state: present
 
-- name: "{{ cleanup_cron_name  }}: Add cleanup cron job for deleting old tar backups"
-  cron:
+- name: Add cleanup cron job for deleting old tar backups - {{ cleanup_cron_name }}
+  ansible.builtin.cron:
     name: "{{ cleanup_cron_name }}"
-    weekday: "{{ cleanup_cron_weekday | default ('*') }}"
-    minute: "{{ cleanup_cron_minute | default ('00') }}"
-    hour: "{{ cleanup_cron_hour | default ('00') }}"
+    weekday: "{{ cleanup_cron_weekday | default('*') }}"
+    minute: "{{ cleanup_cron_minute | default('00') }}"
+    hour: "{{ cleanup_cron_hour | default('00') }}"
     dom: "{{ cleanup_cron_dom | default('*') }}"
     job: "{{ cleanup_cron_job }}"
     state: present
   when: backup_max_age_days is defined and ( backup_max_age_days | int > 0 )
 
-- name: "{{ cleanup_cron_name  }}: Remove cleanup cron job if age is invalid"
-  cron:
+- name: Remove cleanup cron job if age is invalid - {{ cleanup_cron_name }}
+  ansible.builtin.cron:
     name: "{{ cleanup_cron_name }}"
     state: absent
   when: backup_max_age_days is not defined or ( backup_max_age_days | int <= 0 )

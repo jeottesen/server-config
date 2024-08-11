@@ -1,11 +1,12 @@
+---
 - name: Add ansible ssh key to authorized keys on host
-  authorized_key:
+  ansible.posix.authorized_key:
     user: "{{ ssh_user }}"
     key: "{{ ssh_ansible_identity_key }}"
   when: ssh_identity_key is defined and ssh_user is defined
 
-- name: Add "{{ ssh_user }}" ssh key to authorized keys on host
-  authorized_key:
+- name: Add ssh key for user to authorized keys on host "{{ ssh_user }}"
+  ansible.posix.authorized_key:
     user: "{{ ssh_user }}"
     key: "{{ ssh_identity_key }}"
   when: ssh_identity_key is defined and ssh_user is defined

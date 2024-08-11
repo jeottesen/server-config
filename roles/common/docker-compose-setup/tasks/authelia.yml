@@ -1,49 +1,50 @@
+---
 - name: Create authelia dir
-  file:
+  ansible.builtin.file:
     path: "{{ container_appdata_path }}/authelia"
     owner: "{{ docker_user }}"
     group: "{{ docker_group }}"
-    mode: 0700
-    state: "directory"
+    mode: "0700"
+    state: directory
 
 - name: Create authelia/configuration.yml file
-  template:
+  ansible.builtin.template:
     src: "{{ authelia_configuration_template }}"
     dest: "{{ container_appdata_path }}/authelia/configuration.yml"
     owner: "{{ docker_user }}"
     group: "{{ docker_group }}"
-    mode: 0600
+    mode: "0600"
 
 - name: Create authelia/users_database.yml file
-  template:
+  ansible.builtin.template:
     src: "{{ authelia_users_db_template }}"
     dest: "{{ container_appdata_path }}/authelia/users_database.yml"
     owner: "{{ docker_user }}"
     group: "{{ docker_group }}"
-    mode: 0600
+    mode: "0600"
 
 - name: Create authelia assets dir
-  file:
+  ansible.builtin.file:
     path: "{{ container_appdata_path }}/authelia/assets"
     owner: "{{ docker_user }}"
     group: "{{ docker_group }}"
-    mode: 0700
-    state: "directory"
+    mode: "0700"
+    state: directory
 
 - name: Copy logo.png asset if found
-  copy:
+  ansible.builtin.copy:
     src: "{{ authelia_logo_file }}"
     dest: "{{ container_appdata_path }}/authelia/assets/logo.png"
     owner: "{{ docker_user }}"
     group: "{{ docker_group }}"
-    mode: 0600
+    mode: "0600"
   when: authelia_logo_file is defined
 
 - name: Copy favicon.ico asset if found
-  copy:
+  ansible.builtin.copy:
     src: "{{ authelia_favicon_file }}"
     dest: "{{ container_appdata_path }}/authelia/assets/favicon.ico"
     owner: "{{ docker_user }}"
     group: "{{ docker_group }}"
-    mode: 0600
+    mode: "0600"
   when: authelia_favicon_file is defined

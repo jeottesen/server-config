@@ -1,27 +1,27 @@
 ---
-
 - name: Apply standard config
   hosts: "{{ limit_hosts | default('all')}}"
   become: true
   tags: common-config
   tasks:
     - name: Create group {{ primary_group }}
-      group:
+      ansible.builtin.group:
         name: "{{ primary_group }}"
         gid: "{{ primary_user_guid }}"
         state: present
       tags: create-user
     - name: Create user {{ primary_user }}
-      user:
+      ansible.builtin.user:
         name: "{{ primary_user }}"
         password: "{{ primary_user_pass_encoded }}"
         group: "{{ primary_group }}"
         uid: "{{ primary_user_puid }}"
-        shell: "/bin/bash"
+        shell: /bin/bash
         state: present
       tags: create-user
 
-- hosts: "{{ limit_hosts | default('all')}}"
+- name: Run common roles
+  hosts: "{{ limit_hosts | default('all')}}"
   become: true
   tags: common-config
   roles:
@@ -32,7 +32,7 @@
     - name: devsec.hardening.ssh_hardening
       vars:
         ssh_allow_tcp_forwarding: "yes"
-        #ssh_server_password_login: true
-        #sshd_authenticationmethods: publickey password
+        # ssh_server_password_login: true
+        # sshd_authenticationmethods: publickey password
       tags: ssh
     - name: common/update-all-packages

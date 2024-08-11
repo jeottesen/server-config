@@ -29,7 +29,7 @@ iptables_custom_rules:
       -A TCP -p tcp -m state --state NEW -m tcp -m multiport --dports 139,445 -j ACCEPT
       -A UDP -p udp -m udp -m multiport --dports 137,138 -j ACCEPT
     state: present
-  
+
 # NOTE: 'name', 'rules' and 'state' are required, others are optional.
 
 # By default this role deletes all iptables rules which are not managed by Ansible.

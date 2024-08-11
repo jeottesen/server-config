@@ -5,17 +5,17 @@
 # Modified to remove unecessary tasks
 
 - name: Install Samba packages
-  package:
+  ansible.builtin.package:
     name: '{{ q("flattened", samba__base_packages) }}'
-    state: 'present'
+    state: present
   register: samba__register_packages
   until: samba__register_packages is succeeded
 
 - name: Configure Samba
-  template:
-    src: 'smb.conf.j2'
-    dest: '/etc/samba/smb.conf'
-    owner: 'root'
-    group: 'root'
-    mode: 0644
-  notify: [ 'Check samba config' ]
+  ansible.builtin.template:
+    src: smb.conf.j2
+    dest: /etc/samba/smb.conf
+    owner: root
+    group: root
+    mode: "0644"
+  notify: [Check samba config]

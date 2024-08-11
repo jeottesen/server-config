@@ -1,3 +1,4 @@
+---
 # grog.package role
 package_list:
   - name: acl
@@ -21,17 +22,17 @@ primary_group: jeremy
 
 domain_name: "{{ base_domain_name }}"
 
-docker_dir: "/opt/docker"
-plex_dir: "/home/{{ primary_user }}/plex"
+docker_dir: /opt/docker
+plex_dir: /home/{{ primary_user }}/plex
 
 sshfs_source: "{{ vault_sshfs_source}}"
-sshfs_path: "/remote"
+sshfs_path: /remote
 
 # Foundry VTT
 foundry_admin_key: "{{ vault_foundry_admin_key }}"
-foundry_password:  "{{ vault_foundry_password }}"
-foundry_username:  "{{ vault_foundry_username }}"
-foundry_license_key:  "{{ vault_foundry_license_key }}"
+foundry_password: "{{ vault_foundry_password }}"
+foundry_username: "{{ vault_foundry_username }}"
+foundry_license_key: "{{ vault_foundry_license_key }}"
 
 # Basic Auth
 primary_user_htpass: "{{vault_home_primary_user_htpass }}"
@@ -59,24 +60,24 @@ plex_token: "{{ secret_plex_token }}"
 
 allow_admin_rule: "{{ vault_allow_admin_rule }}"
 
-sub_domains: ["whoami",
-              "oauth",
-              "vm",
-              "login",
-              "plex",
-              "qbt.public",
-              "qbt.private",
-              "qbt.books",
-              "files",
-              "tautulli",
-              "speedtest",
-              "pasta",
-              "sonarr",
-              "radarr",
-              "readarr",
-              "prowlarr",
-              "index",
-              "unifi",
-              "foundry",
-              "crafty"]
-      
+sub_domains:
+  - whoami
+  - oauth
+  - vm
+  - login
+  - plex
+  - qbt.public
+  - qbt.private
+  - qbt.books
+  - files
+  - tautulli
+  - speedtest
+  - pasta
+  - sonarr
+  - radarr
+  - readarr
+  - prowlarr
+  - index
+  - unifi
+  - foundry
+  - crafty

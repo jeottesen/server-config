@@ -1,5 +1,4 @@
 ---
-
 - import_playbook: setup-common.yml
   vars:
     limit_hosts: mediaserver
@@ -38,26 +37,26 @@
     - name: common/email-setup
       tags: email
 
-      # TODO Refactor to it's own thing to reduce duplicate code in setup-mediabackup.yml
+# TODO Refactor to it's own thing to reduce duplicate code in setup-mediabackup.yml
 - name: Configure mediaserver CRON jobs
   hosts: mediaserver
   become: true
   roles:
     - name: mediaserver/cron-backup
       vars:
-        backup_cron_name: "docker-backup"
-        backup_name_prepend: "docker"
+        backup_cron_name: docker-backup
+        backup_name_prepend: docker
         backup_destination: "{{ media_data_path }}/.config/backups"
         backup_source: "{{ docker_dir }}"
-        backup_max_age_days: '7'
+        backup_max_age_days: "7"
       tags: cron
     - name: mediaserver/cron-backup
       vars:
-        backup_cron_name: "plex-backup"
-        backup_name_prepend: "plex"
+        backup_cron_name: plex-backup
+        backup_name_prepend: plex
         backup_destination: "{{ media_data_path }}/.config/backups"
         backup_source: "{{ plex_dir }}"
-        backup_max_age_days: '7'
+        backup_max_age_days: "7"
       tags: cron
   tasks:
     - name: Add the /usr/bin and /usr/sbin folders to the cron PATH needed for smartctl
@@ -69,7 +68,7 @@
     - name: Snapraid SMART emails
       cron:
         name: snapraid scrub
-        job: "sudo snapraid smart | mail --subject='Snapraid SMART' {{ email_user }}+{{ ansible_hostname }}@gmail.com"
+        job: sudo snapraid smart | mail --subject='Snapraid SMART' {{ email_user }}+{{ ansible_hostname }}@gmail.com
         user: root
         weekday: "*"
         minute: "00"

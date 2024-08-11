@@ -1,22 +1,22 @@
 ---
-backup_cron_name: "daily-backup"
-backup_cron_job: 'tar -cvzpf "{{ backup_destination }}/{{ backup_name_prepend }}-`date {{ backup_date_format }}`.tar.gz" "{{ backup_source }}"'
-backup_cron_weekday: '*'
-backup_cron_hour: '00'
-backup_cron_minute: '00'
-backup_cron_dom: '*'
+backup_cron_name: daily-backup
+backup_cron_job: tar -cvzpf "{{ backup_destination }}/{{ backup_name_prepend }}-`date {{ backup_date_format }}`.tar.gz" "{{ backup_source }}"
+backup_cron_weekday: "*"
+backup_cron_hour: "00"
+backup_cron_minute: "00"
+backup_cron_dom: "*"
 
 cleanup_cron_name: "{{ backup_cron_name }}-cleanup"
-cleanup_cron_job: "find {{ backup_destination }} -type f -mtime +{{ backup_max_age_days }} -name '*.tar.gz' -execdir rm -- '{}' +"
-cleanup_cron_weekday: '*'
-cleanup_cron_hour: '00'
-cleanup_cron_minute: '00'
-cleanup_cron_dom: '*'
+cleanup_cron_job: find {{ backup_destination }} -type f -mtime +{{ backup_max_age_days }} -name '*.tar.gz' -execdir rm -- '{}' +
+cleanup_cron_weekday: "*"
+cleanup_cron_hour: "00"
+cleanup_cron_minute: "00"
+cleanup_cron_dom: "*"
 
 # leave empty to keep all backups
 backup_max_age_days: 0
 
-backup_name_prepend: "backup"
-backup_date_format: '+\%Y-\%m-\%d-\%H\%M\%S'
-backup_destination: "/targetdirectory/backup"
-backup_source: "$HOME/sourcedirectory"
+backup_name_prepend: backup
+backup_date_format: +\%Y-\%m-\%d-\%H\%M\%S
+backup_destination: /targetdirectory/backup
+backup_source: $HOME/sourcedirectory

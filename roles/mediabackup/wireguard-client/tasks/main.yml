@@ -1,27 +1,28 @@
-- name: install wiregaurd
-  package:
+---
+- name: Install wiregaurd
+  ansible.builtin.package:
     name: wireguard
     state: present
 
-- name: create folder for /etc/wireguard/wg0.conf
-  file:
-    path: "/etc/wireguard/"
-    owner: "root"
-    group: "root"
-    mode: 0700
-    state: "directory"
+- name: Create folder for /etc/wireguard/wg0.conf
+  ansible.builtin.file:
+    path: /etc/wireguard/
+    owner: root
+    group: root
+    mode: "0700"
+    state: directory
 
 - name: Move wg0.conf file to '/etc/wireguard/wg0.conf'
-  copy:
+  ansible.builtin.copy:
     src: files/vault/wg0.conf
-    dest: "/etc/wireguard/wg0.conf"
-    owner: "root"
-    group: "root"
-    mode: 0600
-  notify: [ 'Reload wireguard' ]
+    dest: /etc/wireguard/wg0.conf
+    owner: root
+    group: root
+    mode: "0600"
+  notify: [Reload wireguard]
 
-- name: enable wireguard service
-  systemd:
+- name: Enable wireguard service
+  ansible.builtin.systemd:
     name: wg-quick@wg0.service
     enabled: true
     state: started

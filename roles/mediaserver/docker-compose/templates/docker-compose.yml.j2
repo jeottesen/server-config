@@ -676,7 +676,7 @@ services:
     volumes:
       - '$PLEX_DIR/config:/config'
       - '$PLEX_DIR/transcode:/transcode'
-      - '$DATA_DIR:/data:ro'
+      - '$DATA_DIR:/data'
     labels:
       - "com.centurylinklabs.watchtower.enable=true"
 
@@ -986,7 +986,7 @@ services:
       - "traefik.http.services.foundry-svc.loadbalancer.server.port=30000" #}
 
   # Crafty Controller - Minecraft server manager
-  crafty-web:
+  {# crafty-web:
     <<: *common-keys-apps # See EXTENSION FIELDS at the top
     image: registry.gitlab.com/crafty-controller/crafty-4:latest
     container_name: crafty
@@ -1014,7 +1014,7 @@ services:
       - "traefik.http.routers.crafty-rtr.service=crafty-svc"
       - "traefik.http.services.crafty-svc.loadbalancer.server.scheme=https"
       - "traefik.http.services.crafty-svc.loadbalancer.server.port=8443"
-      - "traefik.http.services.crafty-svc.loadbalancer.serversTransport=isv-transport@file"
+      - "traefik.http.services.crafty-svc.loadbalancer.serversTransport=isv-transport@file" #}
 
   {# # Don't Starve Server - server for Don't Starve Together
   dst-server:

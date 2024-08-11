@@ -1,17 +1,16 @@
 ---
-
 - name: Install snapraid
-  package:
+  ansible.builtin.package:
     name: snapraid
     state: present
 
-- name: configure snapraid
-  include_tasks: configure.yml
+- name: Configure snapraid
+  ansible.builtin.include_tasks: configure.yml
 
-- name: install and configure snapraid-runner
-  include_tasks: snapraid-runner.yml
+- name: Install and configure snapraid-runner
+  ansible.builtin.include_tasks: snapraid-runner.yml
   when: snapraid_runner
 
-- name: schedule snapraid
-  include_tasks: cron.yml
+- name: Schedule snapraid
+  ansible.builtin.include_tasks: cron.yml
   when: not snapraid_runner

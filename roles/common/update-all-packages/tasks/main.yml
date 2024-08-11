@@ -1,65 +1,33 @@
-- name: Update all packages on RedHat based systems
-  block:
-    - name: Update all installed packages using yum
-      yum:
-        name: '*'
-        state: latest
-        update_cache: true
-        update_only: true
-      register: yum_update_status
-
-    - name: Remove packages not needed anymore
-      yum:
-        autoremove: true
-    
-    - name: ensure yum-utils are installed
-      package: 
-        name: yum-utils
-        state: present
-
-    - name: Check if a reboot is needed
-      command: needs-restarting -r
-      register: reboot_required
-      ignore_errors: true
-
-    - name: Reboot Server if Necessary
-      reboot:
-        msg: "Reboot initiated by Ansible for kernel updates"
-        connect_timeout: 5
-        reboot_timeout: 300
-        pre_reboot_delay: 0
-        post_reboot_delay: 30
-        test_command: uptime
-      when: reboot_required.rc == 1
-  when: ansible_facts['os_family'] == "RedHat"
-  ignore_errors: true
-  become: true
-    
+---
 - name: Update all packages on Debian based systems
-  block: 
+  when: ansible_facts['os_family'] == "Debian"
+  become: true
+  failed_when: apt_result.failed or apt_result.rc != 0
+  block:
     - name: Update apt repo and cache
-      apt: update_cache=yes force_apt_get=yes cache_valid_time=3600
-    
-    - name: Upgrade all packages 
-      apt: upgrade=dist force_apt_get=yes
+      ansible.builtin.apt:
+        update_cache: true
+        upgrade: dist
+        force_apt_get: true
+        cache_valid_time: 3600
+      register: apt_result
 
     - name: Remove packages not needed anymore
-      apt:
+      ansible.builtin.apt:
         autoremove: true
 
     - name: Check if a reboot is needed
       register: reboot_required_file
-      stat: path=/var/run/reboot-required get_md5=no
+      ansible.builtin.stat:
+        path: /var/run/reboot-required
+        get_md5: false
 
     - name: Reboot the box if kernel updated
-      reboot:
-        msg: "Reboot initiated by Ansible for kernel updates"
+      ansible.builtin.reboot:
+        msg: Reboot initiated by Ansible for kernel updates
         connect_timeout: 5
         reboot_timeout: 300
         pre_reboot_delay: 0
         post_reboot_delay: 30
         test_command: uptime
       when: reboot_required_file.stat.exists
-  when: ansible_facts['os_family'] == "Debian"
-  become: true
-  ignore_errors: true

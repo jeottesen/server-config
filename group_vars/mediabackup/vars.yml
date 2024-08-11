@@ -1,16 +1,17 @@
+---
 # grog.package role
 package_list:
   required_packages:
-  - name: acl
-  - name: vim
-  - name: rsync
-  - name: rclone
-  - name: git
-  - name: iptables-persistent
-  - name: screen
-  - name: smartmontools
-  - name: nfs-kernel-server
-  - name: xfsprogs
+    - name: acl
+    - name: vim
+    - name: rsync
+    - name: rclone
+    - name: git
+    - name: iptables-persistent
+    - name: screen
+    - name: smartmontools
+    - name: nfs-kernel-server
+    - name: xfsprogs
 
 primary_user: bak
 primary_group: bak

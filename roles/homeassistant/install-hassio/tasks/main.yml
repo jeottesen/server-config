@@ -1,24 +1,18 @@
 ---
-
 # Update and install packages for hassio and docker  ------------------------ #
 - name: Update all packages to their latest version
-  apt:
-    name: "*"
-    state: latest
-    update_cache: yes
+  ansible.builtin.apt:
+    upgrade: full
+    update_cache: true
+    autoremove: true
 
-- name: Remove dependencies that are no longer required
-  apt:
-    autoremove: yes
-
-- name: install packages for hassio and docker
-  apt:
+- name: Install packages for hassio and docker
+  ansible.builtin.apt:
     name: "{{ item }}"
-    state: latest
   with_items:
     - ca-certificates
     - gnupg
-    - apparmor 
+    - apparmor
     - jq
     - wget
     - curl
@@ -30,19 +24,18 @@
 
 # Install docker ------------------------------------------------------------- #
 - name: Add Docker GPG apt Key
-  apt_key:
+  ansible.builtin.apt_key:
     url: https://download.docker.com/linux/debian/gpg
     state: present
 
 - name: Add Docker Repository
-  apt_repository:
-    repo: "deb https://download.docker.com/linux/debian/ {{ ansible_distribution_release }} stable"
+  ansible.builtin.apt_repository:
+    repo: deb https://download.docker.com/linux/debian/ {{ ansible_distribution_release }} stable
     state: present
 
 - name: Update apt and install docker-ce
-  apt:
+  ansible.builtin.apt:
     name: "{{ item }}"
-    state: latest
     update_cache: true
   with_items:
     - docker-ce
@@ -52,13 +45,13 @@
     - docker-compose-plugin
 
 - name: Set docker cgroup to v1
-  lineinfile:
+  ansible.builtin.lineinfile:
     backup: true
     backrefs: true
     path: /etc/default/grub
-    regexp: '^GRUB_CMDLINE_LINUX_DEFAULT="systemd.unified_cgroup_hierarchy=(false|1) quiet"$'
-    line: 'GRUB_CMDLINE_LINUX_DEFAULT="systemd.unified_cgroup_hierarchy=0 quiet"'
-  notify: update grub
+    regexp: ^GRUB_CMDLINE_LINUX_DEFAULT="systemd.unified_cgroup_hierarchy=(false|1) quiet"$
+    line: GRUB_CMDLINE_LINUX_DEFAULT="systemd.unified_cgroup_hierarchy=0 quiet"
+  notify: Update grub
 
 # Install hassio ------------------------------------------------------------- #
 - name: Install hassio OS Agent

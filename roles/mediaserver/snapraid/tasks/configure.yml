@@ -1,27 +1,26 @@
 ---
-
-- name: check valid configuration
+- name: Check valid configuration
   block:
     - name: Invalid configuration
-      fail:
+      ansible.builtin.fail:
         msg: No data disks defined
       when: snapraid_data_disks | length == 0
     - name: Invalid configuration
-      fail:
+      ansible.builtin.fail:
         msg: No parity disks defined
       when: snapraid_parity_disks | length == 0
     - name: Invalid configuration
-      fail:
+      ansible.builtin.fail:
         msg: No content files defined
       when:
         - snapraid_content_files | length == 0
         - snapraid_data_disks | selectattr('content') | length == 0
         - snapraid_parity_disks | selectattr('content') | length == 0
 
-- name: install snapraid config file
-  template:
+- name: Install snapraid config file
+  ansible.builtin.template:
     src: snapraid.conf.j2
     dest: /etc/snapraid.conf
     owner: root
     group: root
-    mode: 0775
+    mode: "0775"

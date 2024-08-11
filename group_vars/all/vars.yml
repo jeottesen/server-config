@@ -1,3 +1,4 @@
+---
 # primary_user defined in home and remote group vars
 primary_user_pass: "{{ vault_primary_user_pass }}"
 primary_user_pass_encoded: "{{ vault_primary_user_pass_encoded }}"
@@ -14,7 +15,7 @@ docker_users:
 compose_puid: "{{ primary_user_puid }}"
 compose_guid: "{{ primary_user_guid }}"
 
-docker_compose_version: "v2.17.2"
+docker_compose_version: v2.29.1
 docker_package_state: latest
 
 # ssh hardening
@@ -22,7 +23,7 @@ ssh_ansible_identity_key: "{{ vault_ansible_ssh_identity_key }}"
 ssh_identity_key: "{{ vault_ssh_identity_key }}"
 sftp_enabled: true
 
-email_user: "jotaro0010"
+email_user: jotaro0010
 admin_email_address: "{{ email_user }}@gmail.com"
 admin_email_password: "{{ vault_admin_email_password }}"
 alternate_email_address: "{{ vault_alternate_email_address }}"

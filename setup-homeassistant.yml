@@ -1,5 +1,4 @@
 ---
-
 - import_playbook: setup-common.yml
   vars:
     limit_hosts: homeassistant
@@ -10,5 +9,5 @@
     - name: homeassistant/install-hassio
       tags: install-hassio
       become: true
-    #- name: homeassistant/configure-hassio
+    # - name: homeassistant/configure-hassio
     #  tags: configure-hassio

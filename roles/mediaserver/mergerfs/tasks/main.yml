@@ -1,10 +1,11 @@
+---
 - name: Install mergerfs
-  package:
+  ansible.builtin.package:
     name: mergerfs
     state: present
 
 - name: Mount hard drives
-  mount:
+  ansible.posix.mount:
     src: "{{ item.src }}"
     path: "{{ item.path }}"
     fstype: "{{ item.fstype }}"
@@ -13,6 +14,4 @@
     state: mounted
   loop: "{{ fstab_disks }}"
   become: true
-  when: item.src is defined and
-        item.path is defined and
-        item.fstype is defined
+  when: item.src is defined and item.path is defined and item.fstype is defined

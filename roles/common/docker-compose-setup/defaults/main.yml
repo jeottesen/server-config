@@ -1,7 +1,7 @@
 ---
 media_data_path: /data
 
-docker_dir: "/opt/docker"
+docker_dir: /opt/docker
 container_appdata_path: "{{ docker_dir }}/appdata"
 
 traefik_directory: "{{ container_appdata_path }}/traefik"
@@ -17,13 +17,13 @@ route53_secret_access_key: ""
 route53_zone_id: ""
 
 # Template files
-traefik_rules_dir: "templates/traefik/rules"
+traefik_rules_dir: templates/traefik/rules
 
-authelia_assets: "/config/assets/"
-authelia_configuration_template: "authelia/configuration.yml.j2"
-authelia_users_db_template: "authelia/users_database.yml.j2"
+authelia_assets: /config/assets/
+authelia_configuration_template: authelia/configuration.yml.j2
+authelia_users_db_template: authelia/users_database.yml.j2
 
-secrets_template_folder: "templates/secrets/"
+secrets_template_folder: templates/secrets/
 
 # Basic Auth
 primary_user_htpass: ""

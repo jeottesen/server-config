@@ -1,22 +1,66 @@
-
+---
 media_data_path: /data
 
 disk_mount_parent: /merge
-disk_mount_folder: "disk"
+disk_mount_folder: disk
 
 # mergerfs role
 fstab_disks:
-  - { src: /dev/disk/by-id/ata-TOSHIBA_HDWR180_X180A0R0FBLG-part1, path: "{{ disk_mount_parent }}/{{ disk_mount_folder }}1", fstype: xfs, opts: "defaults", passno: 2 }
-  - { src: /dev/disk/by-id/ata-WDC_WD80EFAX-68KNBN0_VAJAJMKL-part1, path: "{{ disk_mount_parent }}/{{ disk_mount_folder }}2", fstype: xfs, opts: "defaults", passno: 2 }
-  - { src: /dev/disk/by-id/ata-WDC_WD80EFAX-68KNBN0_VAJANS1L-part1, path: "{{ disk_mount_parent }}/{{ disk_mount_folder }}3", fstype: xfs, opts: "defaults", passno: 2 }
-  - { src: /dev/disk/by-id/ata-WDC_WD80EFAX-68KNBN0_VAJAKAUL-part1, path: "{{ disk_mount_parent }}/{{ disk_mount_folder }}4", fstype: xfs, opts: "defaults", passno: 2 }
-  - { src: /dev/disk/by-id/ata-ST20000NM007D-3DJ103_ZVT5KW8A-part1, path: "{{ disk_mount_parent }}/{{ disk_mount_folder }}5", fstype: xfs, opts: "defaults", passno: 2 }
-  - { src: /dev/disk/by-id/ata-ST8000DM004-2CX188_ZR11A34D-part1, path: "{{ disk_mount_parent }}/{{ disk_mount_folder }}6", fstype: xfs, opts: "defaults", passno: 2 }
-  - { src: /dev/disk/by-id/ata-ST8000DM004-2CX188_ZR11GTNF-part1, path: "{{ disk_mount_parent }}/{{ disk_mount_folder }}7", fstype: xfs, opts: "defaults", passno: 2 }
-  - { src: /dev/disk/by-id/ata-WDC_WD80EAZZ-00BKLB0_WD-CA1BEVEK-part1, path: "{{ disk_mount_parent }}/{{ disk_mount_folder }}8", fstype: xfs, opts: "defaults", passno: 2 }
-  - { src: /dev/disk/by-id/ata-ST20000NM007D-3DJ103_ZVT5KHM3-part1, path: "{{ disk_mount_parent }}/parity1", fstype: xfs, opts: "defaults", passno: 2 }
-  - { src: /dev/disk/by-id/ata-ST20000NM007D-3DJ103_ZVT5HHYW-part1, path: "{{ disk_mount_parent }}/parity2", fstype: xfs, opts: "defaults", passno: 2 }
-  - { src: "{{ disk_mount_parent }}/{{ disk_mount_folder }}*", path: "{{ media_data_path }}", fstype: fuse.mergerfs, opts: "defaults,allow_other,use_ino,cache.files=partial,dropcacheonclose=true,category.create=epmfs,moveonenospc=true,minfreespace=20G,fsname=Media"}
+  - src: /dev/disk/by-id/ata-TOSHIBA_HDWR180_X180A0R0FBLG-part1
+    path: "{{ disk_mount_parent }}/{{ disk_mount_folder }}1"
+    fstype: xfs
+    opts: defaults
+    passno: 2
+  - src: /dev/disk/by-id/ata-WDC_WD80EFAX-68KNBN0_VAJAJMKL-part1
+    path: "{{ disk_mount_parent }}/{{ disk_mount_folder }}2"
+    fstype: xfs
+    opts: defaults
+    passno: 2
+  - src: /dev/disk/by-id/ata-WDC_WD80EFAX-68KNBN0_VAJANS1L-part1
+    path: "{{ disk_mount_parent }}/{{ disk_mount_folder }}3"
+    fstype: xfs
+    opts: defaults
+    passno: 2
+  - src: /dev/disk/by-id/ata-WDC_WD80EFAX-68KNBN0_VAJAKAUL-part1
+    path: "{{ disk_mount_parent }}/{{ disk_mount_folder }}4"
+    fstype: xfs
+    opts: defaults
+    passno: 2
+  - src: /dev/disk/by-id/ata-ST20000NM007D-3DJ103_ZVT5KW8A-part1
+    path: "{{ disk_mount_parent }}/{{ disk_mount_folder }}5"
+    fstype: xfs
+    opts: defaults
+    passno: 2
+  - src: /dev/disk/by-id/ata-ST8000DM004-2CX188_ZR11A34D-part1
+    path: "{{ disk_mount_parent }}/{{ disk_mount_folder }}6"
+    fstype: xfs
+    opts: defaults
+    passno: 2
+  - src: /dev/disk/by-id/ata-ST8000DM004-2CX188_ZR11GTNF-part1
+    path: "{{ disk_mount_parent }}/{{ disk_mount_folder }}7"
+    fstype: xfs
+    opts: defaults
+    passno: 2
+  - src: /dev/disk/by-id/ata-HUH721212ALE601_8DH27S2H-part1
+    path: "{{ disk_mount_parent }}/{{ disk_mount_folder }}8"
+    fstype: xfs
+    opts: defaults
+    passno: 2
+  - src: /dev/disk/by-id/ata-ST20000NM007D-3DJ103_ZVT5KHM3-part1
+    path: "{{ disk_mount_parent }}/parity1"
+    fstype: xfs
+    opts: defaults
+    passno: 2
+  - src: /dev/disk/by-id/ata-ST20000NM007D-3DJ103_ZVT5HHYW-part1
+    path: "{{ disk_mount_parent }}/parity2"
+    fstype: xfs
+    opts: defaults
+    passno: 2
+  - src: "{{ disk_mount_parent }}/{{ disk_mount_folder }}*"
+    path: "{{ media_data_path }}"
+    fstype: fuse.mergerfs
+    opts: defaults,allow_other,use_ino,cache.files=partial,dropcacheonclose=true,category.create=epmfs,ignorepponrename=true,moveonenospc=true,minfreespace=20G,fsname=Media
+  
 
 # Followed these intrsuctions to disable EPC on Seagate Exos Drives
 # I didn't bother making ansible do this as it's a one time thing

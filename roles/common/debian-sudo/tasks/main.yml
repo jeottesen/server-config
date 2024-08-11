@@ -1,35 +1,35 @@
 ---
 - name: Install and configure sudo for Debian
   block:
-  - name: Assure sudo installed
-    apt:
-      pkg: "sudo"
-      state: present
+    - name: Assure sudo installed
+      ansible.builtin.apt:
+        pkg: sudo
+        state: present
 
-  - name: Ensure sudo users groups are created
-    group:
-      name: "{{ item.group }}"
-      state: present
-    loop: "{{ sudo_users }}"
+    - name: Ensure sudo users groups are created
+      ansible.builtin.group:
+        name: "{{ item.group }}"
+        state: present
+      loop: "{{ sudo_users }}"
 
-  - name: Ensure sudo users are created
-    user:
-      name: "{{ item.user }}"
-      groups: "{{ item.group }}"
-      state: present
-      append: true
-    loop: "{{ sudo_users }}"
+    - name: Ensure sudo users are created
+      ansible.builtin.user:
+        name: "{{ item.user }}"
+        groups: "{{ item.group }}"
+        state: present
+        append: true
+      loop: "{{ sudo_users }}"
 
-  - name: Assure sudo users created and sudo capable
-    user:
-      name: "{{ item.user }}"
-      groups: sudo
-      append: true
-    loop: "{{ sudo_users }}"
-    notify: Reset open ssh sessions
+    - name: Assure sudo users created and sudo capable
+      ansible.builtin.user:
+        name: "{{ item.user }}"
+        groups: sudo
+        append: true
+      loop: "{{ sudo_users }}"
+      notify: Reset open ssh sessions
 
-    # become root to install and setup sudo
-    become: true
-    become_method: su
-    become_user: root
-    when: ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu'
+      # become root to install and setup sudo
+      become: true
+      become_method: su
+      become_user: root
+      when: ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu'
