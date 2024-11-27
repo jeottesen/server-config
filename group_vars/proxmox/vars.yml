@@ -1,0 +1,9 @@
+---
+package_list:
+    - name: python3-proxmoxer
+
+proxmox_api_user: "{{ vault_proxmox_api_user }}"
+proxmox_token_id: "{{ vault_proxmox_token_id }}"
+proxmox_token_value: "{{ vault_proxmox_token_value }}"
+nuk_node: "nuk"
+nuk_host: 192.168.50.8

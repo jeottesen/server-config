@@ -1,0 +1,85 @@
+---
+- name: Apply standard config
+  hosts: proxmox
+  become: true
+  tags: common-config
+  tasks:
+    - name: Create user {{ primary_user }}
+      ansible.builtin.user:
+        name: "{{ primary_user }}"
+        password: "{{ primary_user_pass_encoded }}"
+        uid: "{{ primary_user_puid }}"
+        shell: /bin/bash
+        state: present
+      tags: create-user
+
+- name: Run common roles
+  hosts: proxmox
+  become: true
+  tags: common-config
+  roles:
+    - name: proxmox/use-no-subscription-repos
+    - name: common/debian-sudo
+    - name: common/add-ssh-keys
+      become: true
+      tags: ssh
+    - name: devsec.hardening.ssh_hardening
+      vars:
+        ssh_allow_tcp_forwarding: "yes"
+        # ssh_server_password_login: true
+        # sshd_authenticationmethods: publickey password
+      tags: ssh
+    - name: common/update-all-packages
+    - name: grog.package
+      tags: packages
+
+- name: Setup VM
+  hosts: proxmox
+  become: false
+  tags: setup-vm
+  tasks:
+    - name: Create the media LXC
+      community.general.proxmox:
+        vmid: 100
+        node: "{{ nuk_node }}"
+        api_user: "{{ proxmox_api_user }}"
+        api_password: "{{ primary_user_pass }}"
+        api_host: "{{ nuk_host }}"
+        password: "{{ primary_user_pass }}"
+        hostname: "media"
+        onboot: "true"
+        startup: order=1,up=300 # Wait 5 min before starting
+        #ostemplate: 'local:vztmpl/debian-12-standard_12.7-1_amd64.tar.zst'
+        cores: 4
+        memory: 4096
+        disk: 'local-lvm:80'
+        netif:
+          net0: "name=eth0,gw=192.168.50.1,ip=192.168.50.10/24,bridge=vmbr0"
+        mounts:
+          mp0: "/data,mp=/data"
+          dev0: /dev/dri/renderD128,gid=104
+        features:
+          - keyctl=1
+          - nesting=1
+        update: true
+        state: present
+    - name: Start the media container
+      community.general.proxmox:
+        vmid: 100
+        api_user: "{{ proxmox_api_user }}"
+        api_password: "{{ primary_user_pass }}"
+        api_host: "{{ nuk_host }}"
+        state: started
+    # Manually enable ssh root login then run the setup-common playbook to create users and harden ssh.
+
+- name: Setup media vm
+  hosts: media
+  become: true
+  tags: setup-media
+  vars:
+    package_list:
+      - name: vim
+      - name: zsh
+  roles:
+    - name: grog.package
+      tags: packages

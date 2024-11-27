@@ -1,0 +1,72 @@
+---
+- import_playbook: setup-common.yml
+  vars:
+    limit_hosts: nas
+
+- name: Setup nas
+  hosts: nas
+  become: true
+  roles:
+    - name: grog.package
+      tags: packages
+    - name: common/iptables
+      tags: iptables
+    - name: nas/mergerfs
+      tags: mergerfs
+    - name: nas/snapraid
+      tags: snapraid
+    # install docker and docker compose
+    - name: geerlingguy.docker
+      tags: docker
+    - name: nas/samba
+      tags: samba
+    - name: common/nfs-server
+      tags: nfs
+    - name: nas/sshfs
+      tags: sshfs
+    - name: nas/docker-compose
+      become: false
+      tags: docker-compose
+    - name: nas/data-folders
+      tags: folders
+    - name: common/email-setup
+      tags: email
+
+# TODO Refactor to it's own thing to reduce duplicate code in setup-nas-backup.yml
+- name: Configure nas CRON jobs
+  hosts: nas
+  become: true
+  roles:
+    - name: common/cron-backup
+      vars:
+        backup_cron_name: docker-backup
+        backup_name_prepend: docker
+        backup_destination: "{{ media_data_path }}/.config/backups"
+        backup_source: "{{ docker_dir }}"
+        backup_max_age_days: "7"
+      tags: cron
+    - name: common/cron-backup
+      vars:
+        backup_cron_name: plex-backup
+        backup_name_prepend: plex
+        backup_destination: "{{ media_data_path }}/.config/backups"
+        backup_source: "{{ plex_dir }}"
+        backup_max_age_days: "7"
+      tags: cron
+  tasks:
+    - name: Add the /usr/bin and /usr/sbin folders to the cron PATH needed for smartctl
+      cron:
+        name: PATH
+        env: true
+        job: /usr/bin:/bin:/usr/bin:/usr/sbin
+      tags: cron
+    - name: Snapraid SMART emails
+      cron:
+        name: snapraid scrub
+        job: sudo snapraid smart | mail --subject='Snapraid SMART' {{ email_user }}+{{ ansible_hostname }}@gmail.com
+        user: root
+        weekday: "*"
+        minute: "00"
+        hour: "00"
+        dom: "*"
+      tags: cron

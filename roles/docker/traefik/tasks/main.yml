@@ -1,0 +1,48 @@
+---
+
+- name: Create traefik secrets
+  ansible.builtin.include_role:
+    name: docker/secrets
+    public: "yes"
+  vars:
+    secrets_template_folder: templates/secrets
+
+- name: Create trafick acme dir
+  ansible.builtin.file:
+    path: "{{ traefik_directory }}/acme"
+    owner: "{{ docker_user }}"
+    group: "{{ docker_group }}"
+    mode: "0700"
+    state: directory
+
+- name: Ensure 'traefik/acme/acme.json' exists
+  ansible.builtin.copy:
+    content: ""
+    dest: "{{ traefik_directory }}/acme/acme.json"
+    force: false
+    mode: "0600"
+
+- name: Ensure 'traefik/traefik.log' exists
+  ansible.builtin.copy:
+    content: ""
+    dest: "{{ traefik_directory }}/traefik.log"
+    force: false
+    mode: "0700"
+
+- name: Create trafick rules dir
+  ansible.builtin.file:
+    path: "{{ traefik_directory }}/rules"
+    owner: "{{ docker_user }}"
+    group: "{{ docker_group }}"
+    mode: "0700"
+    state: directory
+
+- name: Create trafik rules
+  ansible.builtin.template:
+    src: "{{ item }}"
+    dest: "{{ traefik_directory }}/rules/{{ item | basename | regex_replace('.j2', '') }}"
+    owner: "{{ docker_user }}"
+    group: "{{ docker_group }}"
+    mode: "0600"
+  with_fileglob:
+    - "{{ traefik_rules_dir }}/*.j2"

@@ -1,0 +1,43 @@
+---
+
+- name: Comment out enterprise repositories
+  ansible.builtin.lineinfile:
+    path: "{{ item.path }}"
+    regexp: ^(deb .* enterprise)$
+    line: "# \\1"
+    backrefs: true
+    firstmatch: true
+  with_items:
+    - "{{ no_subscription_ceph_repo }}"
+    - "{{ no_subscription_pve_repo }}"
+
+- name: Check if ceph repos are already defined
+  ansible.builtin.lineinfile:
+    path: "{{ no_subscription_ceph_repo.path }}"
+    line: "{{ no_subscription_ceph_repo.repo }}"
+  check_mode: true
+  register: no_subscription_ceph_repo_check
+
+- name: Append new lines to ceph repo file
+  ansible.builtin.lineinfile:
+    path: "{{ no_subscription_ceph_repo.path }}"
+    line: "{{ no_subscription_ceph_repo.repo }}"
+  when: no_subscription_ceph_repo_check.changed == 0
+
+- name: Check if pve repos are already defined
+  ansible.builtin.lineinfile:
+    path: "{{ no_subscription_pve_repo.path }}"
+    line: "{{ no_subscription_pve_repo.repo }}"
+  check_mode: true
+  register: no_subscription_pve_repo_check
+
+- name: Append new lines to pve repo file
+  ansible.builtin.lineinfile:
+    path: "{{ no_subscription_pve_repo.path }}"
+    line: "{{ no_subscription_pve_repo.repo }}"
+  when: no_subscription_pve_repo_check.changed == 0
+
+- name: Update and upgrade apt packages
+  ansible.builtin.apt:
+    upgrade: true
+    update_cache: true

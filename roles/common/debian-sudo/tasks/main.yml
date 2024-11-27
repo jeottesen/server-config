@@ -1,9 +1,9 @@
 ---
 - name: Install and configure sudo for Debian
   block:
-    - name: Assure sudo installed
-      ansible.builtin.apt:
-        pkg: sudo
+    - name: Ensure sudo installed
+      ansible.builtin.package:
+        name: sudo
         state: present
 
     - name: Ensure sudo users groups are created

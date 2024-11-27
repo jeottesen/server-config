@@ -2,7 +2,6 @@
 - name: Update all packages on Debian based systems
   when: ansible_facts['os_family'] == "Debian"
   become: true
-  failed_when: apt_result.failed or apt_result.rc != 0
   block:
     - name: Update apt repo and cache
       ansible.builtin.apt:
@@ -10,7 +9,6 @@
         upgrade: dist
         force_apt_get: true
         cache_valid_time: 3600
-      register: apt_result
 
     - name: Remove packages not needed anymore
       ansible.builtin.apt:

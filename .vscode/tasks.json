@@ -4,18 +4,18 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "Run Mediaserver - Tag: docker-compose",
+      "label": "Run nas - Tag: docker-compose",
       "type": "shell",
-      "command": "ansible-playbook setup-mediaserver.yml --tag docker-compose",
+      "command": "ansible-playbook setup-nas.yml --tag docker-compose",
       "group": {
         "kind": "build"
       },
       "problemMatcher": []
     },
     {
-      "label": "Run Mediaserver - Skip-Tag: compose-setup Tag: docker-compose",
+      "label": "Run nas - Skip-Tag: compose-setup Tag: docker-compose",
       "type": "shell",
-      "command": "ansible-playbook setup-mediaserver.yml --skip-tag compose-setup --tag docker-compose",
+      "command": "ansible-playbook setup-nas.yml --skip-tag compose-setup --tag docker-compose",
       "group": {
         "kind": "build"
       },

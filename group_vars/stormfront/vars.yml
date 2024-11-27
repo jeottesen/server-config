@@ -10,8 +10,6 @@ package_list:
   - name: screen
   - name: pip # required for docker management
 
-primary_user: jotaro
-primary_group: jotaro
 secondary_user: "{{ vault_secondary_user }}"
 secondary_group: "{{ vault_secondary_group }}"
 secondary_user_pass: "{{ vault_secondary_user_pass }}"
@@ -33,7 +31,7 @@ remote_ssh_identity_key: "{{ vault_remote_ssh_identity_key }}"
 # override the base domain name
 domain_name: "{{ stormfront_sub_domain }}.{{ base_domain_name }}"
 
-#Authelia
+# Authelia
 authelia_jwt_secret: "{{ vault_authelia_jwt_secret }}"
 authelia_session_secret: "{{ vault_authelia_session_secret }}"
 authelia_storage_encryption_key: "{{ vault_authelia_storage_encryption_key }}"

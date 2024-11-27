@@ -1,0 +1,69 @@
+---
+- import_playbook: setup-common.yml
+  vars:
+    limit_hosts: nas-backup
+
+- name: Setup nas-backup server
+  hosts: nas-backup
+  become: true
+  roles:
+    - name: grog.package
+      tags: packages
+    - name: common/iptables
+      tags: iptables
+    - name: nas/mergerfs
+      tags: mergerfs
+    - name: nas/snapraid
+      tags: snapraid
+    - name: nas/samba
+      tags: samba
+    - name: nas-backup/wireguard-client
+      tags: wireguard
+    - name: common/email-setup
+      tags: email
+
+- name: Configure nas-backup CRON jobs
+  hosts: nas-backup
+  become: true
+  tasks:
+    - name: Add the /usr/bin and /usr/sbin folders to the cron PATH needed for smartctl
+      cron:
+        name: PATH
+        env: true
+        job: /usr/bin:/bin:/usr/bin:/usr/sbin
+      tags: cron
+    - name: Snapraid SMART emails
+      cron:
+        name: snapraid scrub
+        job: sudo snapraid smart | mail --subject='Snapraid SMART' {{ email_user }}+{{ ansible_hostname }}@gmail.com
+        user: root
+        weekday: "*"
+        minute: "00"
+        hour: "00"
+        dom: "*"
+      tags: cron
+
+- name: Setup mgmt user
+  hosts: nas-backup
+  become: true
+  tags: create-mgmt-user
+  tasks:
+    - name: Create group {{ mgmt_group }}
+      group:
+        name: "{{ mgmt_group }}"
+        gid: "{{ mgmt_user_guid }}"
+        state: present
+      tags: create-user
+    - name: Create user {{ mgmt_user }}
+      user:
+        name: "{{ mgmt_user }}"
+        password: "{{ mgmt_user_pass_encoded }}"
+        group: "{{ mgmt_group }}"
+        uid: "{{ mgmt_user_puid }}"
+        shell: /bin/bash
+        state: present
+      tags: create-user
+    - name: Add "{{ mgmt_user }}" ssh key to authorized keys on host
+      authorized_key:
+        user: "{{ mgmt_user }}"
+        key: "{{ mgmt_user_ssh_identity_key }}"

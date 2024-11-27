@@ -1,4 +1,7 @@
 ---
+timezone: America/Denver
+primary_user: jotaro
+primary_group: jotaro
 # primary_user defined in home and remote group vars
 primary_user_pass: "{{ vault_primary_user_pass }}"
 primary_user_pass_encoded: "{{ vault_primary_user_pass_encoded }}"
@@ -6,6 +9,8 @@ primary_user_puid: 1000
 primary_user_guid: 1000
 ansible_user: "{{ primary_user }}"
 ssh_user: "{{ primary_user }}"
+
+media_ip: "{{ vault_media_ip }}"
 
 sudo_users:
   - { user: "{{ primary_user }}", group: "{{ primary_user }}" }
