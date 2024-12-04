@@ -1,8 +1,0 @@
----
-docker_user: root
-docker_group: root
-
-traefik_directory: "{{ container_appdata_path }}/traefik"
-
-# Template files
-traefik_rules_dir: templates/rules

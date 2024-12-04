@@ -1,13 +1,15 @@
 ---
+# - name: Output file list
+#   ansible.builtin.debug:
+#     msg: "{{ disk_folder.path }}/{{ item | replace('.', '/') | replace(\"['\", '/') | replace(\"']\", '') }}"
+#   loop: "{{ data_folders_list.keys() }}"
+
 - name: Create directories inside {{ disk_folder.path }}
   ansible.builtin.file:
-    path: "{{ disk_folder.path }}/{{ new_folder.path }}"
+    path: "{{ disk_folder.path }}/{{ item | replace('.', '/') | replace(\"['\", '/') | replace(\"']\", '') }}"
     state: directory
     mode: u=rwX,g=rwX,o=rwX
-  loop: "{{ query('ansible.builtin.filetree', disk_folder.path) }}"
-  loop_control:
-    loop_var: new_folder
-  when: new_folder.state == "directory"
+  loop: "{{ data_folders_list.keys() }}"
 
 - name: Set permissions and owner for all files
   become: true

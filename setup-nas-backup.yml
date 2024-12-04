@@ -17,7 +17,7 @@
       tags: snapraid
     - name: nas/samba
       tags: samba
-    - name: nas-backup/wireguard-client
+    - name: nas/wireguard-client
       tags: wireguard
     - name: common/email-setup
       tags: email

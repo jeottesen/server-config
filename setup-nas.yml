@@ -3,7 +3,7 @@
   vars:
     limit_hosts: nas
 
-- name: Setup nas
+- name: Setup nas server
   hosts: nas
   become: true
   roles:
@@ -15,25 +15,30 @@
       tags: mergerfs
     - name: nas/snapraid
       tags: snapraid
-    # install docker and docker compose
-    - name: geerlingguy.docker
-      tags: docker
     - name: nas/samba
       tags: samba
-    - name: common/nfs-server
+    - name: nas/nfs-server
       tags: nfs
     - name: nas/sshfs
       tags: sshfs
-    - name: nas/docker-compose
-      become: false
-      tags: docker-compose
     - name: nas/data-folders
       tags: folders
     - name: common/email-setup
       tags: email
+    - name: geerlingguy.docker
+      tags: docker
 
-# TODO Refactor to it's own thing to reduce duplicate code in setup-nas-backup.yml
-- name: Configure nas CRON jobs
+- name: Setup docker compose services and files
+  hosts: nas
+  become: false
+  roles:
+    - name: docker-services/traefik
+    - name: docker-services/wireguard-client
+    - name: docker-services/filebrowser
+    - name: docker-compose
+      tags: docker-compose
+
+- name: Configure nas cron jobs
   hosts: nas
   become: true
   roles:

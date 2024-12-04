@@ -1,0 +1,64 @@
+---
+data_folders:
+  Books:
+    Audiobooks:
+      Library:
+      Original:
+        Audible:
+        MP3:
+      Untagged:
+    Calibre Library:
+    Light Novels:
+    Magazines:
+    Manga:
+    Misc:
+    Other:
+  Files:
+    Backups:
+    Software:
+      MSDN:
+  Games:
+    Console Mods:
+    Other:
+    PC Games:
+    ROMS:
+    Visual Novels:
+  Music:
+    Artists:
+    Billboard:
+    Christmas:
+    Compilations:
+    Misc:
+    Other:
+    Soundtracks:
+    Stand-Up:
+    unsorted:
+  Torrents:
+    private:
+      complete:
+      incomplete:
+      watch:
+    public:
+      complete:
+      incomplete:
+      watch:
+    books:
+      complete:
+      incomplete:
+      watch:
+  TTRPG:
+    Misc:
+  Videos:
+    Anime:
+    Anime Movies:
+    Documentaries:
+    Movies:
+      Foreign:
+      HD:
+      SD:
+    TV Shows:
+      Foreign:
+      Mom:
+      TV:
+    Unprocessed:
+      Downloads:

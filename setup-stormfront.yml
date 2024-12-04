@@ -12,8 +12,16 @@
     # install docker and docker compose
     - name: geerlingguy.docker
       tags: docker
-    - name: stormfront/docker-compose
-      become: false
+
+- name: Setup docker compose services and files
+  hosts: stormfront
+  become: false
+  roles:
+    - name: docker-services/traefik
+    - name: docker-services/authelia
+    - name: docker-services/wireguard-server
+    - name: docker-services/filebrowser
+    - name: docker-compose
       tags: docker-compose
 
 - name: Setup secondary user

@@ -1,0 +1,30 @@
+---
+docker_dir: /opt/docker
+container_appdata_path: "{{ docker_dir }}/appdata"
+container_secrets_path: "{{ docker_dir }}/secrets"
+
+docker_user: root
+docker_group: root
+compose_puid: 0
+compose_guid: 0
+compose_tz: America/Denver
+
+route53__access_key: ""
+route53_secret_access_key: ""
+route53_zone_id: ""
+
+# Basic Auth
+primary_user_htpass: ""
+
+# Oauth
+oauth_client_id: ""
+oauth_client_secret: ""
+forward_auth_secret: ""
+
+media_data_path: /data
+
+radarr_url: http://wireguard:7878
+sonarr_url: http://wireguard:8989
+templates_source: "{{ inventory_hostname }}"
+appdata_templates_source: "{{ templates_source }}/appdata/"
+secrets_template_folder: "{{ templates_source }}/secrets/"
