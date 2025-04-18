@@ -65,25 +65,6 @@ x-common-keys-apps-vpn: &common-keys-apps-vpn
   <<: [*network-vpn, *security]
   restart: unless-stopped
 
-secrets:
-  foundry_config:
-    file: $DOCKER_DIR/secrets/foundry-config.json
-  #htpasswd:
-  #  file: $DOCKER_DIR/secrets/htpasswd
-  authelia_jwt_secret:
-    file: $DOCKER_DIR/secrets/authelia_jwt_secret
-  authelia_session_secret:
-    file: $DOCKER_DIR/secrets/authelia_session_secret
-  authelia_storage_encryption_key:
-      file: $DOCKER_DIR/secrets/authelia_storage_encryption_key
-  #authelia_notifier_smtp_password:
-  #  file: $DOCKER_DIR/secrets/authelia_notifier_smtp_password
-  #authelia_storage_mysql_password:
-  #  file: $DOCKER_DIR/secrets/authelia_storage_mysql_password
-  #authelia_duo_api_secret_key:
-  #  file: $DOCKER_DIR/secrets/authelia_duo_api_secret_key
-
-
 services:
 
 ########################### Core Services
@@ -126,15 +107,15 @@ services:
       - DISTRIBUTION=0
       - EXEC=0
       - IMAGES=1 # Portainer
-      - INFO=1 # Portainer
+      - INFO=0 # Portainer
       - NETWORKS=1 # Portainer
       - NODES=0
       - PLUGINS=0
-      - SERVICES=1 # Portainer
+      - SERVICES=0 # Portainer
       - SESSION=0
       - SWARM=0
       - SYSTEM=0
-      - TASKS=1 # Portainer
+      - TASKS=0 # Portainer
       - VOLUMES=1 # Portainer
 
   # Traefik 2 - Reverse Proxy
@@ -252,7 +233,6 @@ services:
       PROVIDERS_GOOGLE_CLIENT_ID: "{{ oauth_client_id }}"
       PROVIDERS_GOOGLE_CLIENT_SECRET: "{{ oauth_client_secret }}"
       SECRET: "{{ forward_auth_secret }}"
-      LOGOUT_REDIRECT: $DOMAIN_NAME
       COOKIE_DOMAIN: $DOMAIN_NAME
       AUTH_HOST: oauth.$DOMAIN_NAME
       LIFETIME: 86400 # 1 day
@@ -310,7 +290,7 @@ services:
       - "traefik.http.routers.whoami-rtr.service=whoami-svc"
       - "traefik.http.services.whoami-svc.loadbalancer.server.port=80" #}
 
-  # Autoindex - Simple Directory Index
+  {# # Autoindex - Simple Directory Index
   autoindex:
     <<: *common-keys-apps # See EXTENSION FIELDS at the top
     container_name: autoindex
@@ -328,7 +308,7 @@ services:
       - "traefik.http.routers.autoindex-rtr.middlewares=chain-no-auth@file"
       ## HTTP Services
       - "traefik.http.routers.autoindex-rtr.service=autoindex-svc"
-      - "traefik.http.services.autoindex-svc.loadbalancer.server.port=80"
+      - "traefik.http.services.autoindex-svc.loadbalancer.server.port=80" #}
 
   # Organizr - Unified Frontend
   organizr:
@@ -603,21 +583,13 @@ services:
 
   prowlarr:
     <<: *common-keys-apps-vpn # See EXTENSION FIELDS at the top
-    image: ghcr.io/hotio/prowlarr
+    image: lscr.io/linuxserver/prowlarr:latest
     container_name: prowlarr
     environment:
       <<: *primary-tz-puid-pgid
     volumes:
       - $CONTAINER_APPDATA_DIR/prowlarr:/config
     # traefik labels under wireguard
-
-  flaresolverr:
-    <<: *common-keys-apps-vpn # See EXTENSION FIELDS at the top
-    # DockerHub mirror flaresolverr/flaresolverr:latest
-    image: ghcr.io/flaresolverr/flaresolverr:latest
-    container_name: flaresolverr
-    environment:
-      <<: *primary-tz-puid-pgid
 
   ############################# Media
 
@@ -632,27 +604,9 @@ services:
     volumes:
       - '$CONTAINER_APPDATA_DIR/plexautolanguages:/config'
 
-  # Audio and Subtitle manager for Plex
-  pasta:
-    <<: *common-keys-apps # See EXTENSION FIELDS at the top
-    image: cglatot/pasta
-    container_name: pasta
-    environment:
-      <<: *default-tz-puid-pgid
-    labels:
-      - "traefik.enable=true"
-      ## HTTP Routers
-      - "traefik.http.routers.pasta-rtr.entrypoints=https"
-      - "traefik.http.routers.pasta-rtr.rule=Host(`pasta.$DOMAIN_NAME`)"
-      ## Middlewares
-      - "traefik.http.routers.pasta-rtr.middlewares=chain-oauth@file"
-      ## HTTP Services
-      - "traefik.http.routers.pasta-rtr.service=pasta-svc"
-      - "traefik.http.services.pasta-svc.loadbalancer.server.port=80"
-
   tautulli:
     <<: *common-keys-apps # See EXTENSION FIELDS at the top
-    image: linuxserver/tautulli
+    image: lscr.io/linuxserver/tautulli:latest
     container_name: tautulli
     environment:
       <<: *default-tz-puid-pgid
@@ -838,6 +792,65 @@ services:
       - "traefik.http.routers.filebrowser-rtr.service=filebrowser-svc"
       - "traefik.http.services.filebrowser-svc.loadbalancer.server.port=80"
 
+  open-webui:
+    <<: *common-keys-apps # See EXTENSION FIELDS at the top
+    image: ghcr.io/open-webui/open-webui:main
+    container_name: open-webui
+    volumes:
+      - $CONTAINER_APPDATA_DIR/open-webui:/app/backend/data
+    environment:
+      WEBUI_AUTH_TRUSTED_EMAIL_HEADER: 'X-Forwarded-User'
+    labels:
+      - "traefik.enable=true"
+      ## HTTP Routers
+      - "traefik.http.routers.open-webui-rtr.entrypoints=https"
+      - "traefik.http.routers.open-webui-rtr.rule=Host(`ai.$DOMAIN_NAME`)"
+      ## Middlewares
+      - "traefik.http.routers.open-webui-rtr.middlewares=chain-oauth@file" 
+      ## HTTP Services
+      - "traefik.http.routers.open-webui-rtr.service=open-webui-svc"
+      - "traefik.http.services.open-webui-svc.loadbalancer.server.port=8080"
+
+  ombi:
+    <<: *common-keys-apps # See EXTENSION FIELDS at the top
+    image: lscr.io/linuxserver/ombi:latest
+    container_name: ombi
+    environment:
+      <<: *primary-tz-puid-pgid
+    volumes:
+      - $CONTAINER_APPDATA_DIR/ombi/config:/config
+    labels:
+      - "traefik.enable=true"
+      ## HTTP Routers
+      - "traefik.http.routers.ombi-rtr.entrypoints=https"
+      - "traefik.http.routers.ombi-rtr.rule=Host(`ombi.$DOMAIN_NAME`)"
+      ## Middlewares
+      - "traefik.http.routers.ombi-rtr.middlewares=chain-oauth@file" 
+      ## HTTP Services
+      - "traefik.http.routers.ombi-rtr.service=ombi-svc"
+      - "traefik.http.services.ombi-svc.loadbalancer.server.port=3579"
+
+
+  # Vaultwarden container
+  vaultwarden:
+    <<: *common-keys-apps # See EXTENSION FIELDS at the top
+    image: vaultwarden/server:latest
+    container_name: vaultwarden
+    volumes:
+      - $CONTAINER_APPDATA_DIR/vaultwarden:/data
+    environment:
+      <<: *primary-tz-puid-pgid
+    labels:
+      - "traefik.enable=true"
+      ## HTTP Routers
+      - "traefik.http.routers.vaultwarden-rtr.entrypoints=https"
+      - "traefik.http.routers.vaultwarden-rtr.rule=Host(`vaultwarden.$DOMAIN_NAME`)"
+      ## Middlewares
+      - "traefik.http.routers.vaultwarden-rtr.middlewares=chain-oauth@file" 
+      ## HTTP Services
+      - "traefik.http.routers.vaultwarden-rtr.service=vaultwarden-svc"
+      - "traefik.http.services.vaultwarden-svc.loadbalancer.server.port=80"
+
   ############################# Game Servers
 
   {# # Foundry VTT - A server for TTRPGS
@@ -915,7 +928,7 @@ services:
     volumes:
       - "$CONTAINER_APPDATA_DIR/dst-server/:/data:rw" #}
 
-  factorio:
+  {# factorio:
     image: factoriotools/factorio:stable
     container_name: factorio
     environment:
@@ -924,7 +937,7 @@ services:
       - "34197:34197/udp"
       - "27015:27015/tcp"
     volumes:
-      - "$USER_DIR/factorio/:/factorio"
+      - "$USER_DIR/factorio/:/factorio" #}
 
   ############################# MAINTENANCE
 
@@ -943,7 +956,7 @@ services:
       WATCHTOWER_POLL_INTERVAL: "3600" # Check for updates every hour
       WATCHTOWER_TIMEOUT: "60s"
 
-  # Docker-GC - Automatic Docker Garbage Collection
+  {# # Docker-GC - Automatic Docker Garbage Collection
   # Create docker-gc-exclude file
   dockergc:
     <<: *common-keys-apps # See EXTENSION FIELDS at the top
@@ -962,4 +975,4 @@ services:
       DRY_RUN: 0
       CLEAN_UP_VOLUMES: 1
       TZ: $TZ
-      DOCKER_HOST: tcp://socket-proxy:2375
+      DOCKER_HOST: tcp://socket-proxy:2375 #}

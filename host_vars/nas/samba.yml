@@ -69,3 +69,9 @@ samba__shares:
     create mask: 666
     directory mask: 777
 
+  backup:
+    path: "{{ backup_data_path }}"
+    comment: Offsite backup of nas
+    read only: true
+    guest ok: true
+    force user: nobody

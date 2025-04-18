@@ -1,12 +1,5 @@
 ---
 
-- name: Create traefik secrets
-  ansible.builtin.include_role:
-    name: docker/secrets
-    public: "yes"
-  vars:
-    secrets_template_folder: templates/secrets
-
 - name: Create trafick acme dir
   ansible.builtin.file:
     path: "{{ traefik_directory }}/acme"

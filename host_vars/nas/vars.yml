@@ -62,6 +62,8 @@ plex_token: "{{ secret_plex_token }}"
 allow_admin_rule: "{{ vault_allow_admin_rule }}"
 
 sub_domains:
+  - ai
+  - ombi
   - whoami
   - oauth
   - vm
@@ -83,3 +85,4 @@ sub_domains:
   - foundry
   - factorio
   - crafty
+  - vaultwarden

@@ -1,0 +1,33 @@
+---
+# grog.package role
+package_list:
+  - name: acl
+  - name: vim
+  - name: zsh
+  - name: git
+  - name: iptables-persistent
+  - name: screen
+  - name: pip # required for docker management
+  - name: cifs-utils
+  - name: qemu-guest-agent # proxmox
+
+domain_name: "{{ base_domain_name }}"
+
+docker_dir: /opt/docker
+plex_dir: /plex
+
+media_data_path: /data
+
+plex_token: "{{ secret_plex_token }}"
+
+# Oauth
+oauth_client_id: "{{ vault_oauth_client_id }}"
+oauth_client_secret: "{{ vault_oauth_client_secret }}"
+forward_auth_secret: "{{ vault_forward_auth_secret }}"
+oauth_whitelist: "{{ vault_oauth_whitelist }}"
+
+# Route 53
+route53_access_key: "{{ vault_route53_access_key_id }}"
+route53_secret_access_key: "{{ vault_route53_secret_access_key }}"
+route53_region: us-west-1
+route53_zone_id: "{{ vault_route53_zone_id }}"

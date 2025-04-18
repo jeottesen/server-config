@@ -4,15 +4,13 @@
   tags: compose-setup
   block:
 
-    - name: Setup wireguard
+    - name: Setup secrets
       ansible.builtin.include_tasks: secrets.yml
 
     - name: Ensure appdata directory structure exists
       ansible.builtin.file:
         path: "{{ container_appdata_path }}/{{ item.path }}"
         state: directory
-        owner: "{{ docker_user }}"
-        group: "{{ docker_group }}"
         mode: "0755"
       loop: "{{ query('ansible.builtin.filetree', appdata_templates_source) }}"
       when: item.state == 'directory'
@@ -21,11 +19,21 @@
       ansible.builtin.template:
         src: "{{ item.src }}"
         dest: '{{ container_appdata_path }}/{{ item.path | regex_replace("\.j2$", "") }}'
-        owner: "{{ docker_user }}"
-        group: "{{ docker_group }}"
         mode: "0644"
       loop: "{{ query('ansible.builtin.filetree', appdata_templates_source) }}"
-      when: item.state == 'file'
+      when:
+        - item.state == 'file'
+        - item.path.endswith('.j2')
+
+    - name: Copy appdata files
+      ansible.builtin.copy:
+        src: "{{ item.src }}"
+        dest: '{{ container_appdata_path }}/{{ item.path }}'
+        mode: "0644"
+      loop: "{{ query('ansible.builtin.filetree', appdata_templates_source) }}"
+      when:
+        - item.state == 'file'
+        - not item.path.endswith('.j2')
 
 - name: Setup docker-compose files
   become: true

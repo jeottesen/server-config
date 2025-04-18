@@ -1,0 +1,47 @@
+---
+- import_playbook: setup-common.yml
+  vars:
+    limit_hosts: media
+
+- name: Setup server
+  hosts: media
+  become: true
+  roles:
+    - name: grog.package
+      tags: packages
+    - name: common/iptables
+      tags: iptables
+    - name: geerlingguy.docker
+      tags: docker
+
+- name: Setup docker compose services and files
+  hosts: media
+  become: true
+  roles:
+    - name: docker-services/traefik
+    - name: docker-compose
+      tags: docker-compose
+
+# Configure igpu passthrough.
+# https://www.michaelstinkerings.org/gpu-virtualization-with-intel-12th-gen-igpu-uhd-730/
+
+# - name: Configure nas cron jobs
+#   hosts: media
+#   become: true
+#   roles:
+#     - name: common/cron-backup
+#       vars:
+#         backup_cron_name: docker-backup
+#         backup_name_prepend: media-docker
+#         backup_destination: "{{ media_data_path }}/.config/backups"
+#         backup_source: "{{ docker_dir }}"
+#         backup_max_age_days: "7"
+#       tags: cron
+#     - name: common/cron-backup
+#       vars:
+#         backup_cron_name: plex-backup
+#         backup_name_prepend: plex
+#         backup_destination: "{{ media_data_path }}/.config/backups"
+#         backup_source: "{{ plex_dir }}"
+#         backup_max_age_days: "7"
+#       tags: cron
