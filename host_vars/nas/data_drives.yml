@@ -3,46 +3,47 @@ media_data_path: /data
 
 disk_mount_parent: /merge
 disk_mount_folder: disk
+disk_mount_path: "{{ disk_mount_parent }}/{{ disk_mount_folder }}"
 
 # mergerfs role
 fstab_disks:
   - src: /dev/disk/by-id/ata-TOSHIBA_HDWR180_X180A0R0FBLG-part1
-    path: "{{ disk_mount_parent }}/{{ disk_mount_folder }}1"
+    path: "{{ disk_mount_path }}1"
     fstype: xfs
     opts: defaults
     passno: 2
   - src: /dev/disk/by-id/ata-WDC_WD80EFAX-68KNBN0_VAJAJMKL-part1
-    path: "{{ disk_mount_parent }}/{{ disk_mount_folder }}2"
+    path: "{{ disk_mount_path }}2"
     fstype: xfs
     opts: defaults
     passno: 2
   - src: /dev/disk/by-id/ata-WDC_WD80EFAX-68KNBN0_VAJANS1L-part1
-    path: "{{ disk_mount_parent }}/{{ disk_mount_folder }}3"
+    path: "{{ disk_mount_path }}3"
     fstype: xfs
     opts: defaults
     passno: 2
   - src: /dev/disk/by-id/ata-WDC_WD80EFAX-68KNBN0_VAJAKAUL-part1
-    path: "{{ disk_mount_parent }}/{{ disk_mount_folder }}4"
+    path: "{{ disk_mount_path }}4"
     fstype: xfs
     opts: defaults
     passno: 2
   - src: /dev/disk/by-id/ata-ST20000NM007D-3DJ103_ZVT5KW8A-part1
-    path: "{{ disk_mount_parent }}/{{ disk_mount_folder }}5"
+    path: "{{ disk_mount_path }}5"
     fstype: xfs
     opts: defaults
     passno: 2
   - src: /dev/disk/by-id/ata-ST8000DM004-2CX188_ZR11A34D-part1
-    path: "{{ disk_mount_parent }}/{{ disk_mount_folder }}6"
+    path: "{{ disk_mount_path }}6"
     fstype: xfs
     opts: defaults
     passno: 2
   - src: /dev/disk/by-id/ata-ST8000DM004-2CX188_ZR11GTNF-part1
-    path: "{{ disk_mount_parent }}/{{ disk_mount_folder }}7"
+    path: "{{ disk_mount_path }}7"
     fstype: xfs
     opts: defaults
     passno: 2
   - src: /dev/disk/by-id/ata-HUH721212ALE601_8DH27S2H-part1
-    path: "{{ disk_mount_parent }}/{{ disk_mount_folder }}8"
+    path: "{{ disk_mount_path }}8"
     fstype: xfs
     opts: defaults
     passno: 2
@@ -56,11 +57,10 @@ fstab_disks:
     fstype: xfs
     opts: defaults
     passno: 2
-  - src: "{{ disk_mount_parent }}/{{ disk_mount_folder }}*"
+  - src: "{{ disk_mount_path }}*"
     path: "{{ media_data_path }}"
     fstype: fuse.mergerfs
     opts: defaults,allow_other,use_ino,cache.files=partial,dropcacheonclose=true,category.create=epmfs,ignorepponrename=true,moveonenospc=true,minfreespace=20G,fsname=Media
-
 
 # Followed these intrsuctions to disable EPC on Seagate Exos Drives
 # I didn't bother making ansible do this as it's a one time thing

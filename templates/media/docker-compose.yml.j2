@@ -351,12 +351,13 @@ services:
       - "12346-12347:12346-12347/udp"
     volumes:
       - "$CONTAINER_APPDATA_DIR/dst-server/:/data:rw" #}
-
+  
   factorio-one:
     image: factoriotools/factorio:stable
     container_name: factorio-one
     environment:
       <<: *primary-tz-puid-pgid
+      USERNAME: jotaro0010
     ports:
       - "34197:34197/udp"
       # - "27015:27015/tcp" # RCON
@@ -370,6 +371,7 @@ services:
     container_name: factorio-two
     environment:
       <<: *primary-tz-puid-pgid
+      USERNAME: jotaro0010
     ports:
       - "34198:34197/udp"
       # - "27016:27015/tcp" # RCON

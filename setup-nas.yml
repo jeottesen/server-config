@@ -75,3 +75,31 @@
         hour: "00"
         dom: "*"
       tags: cron
+
+
+- name: Install hd-idle and configure it
+  hosts: nas
+  become: true
+  tags: hd-idle
+  tasks:
+    - name: Install hd-idle package
+      apt:
+        name: hd-idle
+        state: present
+
+    - name: Append HD_IDLE_OPTS to /etc/default/hd-idle
+      lineinfile:
+        path: /etc/default/hd-idle
+        line: 'HD_IDLE_OPTS="-i 600 -l /var/log/hd-idle.log"'
+        create: true
+
+    - name: Touch /var/log/hd-idle.log
+      file:
+        path: /var/log/hd-idle.log
+        state: touch
+
+    - name: Start and enable hd-idle service
+      systemd:
+        name: hd-idle
+        state: started
+        enabled: true

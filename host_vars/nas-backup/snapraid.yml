@@ -10,6 +10,8 @@ snapraid_data_disks:
     content: true
   - path: "{{ backup_mount_parent }}/{{ backup_disk_mount_folder }}3"
     content: true
+  - path: "{{ backup_mount_parent }}/{{ backup_disk_mount_folder }}4"
+    content: true
 snapraid_parity_disks:
   - path: "{{ backup_mount_parent }}/parity"
     content: false

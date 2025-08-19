@@ -13,6 +13,8 @@ networks:
     #ipam:
     #  config:
     #    - subnet: 192.168.91.0/24
+  rustdesk-net:
+    external: false
 
 ########################### EXTENSION FIELDS
 # Helps eliminate repetition of sections
@@ -836,20 +838,55 @@ services:
     <<: *common-keys-apps # See EXTENSION FIELDS at the top
     image: vaultwarden/server:latest
     container_name: vaultwarden
+    user: 1000:1000
     volumes:
       - $CONTAINER_APPDATA_DIR/vaultwarden:/data
     environment:
       <<: *primary-tz-puid-pgid
+      DOMAIN: "https://vault.cobaltcavern.com"
+      SIGNUPS_ALLOWED: "false"
     labels:
       - "traefik.enable=true"
       ## HTTP Routers
       - "traefik.http.routers.vaultwarden-rtr.entrypoints=https"
-      - "traefik.http.routers.vaultwarden-rtr.rule=Host(`vaultwarden.$DOMAIN_NAME`)"
+      - "traefik.http.routers.vaultwarden-rtr.rule=Host(`vault.$DOMAIN_NAME`)"
       ## Middlewares
-      - "traefik.http.routers.vaultwarden-rtr.middlewares=chain-oauth@file" 
+      - "traefik.http.routers.vaultwarden-rtr.middlewares=chain-no-auth@file" # Use vaultwardens authentication
       ## HTTP Services
       - "traefik.http.routers.vaultwarden-rtr.service=vaultwarden-svc"
       - "traefik.http.services.vaultwarden-svc.loadbalancer.server.port=80"
+
+  syncthing:
+    <<: *common-keys-apps
+    image: syncthing/syncthing:latest
+    container_name: syncthing
+    hostname: cobalt-syncthing
+    volumes:
+      - $CONTAINER_APPDATA_DIR/syncthing:/var/syncthing
+      - /data/Games/Emudeck/:/sync/emudeck
+    user: 1000:1000
+    environment:
+      <<: *primary-tz-puid-pgid
+    ports:
+      - 22000:22000/tcp # TCP file transfers
+      - 22000:22000/udp # QUIC file transfers
+      #- 21027:21027/udp # Receive local discovery broadcasts
+    restart: unless-stopped
+    healthcheck:
+      test: curl -fkLsS -m 2 127.0.0.1:8384/rest/noauth/health | grep -o --color=never OK || exit 1
+      interval: 1m
+      timeout: 10s
+      retries: 3
+    labels:
+      - "traefik.enable=true"
+      ## HTTP Routers
+      - "traefik.http.routers.syncthing-rtr.entrypoints=https"
+      - "traefik.http.routers.syncthing-rtr.rule=Host(`sync.$DOMAIN_NAME`)"
+      ## Middlewares
+      - "traefik.http.routers.syncthing-rtr.middlewares=chain-oauth@file"
+      ## HTTP Services
+      - "traefik.http.routers.syncthing-rtr.service=syncthing-svc"
+      - "traefik.http.services.syncthing-svc.loadbalancer.server.port=8384"
 
   ############################# Game Servers
 
@@ -976,3 +1013,44 @@ services:
       CLEAN_UP_VOLUMES: 1
       TZ: $TZ
       DOCKER_HOST: tcp://socket-proxy:2375 #}
+
+  {# hbbs:
+    container_name: hbbs
+    ports:
+      - 21115:21115
+      - 21116:21116
+      - 21116:21116/udp
+      - 21118:21118
+    image: rustdesk/rustdesk-server:latest
+    command: hbbs -r rustdesk.cobaltcavern.com
+    volumes:
+      - ./data:/root
+    networks:
+      - rustdesk-net
+      - proxies
+    depends_on:
+      - hbbr
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true" 
+      ## HTTP Routers
+      - "traefik.http.routers.hbbs-rtr.entrypoints=https"
+      - "traefik.http.routers.hbbs-rtr.rule=Host(`rustdesk.$DOMAIN_NAME`)"
+      ## Middlewares
+      - "traefik.http.routers.hbbs-rtr.middlewares=chain-oauth@file"
+      ## HTTP Services
+      - "traefik.http.routers.hbbs-rtr.service=hbbs-svc"
+      - "traefik.http.services.hbbs-svc.loadbalancer.server.port=21115"
+
+  hbbr:
+    container_name: hbbr
+    ports:
+      - 21117:21117
+      - 21119:21119
+    image: rustdesk/rustdesk-server:latest
+    command: hbbr
+    volumes:
+      - ./data:/root
+    networks:
+      - rustdesk-net
+    restart: unless-stopped #}
