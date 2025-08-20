@@ -120,60 +120,57 @@ services:
       - TASKS=0 # Portainer
       - VOLUMES=1 # Portainer
 
-  # Traefik 2 - Reverse Proxy
+  # Traefik 3 - Reverse Proxy
   traefik:
     <<: *common-keys-core # See EXTENSION FIELDS at the top
     container_name: traefik
-    image: traefik:v2.9
+    image: traefik:3.3
     command: # CLI arguments
       - --global.checkNewVersion=true
-      - --global.sendAnonymousUsage=true
-      - --entryPoints.http.address=:80
-      - --entryPoints.https.address=:443
+      - --global.sendAnonymousUsage=false
+      - --entrypoints.web.address=:80
+      - --entrypoints.websecure.address=:443
+      - --entrypoints.traefik.address=:8080
+      - --entrypoints.websecure.http3=true
+      - --entrypoints.web.http.redirections.entrypoint.to=websecure
+      - --entrypoints.web.http.redirections.entrypoint.scheme=https
+      - --entrypoints.web.http.redirections.entrypoint.permanent=true
       # Allow these IPs to set the X-Forwarded-* headers - Cloudflare IPs: https://www.cloudflare.com/ips/
-      # - --entrypoints.https.forwardedHeaders.trustedIPs=173.245.48.0/20,103.21.244.0/22,103.22.200.0/22,103.31.4.0/22,141.101.64.0/18,108.162.192.0/18,190.93.240.0/20,188.114.96.0/20,197.234.240.0/22,198.41.128.0/17,162.158.0.0/15,104.16.0.0/13,104.24.0.0/14,172.64.0.0/13,131.0.72.0/22
-      - --entryPoints.traefik.address=:8080
-      # - --entryPoints.ping.address=:8081
+      # - --entrypoints.websecure.forwardedHeaders.trustedIPs=173.245.48.0/20,103.21.244.0/22,103.22.200.0/22,103.31.4.0/22,141.101.64.0/18,108.162.192.0/18,190.93.240.0/20,188.114.96.0/20,197.234.240.0/22,198.41.128.0/17,162.158.0.0/15,104.16.0.0/13,104.24.0.0/14,172.64.0.0/13,131.0.72.0/22
       - --api=true
-      - --api.insecure=false
       - --api.dashboard=true
-      #- --ping=true
+      - --api.insecure=false
       # - --serversTransport.insecureSkipVerify=true
       - --log=true
+      - --log.filePath=/logs/traefik.log
       - --log.level=WARN # (Default: error) DEBUG, INFO, WARN, ERROR, FATAL, PANIC
       - --accessLog=true
-      - --accessLog.filePath=/traefik.log
+      - --accessLog.filePath=/logs/access.log
       - --accessLog.bufferingSize=100 # Configuring a buffer of 100 lines
-      - --accessLog.filters.statusCodes=400-499
+      - --accessLog.filters.statusCodes=204-299,400-499,500-599
       - --providers.docker=true
       # - --providers.docker.endpoint=unix:///var/run/docker.sock # Use Docker Socket Proxy instead for improved security
       - --providers.docker.endpoint=tcp://socket-proxy:2375
-      # Automatically set Host rule for services
       - --providers.docker.exposedByDefault=false
-      # - --entrypoints.https.http.middlewares=chain-basic-auth@file
-      - --entrypoints.https.http.tls.options=tls-opts@file
-      # Add route53 as default certresolver for all services. Also enables TLS and no need to specify on individual services
-      - --entrypoints.https.http.tls.certresolver=route53
-      # - --entrypoints.https.http.tls.domains[0].main=$DOMAIN_NAME
-      # - --entrypoints.https.http.tls.domains[0].sans=*.$DOMAIN_NAME
       - --providers.docker.network=docker_proxies
-      - --providers.docker.swarmMode=false
+      - --entrypoints.websecure.http.tls=true
+      - --entrypoints.websecure.http.tls.options=tls-opts@file
+      # Add route53 as default certresolver for all services. Also enables TLS and no need to specify on individual services
+      - --entrypoints.websecure.http.tls.certresolver=dns-route53
+      - --entrypoints.websecure.http.tls.domains[0].main=$DOMAIN_NAME
+      - --entrypoints.websecure.http.tls.domains[0].sans=*.$DOMAIN_NAME
       - --providers.file.directory=/rules # Load dynamic configuration from one or more .toml or .yml files in a directory
-      # - --providers.file.filename=/path/to/file # Load dynamic configuration from a file
       - --providers.file.watch=true # Only works on top level files in the rules folder
-      #- --certificatesResolvers.route53.acme.caServer=https://acme-staging-v02.api.letsencrypt.org/directory # LetsEncrypt Staging Server - uncomment when testing
-      - --certificatesResolvers.route53.acme.email=$EMAIL_ADDRESS
-      - --certificatesResolvers.route53.acme.storage=/acme.json
-      - --certificatesResolvers.route53.acme.dnsChallenge.provider=route53
-      - --certificatesResolvers.route53.acme.dnsChallenge.delayBeforeCheck=90 # To delay DNS check and reduce LE hitrate
+      #- --certificatesResolvers.dns-route53.acme.caServer=https://acme-staging-v02.api.letsencrypt.org/directory # LetsEncrypt Staging Server - uncomment when testing
+      - --certificatesResolvers.dns-route53.acme.email=$EMAIL_ADDRESS
+      - --certificatesResolvers.dns-route53.acme.storage=/acme.json
+      - --certificatesResolvers.dns-route53.acme.dnsChallenge.provider=route53
+      - --certificatesResolvers.dns-route53.acme.dnsChallenge.resolvers=1.1.1.1:53,1.0.0.1:53
+      - --certificatesResolvers.dns-route53.acme.dnsChallenge.delayBeforeCheck=90 # To delay DNS check and reduce LE hitrate
     networks:
       proxies:
           ipv4_address: 10.17.100.200
       socket_proxy:
-    #healthcheck:
-    #  test: ["CMD", "traefik", "healthcheck", "--ping"]
-    #  interval: 5s
-    #  retries: 3
     ports:
       - target: 80
         published: 80
@@ -192,7 +189,7 @@ services:
     volumes:
       - $CONTAINER_APPDATA_DIR/traefik/rules:/rules # file provider directory
       - $CONTAINER_APPDATA_DIR/traefik/acme/acme.json:/acme.json # cert location - you must touch this file and change permissions to 600
-      - $CONTAINER_APPDATA_DIR/traefik/traefik.log:/traefik.log # for fail2ban - make sure to touch file before starting container
+      - $CONTAINER_APPDATA_DIR/traefik/logs:/logs # log directory for traefik and access logs
       - $CONTAINER_APPDATA_DIR/traefik/plugins-local:/plugins-local # traefik plugins
     environment:
       AWS_ACCESS_KEY_ID: $AWS_ACCESS_KEY_ID
@@ -202,24 +199,15 @@ services:
     labels:
       #- "autoheal=true"
       - "traefik.enable=true"
-      # HTTP-to-HTTPS Redirect
-      - "traefik.http.routers.http-catchall.entrypoints=http"
-      - "traefik.http.routers.http-catchall.rule=HostRegexp(`{host:.+}`)"
-      - "traefik.http.routers.http-catchall.middlewares=chain-redirect@file"
-      #- "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
       # HTTP Routers
-      - "traefik.http.routers.traefik-rtr.entrypoints=https"
+      - "traefik.http.routers.traefik-rtr.entrypoints=websecure"
       - "traefik.http.routers.traefik-rtr.rule=Host(`traefik.$DOMAIN_NAME`)"
       - "traefik.http.routers.traefik-rtr.tls=true"
-      - "traefik.http.routers.traefik-rtr.tls.certresolver=route53"
+      - "traefik.http.routers.traefik-rtr.tls.certresolver=dns-route53"
       - "traefik.http.routers.traefik-rtr.tls.domains[0].main=$DOMAIN_NAME"
       - "traefik.http.routers.traefik-rtr.tls.domains[0].sans=*.$DOMAIN_NAME"
       ## Services - API
       - "traefik.http.routers.traefik-rtr.service=api@internal"
-      ## Healthcheck/ping
-      #- "traefik.http.routers.ping.rule=Host(`traefik.$DOMAIN_NAME`) && Path(`/ping`)"
-      #- "traefik.http.routers.ping.tls=true"
-      #- "traefik.http.routers.ping.service=ping@internal"
       ## Middlewares
       #- "traefik.http.routers.traefik-rtr.middlewares=chain-no-auth@file" # For No Authentication
       #- "traefik.http.routers.traefik-rtr.middlewares=chain-auth-basic@file" # For Basic HTTP Authentication      
@@ -240,12 +228,12 @@ services:
       LIFETIME: 86400 # 1 day
       INSECURE_COOKIE: "false"
       LOG_LEVEL: info
-      WHITELIST: {% for email in oauth_whitelist %}{{ email }},{% endfor %}{{ admin_email_address }}
+      WHITELIST: "{% for email in oauth_whitelist %}{{ email }},{% endfor %}{{ admin_email_address }}"
     labels:
       - "traefik.enable=true"
       # HTTP Routers
       - "traefik.http.routers.oauth-rtr.tls=true"
-      - "traefik.http.routers.oauth-rtr.entrypoints=https"
+      - "traefik.http.routers.oauth-rtr.entrypoints=websecure"
       - "traefik.http.routers.oauth-rtr.rule=Host(`oauth.$DOMAIN_NAME`)"
       # Middlewares
       - "traefik.http.routers.oauth-rtr.middlewares=chain-oauth@file"
@@ -269,7 +257,7 @@ services:
       DDNSR53_ROUTE53_RECORDSSET_0_TYPE: A
       DDNSR53_ROUTE53_RECORDSSET_0_TTL: 300
 {% for sub in sub_domains %}
-      DDNSR53_ROUTE53_RECORDSSET_{{ loop.index }}_NAME: {{ sub }}.$DOMAIN_NAME
+      DDNSR53_ROUTE53_RECORDSSET_{{ loop.index }}_NAME: "{{ sub }}.$DOMAIN_NAME"
       DDNSR53_ROUTE53_RECORDSSET_{{ loop.index }}_TYPE: A
       DDNSR53_ROUTE53_RECORDSSET_{{ loop.index }}_TTL: 300
 {% endfor %}
@@ -328,8 +316,8 @@ services:
     labels:
       - "traefik.enable=true"
       ## HTTP Routers
-      - "traefik.http.routers.organizr-rtr.entrypoints=https"
-      - "traefik.http.routers.organizr-rtr.rule=Host(`$DOMAIN_NAME`,`www.$DOMAIN_NAME`, `login.$DOMAIN_NAME`)"
+      - "traefik.http.routers.organizr-rtr.entrypoints=websecure"
+      - "traefik.http.routers.organizr-rtr.rule=Host(`$DOMAIN_NAME`) || Host(`www.$DOMAIN_NAME`) || Host(`login.$DOMAIN_NAME`)"
       ## Middlewares
       - "traefik.http.routers.organizr-rtr.middlewares=chain-oauth@file"
       ## HTTP Services
@@ -360,7 +348,7 @@ services:
       - "traefik.enable=true"
       ## HTTP Routers
       - "traefik.http.routers.unifi-rtr.tls=true"
-      - "traefik.http.routers.unifi-rtr.entrypoints=https"
+      - "traefik.http.routers.unifi-rtr.entrypoints=websecure"
       - "traefik.http.routers.unifi-rtr.rule=Host(`unifi.$DOMAIN_NAME`)"
       ## Middlewares
       - "traefik.http.routers.unifi-rtr.middlewares=chain-oauth@file"
@@ -386,7 +374,7 @@ services:
     labels:
       - "traefik.enable=true"
       ## HTTP Routers
-      - "traefik.http.routers.speedtest-rtr.entrypoints=https"
+      - "traefik.http.routers.speedtest-rtr.entrypoints=websecure"
       - "traefik.http.routers.speedtest-rtr.rule=Host(`speedtest.$DOMAIN_NAME`)"
       ## Middlewares
       - "traefik.http.routers.speedtest-rtr.middlewares=chain-oauth@file"
@@ -423,11 +411,11 @@ services:
 
       ### Public QBittorent Routers
       ## HTTP Routers Auth Bypass
-      - "traefik.http.routers.qbt-public-rtr-bypass.entrypoints=https"
-      - "traefik.http.routers.qbt-public-rtr-bypass.rule=Host(`qbt.public.$DOMAIN_NAME`) && Headers(`Traefik-Auth-Key`, `$TRAEFIK_AUTH_KEY`)" # Bypass Auth for LunaSea on iOS
+      - "traefik.http.routers.qbt-public-rtr-bypass.entrypoints=websecure"
+      - "traefik.http.routers.qbt-public-rtr-bypass.rule=Host(`qbt.public.$DOMAIN_NAME`) && Header(`Traefik-Auth-Key`, `$TRAEFIK_AUTH_KEY`)" # Bypass Auth for LunaSea on iOS
       - "traefik.http.routers.qbt-public-rtr-bypass.priority=100"
       ## HTTP Routers
-      - "traefik.http.routers.qbt-public-rtr.entrypoints=https"
+      - "traefik.http.routers.qbt-public-rtr.entrypoints=websecure"
       - "traefik.http.routers.qbt-public-rtr.rule=Host(`qbt.public.$DOMAIN_NAME`)"
       - "traefik.http.routers.qbt-public-rtr.priority=99"
       ## Middlewares
@@ -439,11 +427,11 @@ services:
 
       ### Private QBittorent Routers
       ## HTTP Routers Auth Bypass
-      - "traefik.http.routers.qbt-private-rtr-bypass.entrypoints=https"
-      - "traefik.http.routers.qbt-private-rtr-bypass.rule=Host(`qbt.private.$DOMAIN_NAME`) && Headers(`Traefik-Auth-Key`, `$TRAEFIK_AUTH_KEY`)" # Bypass Auth for LunaSea on iOS
+      - "traefik.http.routers.qbt-private-rtr-bypass.entrypoints=websecure"
+      - "traefik.http.routers.qbt-private-rtr-bypass.rule=Host(`qbt.private.$DOMAIN_NAME`) && Header(`Traefik-Auth-Key`, `$TRAEFIK_AUTH_KEY`)" # Bypass Auth for LunaSea on iOS
       - "traefik.http.routers.qbt-private-rtr-bypass.priority=100"
       ## HTTP Routers
-      - "traefik.http.routers.qbt-private-rtr.entrypoints=https"
+      - "traefik.http.routers.qbt-private-rtr.entrypoints=websecure"
       - "traefik.http.routers.qbt-private-rtr.rule=Host(`qbt.private.$DOMAIN_NAME`)"
       - "traefik.http.routers.qbt-private-rtr.priority=99"
       ## Middlewares
@@ -455,11 +443,11 @@ services:
 
       ### Books QBittorent Routers
       ## HTTP Routers Auth Bypass
-      - "traefik.http.routers.qbt-books-rtr-bypass.entrypoints=https"
-      - "traefik.http.routers.qbt-books-rtr-bypass.rule=Host(`qbt.books.$DOMAIN_NAME`) && Headers(`Traefik-Auth-Key`, `$TRAEFIK_AUTH_KEY`)" # Bypass Auth for LunaSea on iOS
+      - "traefik.http.routers.qbt-books-rtr-bypass.entrypoints=websecure"
+      - "traefik.http.routers.qbt-books-rtr-bypass.rule=Host(`qbt.books.$DOMAIN_NAME`) && Header(`Traefik-Auth-Key`, `$TRAEFIK_AUTH_KEY`)" # Bypass Auth for LunaSea on iOS
       - "traefik.http.routers.qbt-books-rtr-bypass.priority=100"
       ## HTTP Routers
-      - "traefik.http.routers.qbt-books-rtr.entrypoints=https"
+      - "traefik.http.routers.qbt-books-rtr.entrypoints=websecure"
       - "traefik.http.routers.qbt-books-rtr.rule=Host(`qbt.books.$DOMAIN_NAME`)"
       - "traefik.http.routers.qbt-books-rtr.priority=99"
       ## Middlewares
@@ -471,11 +459,11 @@ services:
 
       ### TV Sonarr Routers
       ## HTTP Routers Auth Bypass
-      - "traefik.http.routers.sonarr-rtr-bypass.entrypoints=https"
-      - "traefik.http.routers.sonarr-rtr-bypass.rule=Host(`sonarr.$DOMAIN_NAME`) && Headers(`Traefik-Auth-Key`, `$TRAEFIK_AUTH_KEY`)" # Bypass Auth for LunaSea on iOS
+      - "traefik.http.routers.sonarr-rtr-bypass.entrypoints=websecure"
+      - "traefik.http.routers.sonarr-rtr-bypass.rule=Host(`sonarr.$DOMAIN_NAME`) && Header(`Traefik-Auth-Key`, `$TRAEFIK_AUTH_KEY`)" # Bypass Auth for LunaSea on iOS
       - "traefik.http.routers.sonarr-rtr-bypass.priority=100"
       ## HTTP Routers
-      - "traefik.http.routers.sonarr-rtr.entrypoints=https"
+      - "traefik.http.routers.sonarr-rtr.entrypoints=websecure"
       - "traefik.http.routers.sonarr-rtr.rule=Host(`sonarr.$DOMAIN_NAME`)"
       - "traefik.http.routers.sonarr-rtr.priority=99"
       ## Middlewares
@@ -487,11 +475,11 @@ services:
 
       ### Radarr Routers
       # HTTP Routers Auth Bypass
-      - "traefik.http.routers.radarr-rtr-bypass.entrypoints=https"
-      - "traefik.http.routers.radarr-rtr-bypass.rule=Host(`radarr.$DOMAIN_NAME`) && Headers(`Traefik-Auth-Key`, `$TRAEFIK_AUTH_KEY`)" # Bypass Auth for LunaSea on iOS
+      - "traefik.http.routers.radarr-rtr-bypass.entrypoints=websecure"
+      - "traefik.http.routers.radarr-rtr-bypass.rule=Host(`radarr.$DOMAIN_NAME`) && Header(`Traefik-Auth-Key`, `$TRAEFIK_AUTH_KEY`)" # Bypass Auth for LunaSea on iOS
       - "traefik.http.routers.radarr-rtr-bypass.priority=100"
       ## HTTP Routers
-      - "traefik.http.routers.radarr-rtr.entrypoints=https"
+      - "traefik.http.routers.radarr-rtr.entrypoints=websecure"
       - "traefik.http.routers.radarr-rtr.rule=Host(`radarr.$DOMAIN_NAME`)"
       - "traefik.http.routers.radarr-rtr.priority=99"
       ## Middlewares
@@ -504,11 +492,11 @@ services:
       
       ### Readarr Routers
       # HTTP Routers Auth Bypass
-      - "traefik.http.routers.readarr-rtr-bypass.entrypoints=https"
-      - "traefik.http.routers.readarr-rtr-bypass.rule=Host(`readarr.$DOMAIN_NAME`) && Headers(`Traefik-Auth-Key`, `$TRAEFIK_AUTH_KEY`)" # Bypass Auth for LunaSea on iOS
+      - "traefik.http.routers.readarr-rtr-bypass.entrypoints=websecure"
+      - "traefik.http.routers.readarr-rtr-bypass.rule=Host(`readarr.$DOMAIN_NAME`) && Header(`Traefik-Auth-Key`, `$TRAEFIK_AUTH_KEY`)" # Bypass Auth for LunaSea on iOS
       - "traefik.http.routers.readarr-rtr-bypass.priority=100"
       ## HTTP Routers Auth
-      - "traefik.http.routers.readarr-rtr.entrypoints=https"
+      - "traefik.http.routers.readarr-rtr.entrypoints=websecure"
       - "traefik.http.routers.readarr-rtr.rule=Host(`readarr.$DOMAIN_NAME`)"
       - "traefik.http.routers.readarr-rtr.priority=99"
       ## Middlewares
@@ -520,9 +508,9 @@ services:
 
       ### Prowlarr Routers
       ## HTTP Routers
-      - "traefik.http.routers.prowlarr-login-rtr.entrypoints=https"
+      - "traefik.http.routers.prowlarr-login-rtr.entrypoints=websecure"
       - "traefik.http.routers.prowlarr-login-rtr.rule=Host(`prowlarr.$DOMAIN_NAME`)"
-      - "traefik.http.routers.prowlarr-rtr.entrypoints=https"
+      - "traefik.http.routers.prowlarr-rtr.entrypoints=websecure"
       - "traefik.http.routers.prowlarr-rtr.rule=Host(`prowlarr.$DOMAIN_NAME`) && {{ allow_admin_rule }}"
       ## Middlewares
       - "traefik.http.routers.prowlarr-login-rtr.middlewares=chain-oauth@file,back-to-home@file"
@@ -617,7 +605,7 @@ services:
     labels:
       - "traefik.enable=true"
       ## HTTP Routers
-      - "traefik.http.routers.tautulli-rtr.entrypoints=https"
+      - "traefik.http.routers.tautulli-rtr.entrypoints=websecure"
       - "traefik.http.routers.tautulli-rtr.rule=Host(`tautulli.$DOMAIN_NAME`)"
       ## Middlewares
       - "traefik.http.routers.tautulli-rtr.middlewares=chain-oauth@file"
@@ -699,11 +687,11 @@ services:
     labels:
       - "traefik.enable=true"
       ## HTTP Routers Auth Bypass
-      - "traefik.http.routers.overseerr-rtr-bypass.entrypoints=https"
-      - "traefik.http.routers.overseerr-rtr-bypass.rule=Host(`overseerr.$DOMAIN_NAME`) && Headers(`Traefik-Auth-Key`, `$TRAEFIK_AUTH_KEY`)" # Bypass Auth for mobile apps
+      - "traefik.http.routers.overseerr-rtr-bypass.entrypoints=websecure"
+      - "traefik.http.routers.overseerr-rtr-bypass.rule=Host(`overseerr.$DOMAIN_NAME`) && Header(`Traefik-Auth-Key`, `$TRAEFIK_AUTH_KEY`)" # Bypass Auth for mobile apps
       - "traefik.http.routers.overseerr-rtr-bypass.priority=100"
       ## HTTP Routers
-      - "traefik.http.routers.overseerr-rtr.entrypoints=https"
+      - "traefik.http.routers.overseerr-rtr.entrypoints=websecure"
       - "traefik.http.routers.overseerr-rtr.rule=Host(`overseerr.$DOMAIN_NAME`)"
       - "traefik.http.routers.overseerr-rtr.priority=99"
       ## Middlewares
@@ -731,7 +719,7 @@ services:
       - "traefik.enable=true"
       ## HTTP Routers Auth Bypass
       #- "traefik.http.routers.lidarr-rtr-bypass.entrypoints=https"
-      #- "traefik.http.routers.lidarr-rtr-bypass.rule=Host(`lidarr.$DOMAIN_NAME`) && (Headers(`X-Api-Key`, `$LIDARR_API_KEY`) || Query(`apikey`, `$LIDARR_API_KEY`))"
+      #- "traefik.http.routers.lidarr-rtr-bypass.rule=Host(`lidarr.$DOMAIN_NAME`) && (Header(`X-Api-Key`, `$LIDARR_API_KEY`) || Query(`apikey`, `$LIDARR_API_KEY`))"
       #- "traefik.http.routers.lidarr-rtr-bypass.priority=100"
       ## HTTP Routers Auth
       - "traefik.http.routers.lidarr-rtr.entrypoints=https"
@@ -813,7 +801,7 @@ services:
     labels:
       - "traefik.enable=true"
       ## HTTP Routers
-      - "traefik.http.routers.filebrowser-rtr.entrypoints=https"
+      - "traefik.http.routers.filebrowser-rtr.entrypoints=websecure"
       - "traefik.http.routers.filebrowser-rtr.rule=Host(`files.$DOMAIN_NAME`)"
       ## Middlewares
       - "traefik.http.routers.filebrowser-rtr.middlewares=chain-oauth@file" # ,default-guest-user"
@@ -832,7 +820,7 @@ services:
     labels:
       - "traefik.enable=true"
       ## HTTP Routers
-      - "traefik.http.routers.open-webui-rtr.entrypoints=https"
+      - "traefik.http.routers.open-webui-rtr.entrypoints=websecure"
       - "traefik.http.routers.open-webui-rtr.rule=Host(`ai.$DOMAIN_NAME`)"
       ## Middlewares
       - "traefik.http.routers.open-webui-rtr.middlewares=chain-oauth@file" 
@@ -851,7 +839,7 @@ services:
     labels:
       - "traefik.enable=true"
       ## HTTP Routers
-      - "traefik.http.routers.ombi-rtr.entrypoints=https"
+      - "traefik.http.routers.ombi-rtr.entrypoints=websecure"
       - "traefik.http.routers.ombi-rtr.rule=Host(`ombi.$DOMAIN_NAME`)"
       ## Middlewares
       - "traefik.http.routers.ombi-rtr.middlewares=chain-oauth@file" 
@@ -875,7 +863,7 @@ services:
     labels:
       - "traefik.enable=true"
       ## HTTP Routers
-      - "traefik.http.routers.vaultwarden-rtr.entrypoints=https"
+      - "traefik.http.routers.vaultwarden-rtr.entrypoints=websecure"
       - "traefik.http.routers.vaultwarden-rtr.rule=Host(`vault.$DOMAIN_NAME`)"
       ## Middlewares
       - "traefik.http.routers.vaultwarden-rtr.middlewares=chain-no-auth@file" # Use vaultwardens authentication
@@ -907,7 +895,7 @@ services:
     labels:
       - "traefik.enable=true"
       ## HTTP Routers
-      - "traefik.http.routers.syncthing-rtr.entrypoints=https"
+      - "traefik.http.routers.syncthing-rtr.entrypoints=websecure"
       - "traefik.http.routers.syncthing-rtr.rule=Host(`sync.$DOMAIN_NAME`)"
       ## Middlewares
       - "traefik.http.routers.syncthing-rtr.middlewares=chain-oauth@file"
@@ -929,7 +917,7 @@ services:
     labels:
       - "traefik.enable=true"
       ## HTTP Routers
-      - "traefik.http.routers.zigbee2mqtt-rtr.entrypoints=https"
+      - "traefik.http.routers.zigbee2mqtt-rtr.entrypoints=websecure"
       - "traefik.http.routers.zigbee2mqtt-rtr.rule=Host(`zigbee.$DOMAIN_NAME`)"
       ## Middlewares
       - "traefik.http.routers.zigbee2mqtt-rtr.middlewares=chain-oauth@file"

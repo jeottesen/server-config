@@ -3,7 +3,7 @@ http:
     plex-rtr:
       rule: "Host(`plex.{{ domain_name }}`)"
       entryPoints:
-        - https
+        - websecure
       middlewares:
         - chain-no-auth
       service: plex-svc
