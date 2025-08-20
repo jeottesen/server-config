@@ -1,5 +1,7 @@
 {
     "editor.tabSize": 2,
     "cSpell.enabled": false,
-    "ansible.python.interpreterPath": "/bin/python3"
+    "ansible.python.interpreterPath": "/bin/python3",
+    "python-envs.pythonProjects": [],
+    "python-envs.defaultEnvManager": "ms-python.python:system"
 }
