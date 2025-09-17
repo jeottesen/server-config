@@ -1,0 +1,44 @@
+services:
+  common-keys-core:
+    networks:
+      - swarm_proxies
+    security_opt:
+      - no-new-privileges:true
+
+  common-keys-apps:
+    networks:
+      - swarm_proxies
+    security_opt:
+      - no-new-privileges:true
+
+  common-keys-core-vpn:
+    network_mode: "service:wireguard"
+    depends_on:
+      - wireguard
+    security_opt:
+      - no-new-privileges:true
+
+  common-keys-apps-vpn:
+    network_mode: "service:wireguard"
+    depends_on:
+      - wireguard
+    security_opt:
+      - no-new-privileges:true
+
+  immich-ml:
+    extends:
+      file: hwaccel.ml.yml
+      service: openvino
+    networks:
+      - swarm_proxies
+    security_opt:
+      - no-new-privileges:true
+
+  immich-server:
+    extends:
+      file: hwaccel.transcoding.yml
+      service: quicksync
+    networks:
+      - swarm_proxies
+    security_opt:
+      - no-new-privileges:true

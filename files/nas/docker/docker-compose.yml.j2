@@ -130,6 +130,9 @@ services:
       - --global.sendAnonymousUsage=false
       - --entrypoints.web.address=:80
       - --entrypoints.websecure.address=:443
+      - --entrypoints.websecure.transport.respondingTimeouts.readTimeout=600s
+      - --entrypoints.websecure.transport.respondingTimeouts.idleTimeout=600s
+      - --entrypoints.websecure.transport.respondingTimeouts.writeTimeout=600s
       - --entrypoints.traefik.address=:8080
       - --entrypoints.websecure.http3=true
       - --entrypoints.web.http.redirections.entrypoint.to=websecure
@@ -205,7 +208,7 @@ services:
       - "traefik.http.routers.traefik-rtr.tls=true"
       - "traefik.http.routers.traefik-rtr.tls.certresolver=dns-route53"
       - "traefik.http.routers.traefik-rtr.tls.domains[0].main=$DOMAIN_NAME"
-      - "traefik.http.routers.traefik-rtr.tls.domains[0].sans=*.$DOMAIN_NAME"
+      - "traefik.http.routers.traefik-rtr.tls.domains[0].sans=*.$DOMAIN_NAME,*.qbt.$DOMAIN_NAME"
       ## Services - API
       - "traefik.http.routers.traefik-rtr.service=api@internal"
       ## Middlewares
@@ -412,11 +415,11 @@ services:
       ### Public QBittorent Routers
       ## HTTP Routers Auth Bypass
       - "traefik.http.routers.qbt-public-rtr-bypass.entrypoints=websecure"
-      - "traefik.http.routers.qbt-public-rtr-bypass.rule=Host(`qbt.public.$DOMAIN_NAME`) && Header(`Traefik-Auth-Key`, `$TRAEFIK_AUTH_KEY`)" # Bypass Auth for LunaSea on iOS
+      - "traefik.http.routers.qbt-public-rtr-bypass.rule=Host(`public.qbt.$DOMAIN_NAME`) && Header(`Traefik-Auth-Key`, `$TRAEFIK_AUTH_KEY`)" # Bypass Auth for LunaSea on iOS
       - "traefik.http.routers.qbt-public-rtr-bypass.priority=100"
       ## HTTP Routers
       - "traefik.http.routers.qbt-public-rtr.entrypoints=websecure"
-      - "traefik.http.routers.qbt-public-rtr.rule=Host(`qbt.public.$DOMAIN_NAME`)"
+      - "traefik.http.routers.qbt-public-rtr.rule=Host(`public.qbt.$DOMAIN_NAME`)"
       - "traefik.http.routers.qbt-public-rtr.priority=99"
       ## Middlewares
       - "traefik.http.routers.qbt-public-rtr.middlewares=chain-oauth@file"
@@ -428,11 +431,11 @@ services:
       ### Private QBittorent Routers
       ## HTTP Routers Auth Bypass
       - "traefik.http.routers.qbt-private-rtr-bypass.entrypoints=websecure"
-      - "traefik.http.routers.qbt-private-rtr-bypass.rule=Host(`qbt.private.$DOMAIN_NAME`) && Header(`Traefik-Auth-Key`, `$TRAEFIK_AUTH_KEY`)" # Bypass Auth for LunaSea on iOS
+      - "traefik.http.routers.qbt-private-rtr-bypass.rule=Host(`private.qbt.$DOMAIN_NAME`) && Header(`Traefik-Auth-Key`, `$TRAEFIK_AUTH_KEY`)" # Bypass Auth for LunaSea on iOS
       - "traefik.http.routers.qbt-private-rtr-bypass.priority=100"
       ## HTTP Routers
       - "traefik.http.routers.qbt-private-rtr.entrypoints=websecure"
-      - "traefik.http.routers.qbt-private-rtr.rule=Host(`qbt.private.$DOMAIN_NAME`)"
+      - "traefik.http.routers.qbt-private-rtr.rule=Host(`private.qbt.$DOMAIN_NAME`)"
       - "traefik.http.routers.qbt-private-rtr.priority=99"
       ## Middlewares
       - "traefik.http.routers.qbt-private-rtr.middlewares=chain-oauth@file"
@@ -444,11 +447,11 @@ services:
       ### Books QBittorent Routers
       ## HTTP Routers Auth Bypass
       - "traefik.http.routers.qbt-books-rtr-bypass.entrypoints=websecure"
-      - "traefik.http.routers.qbt-books-rtr-bypass.rule=Host(`qbt.books.$DOMAIN_NAME`) && Header(`Traefik-Auth-Key`, `$TRAEFIK_AUTH_KEY`)" # Bypass Auth for LunaSea on iOS
+      - "traefik.http.routers.qbt-books-rtr-bypass.rule=Host(`books.qbt.$DOMAIN_NAME`) && Header(`Traefik-Auth-Key`, `$TRAEFIK_AUTH_KEY`)" # Bypass Auth for LunaSea on iOS
       - "traefik.http.routers.qbt-books-rtr-bypass.priority=100"
       ## HTTP Routers
       - "traefik.http.routers.qbt-books-rtr.entrypoints=websecure"
-      - "traefik.http.routers.qbt-books-rtr.rule=Host(`qbt.books.$DOMAIN_NAME`)"
+      - "traefik.http.routers.qbt-books-rtr.rule=Host(`books.qbt.$DOMAIN_NAME`)"
       - "traefik.http.routers.qbt-books-rtr.priority=99"
       ## Middlewares
       - "traefik.http.routers.qbt-books-rtr.middlewares=chain-oauth@file"
@@ -490,21 +493,21 @@ services:
       - "traefik.http.routers.radarr-rtr.service=radarr-svc"
       - "traefik.http.services.radarr-svc.loadbalancer.server.port=7878"
       
-      ### Readarr Routers
-      # HTTP Routers Auth Bypass
-      - "traefik.http.routers.readarr-rtr-bypass.entrypoints=websecure"
-      - "traefik.http.routers.readarr-rtr-bypass.rule=Host(`readarr.$DOMAIN_NAME`) && Header(`Traefik-Auth-Key`, `$TRAEFIK_AUTH_KEY`)" # Bypass Auth for LunaSea on iOS
-      - "traefik.http.routers.readarr-rtr-bypass.priority=100"
-      ## HTTP Routers Auth
-      - "traefik.http.routers.readarr-rtr.entrypoints=websecure"
-      - "traefik.http.routers.readarr-rtr.rule=Host(`readarr.$DOMAIN_NAME`)"
-      - "traefik.http.routers.readarr-rtr.priority=99"
-      ## Middlewares
-      - "traefik.http.routers.readarr-rtr.middlewares=chain-oauth@file"
-      ## HTTP Services
-      - "traefik.http.routers.readarr-rtr-bypass.service=readarr-svc"
-      - "traefik.http.routers.readarr-rtr.service=readarr-svc"
-      - "traefik.http.services.readarr-svc.loadbalancer.server.port=8787"
+      # ### Readarr Routers
+      # # HTTP Routers Auth Bypass
+      # - "traefik.http.routers.readarr-rtr-bypass.entrypoints=websecure"
+      # - "traefik.http.routers.readarr-rtr-bypass.rule=Host(`readarr.$DOMAIN_NAME`) && Header(`Traefik-Auth-Key`, `$TRAEFIK_AUTH_KEY`)" # Bypass Auth for LunaSea on iOS
+      # - "traefik.http.routers.readarr-rtr-bypass.priority=100"
+      # ## HTTP Routers Auth
+      # - "traefik.http.routers.readarr-rtr.entrypoints=websecure"
+      # - "traefik.http.routers.readarr-rtr.rule=Host(`readarr.$DOMAIN_NAME`)"
+      # - "traefik.http.routers.readarr-rtr.priority=99"
+      # ## Middlewares
+      # - "traefik.http.routers.readarr-rtr.middlewares=chain-oauth@file"
+      # ## HTTP Services
+      # - "traefik.http.routers.readarr-rtr-bypass.service=readarr-svc"
+      # - "traefik.http.routers.readarr-rtr.service=readarr-svc"
+      # - "traefik.http.services.readarr-svc.loadbalancer.server.port=8787"
 
       ### Prowlarr Routers
       ## HTTP Routers
@@ -593,6 +596,20 @@ services:
       PLEX_TOKEN: $PLEX_TOKEN
     volumes:
       - '$CONTAINER_APPDATA_DIR/plexautolanguages:/config'
+    
+  plexnfswatchdog:
+    <<: *common-keys-apps
+    build: ./plexnfswatchdog
+    container_name: plexnfswatchdog
+    environment:
+      PLEX_SERVER: "http://$PLEX_IP:32400"
+      PLEX_TOKEN: "$PLEX_TOKEN"
+      WATCH_PATHS: "'/data/Videos/Movies/HD' '/data/Videos/Movies/Foreign' '/data/Videos/Movies/SD' '/data/Videos/TV Shows/TV' '/data/Videos/TV Shows/Foreign' '/data/Videos/Anime' '/data/Videos/Anime Movies'"
+      LISTENERS: "move modify create delete"
+      # - SCAN_INTERVAL: 60
+    volumes:
+      - /data/Videos:/data/Videos:ro
+      
 
   tautulli:
     <<: *common-keys-apps # See EXTENSION FIELDS at the top
@@ -662,17 +679,17 @@ services:
 
   # Readarr - Books management
   # Set url_base in readarr settings if using PathPrefix
-  readarr:
-    <<: *common-keys-apps-vpn # See EXTENSION FIELDS at the top
-    image: lscr.io/linuxserver/readarr:develop
-    container_name: readarr
-    environment:
-      <<: *primary-tz-puid-pgid
-    volumes:
-      - $CONTAINER_APPDATA_DIR/readarr:/config
-      - $DATA_DIR:/data
-      - "/etc/localtime:/etc/localtime:ro"
-    #Traefik labels under wireguard
+  # readarr:
+  #   <<: *common-keys-apps-vpn # See EXTENSION FIELDS at the top
+  #   image: lscr.io/linuxserver/readarr:develop
+  #   container_name: readarr
+  #   environment:
+  #     <<: *primary-tz-puid-pgid
+  #   volumes:
+  #     - $CONTAINER_APPDATA_DIR/readarr:/config
+  #     - $DATA_DIR:/data
+  #     - "/etc/localtime:/etc/localtime:ro"
+  #   #Traefik labels under wireguard
 
   # Overseer - Request management for Plex
   overseerr:
@@ -817,6 +834,9 @@ services:
       - $CONTAINER_APPDATA_DIR/open-webui:/app/backend/data
     environment:
       WEBUI_AUTH_TRUSTED_EMAIL_HEADER: 'X-Forwarded-User'
+      GOOGLE_DRIVE_CLIENT_ID: "{{ google_drive_client_id }}"
+      GOOGLE_DRIVE_API_KEY: "{{ google_drive_api_key }}"
+      GOOGLE_REDIRECT_URI: "$DOMAIN_NAME"
     labels:
       - "traefik.enable=true"
       ## HTTP Routers

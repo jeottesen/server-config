@@ -1,0 +1,13 @@
+x-default-environment: &default-tz-puid-pgid
+  TZ: $TZ
+  USER_ID:  0
+  GROUP_ID: 0
+  PUID: 0
+  PGID: 0
+
+x-primary-environment: &primary-tz-puid-pgid
+  TZ: $TZ
+  USER_ID:  $PUID
+  GROUP_ID: $PGID
+  PUID: $PUID
+  PGID: $PGID

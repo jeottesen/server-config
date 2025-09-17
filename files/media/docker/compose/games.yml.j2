@@ -1,0 +1,112 @@
+{% include '_anchors.yml.j2' %}
+
+services:
+  factorio-one:
+    image: factoriotools/factorio:stable
+    container_name: factorio-one
+    environment:
+      <<: *primary-tz-puid-pgid
+      USERNAME: jotaro0010
+    ports:
+      - "34197:34197/udp"
+      # - "27015:27015/tcp" # RCON
+    volumes:
+      - "$USER_DIR/factorio-one/:/factorio"
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true" 
+
+  factorio-two:
+    image: factoriotools/factorio:stable
+    container_name: factorio-two
+    environment:
+      <<: *primary-tz-puid-pgid
+      USERNAME: jotaro0010
+    ports:
+      - "34198:34197/udp"
+      # - "27016:27015/tcp" # RCON
+    volumes:
+      - "$USER_DIR/factorio-two/:/factorio"
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+
+  {#    
+  foundry:
+    extends:
+      file: common.yml
+      service: common-keys-apps
+    image: felddy/foundryvtt:release
+    container_name: foundry
+    volumes:
+      - $CONTAINER_APPDATA_DIR/foundry:/data
+    environment:
+      FOUNDRY_UID: $PUID
+      FOUNDRY_GID: $PGID
+      TIMEZONE: $TZ
+      FOUNDRY_HOSTNAME: "foundry.$DOMAIN_NAME"
+      #FOUNDRY_PROXY_PORT: 443
+      FOUNDRY_PROXY_SSL: "true"
+      FOUNDRY_MINIFY_STATIC_FILES: "true"
+    secrets:
+      - source: foundry_config
+        target: config.json
+    labels:
+      - "traefik.enable=true"
+      ## HTTP Routers
+      - "traefik.http.routers.foundry-rtr.entrypoints=https"
+      - "traefik.http.routers.foundry-rtr.rule=Host(`foundry.$DOMAIN_NAME`)"
+      - "traefik.http.routers.foundry-rtr.tls=true"
+      ## Middlewares
+      - "traefik.http.routers.foundry-rtr.middlewares=chain-no-auth@file"
+      ## HTTP Services
+      - "traefik.http.routers.foundry-rtr.service=foundry-svc"
+      - "traefik.http.services.foundry-svc.loadbalancer.server.port=30000" 
+  #}
+
+  {#
+  crafty-web:
+    extends:
+      file: common.yml
+      service: common-keys-apps
+    image: registry.gitlab.com/crafty-controller/crafty-4:latest
+    container_name: crafty
+    environment:
+      <<: *primary-tz-puid-pgid
+    ports:
+      - "8123:8123" # DYNMAP
+      - "19132:19132/udp" # BEDROCK
+      - "25500-25600:25500-25600" # MC SERV PORT RANGE
+    volumes:
+      - "$USER_DIR/minecraft/backups:/crafty/backups"
+      - "$USER_DIR/minecraft/logs:/crafty/logs"
+      - "$USER_DIR/minecraft/servers:/crafty/servers"
+      - "$USER_DIR/minecraft/config:/crafty/app/config"
+      - "$USER_DIR/minecraft/import:/crafty/import"
+    labels:
+      - "traefik.enable=true"
+      ## HTTP Routers
+      - "traefik.http.routers.crafty-rtr.entrypoints=https"
+      - "traefik.http.routers.crafty-rtr.rule=Host(`crafty.$DOMAIN_NAME`)"
+      - "traefik.http.routers.crafty-rtr.tls=true"
+      ## Middlewares
+      - "traefik.http.routers.crafty-rtr.middlewares=chain-oauth@file"
+      ## HTTP Services
+      - "traefik.http.routers.crafty-rtr.service=crafty-svc"
+      - "traefik.http.services.crafty-svc.loadbalancer.server.scheme=https"
+      - "traefik.http.services.crafty-svc.loadbalancer.server.port=8443"
+      - "traefik.http.services.crafty-svc.loadbalancer.serversTransport=isv-transport@file"
+  #}
+
+  {#
+  dst-server:
+    image: jamesits/dst-server:latest
+    container_name: dst-server
+    profiles:
+      - donotstart
+    environment:
+      <<: *default-tz-puid-pgid
+    ports:
+      - "10999-11000:10999-11000/udp"
+      - "12346-12347:12346-12347/udp"
+    volumes:
+      - "$CONTAINER_APPDATA_DIR/dst-server/:/data:rw"
+    #}

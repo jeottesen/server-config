@@ -1,0 +1,14 @@
+http:
+  routers:
+    immich-rtr:
+      rule: "Host(`photos.{{ domain_name }}`)"
+      entryPoints:
+        - websecure 
+      middlewares:
+        - chain-no-auth
+      service: immich-svc
+  services:
+    immich-svc:
+      loadBalancer:
+        servers:
+          - url: "http://{{ immich_ip }}:2283/"

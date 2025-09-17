@@ -18,6 +18,7 @@ package_list:
 
 host_ip: "{{ vault_host_ip }}"
 plex_ip: "{{ vault_plex_ip }}"
+immich_ip: "{{ vault_immich_ip }}"
 haos_ip: "{{ vault_haos_ip }}"
 
 primary_user: jeremy
@@ -63,35 +64,38 @@ plex_token: "{{ secret_plex_token }}"
 
 allow_admin_rule: "{{ vault_allow_admin_rule }}"
 
+# Google Drive
+google_drive_client_id: "{{ vault_google_drive_client_id }}"
+google_drive_api_key: "{{ vault_google_drive_api_key }}"
+
 sub_domains:
   - ai
-  - ombi
-  - whoami
-  - oauth
+  - crafty
+  - factorio
+  - files
+  - foundry
   - home
-  - vm
+  - index
+  - login
   - nas
   - nuk
-  - login
-  - plex
-  - qbt.public
-  - qbt.private
-  - qbt.books
-  - files
-  - tautulli
-  - speedtest
+  - oauth
+  - ombi
+  - overseerr
   - pasta
-  - sonarr
+  - photos
+  - plex
+  - prowlarr
+  - books.qbt
+  - private.qbt
+  - public.qbt
   - radarr
   - readarr
-  - prowlarr
-  - overseerr
-  - zigbee
-  - index
-  - unifi
-  - foundry
-  - factorio
-  - crafty
-  - vault
-  - rustdeck
+  - sonarr
+  - speedtest
   - sync
+  - tautulli
+  - unifi
+  - vault
+  - whoami
+  - zigbee

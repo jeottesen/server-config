@@ -1,0 +1,20 @@
+{% include '_anchors.yml.j2' %}
+
+services:
+  watchtower:
+    extends:
+      file: common.yml
+      service: common-keys-core
+    image: containrrr/watchtower
+    container_name: watchtower
+    networks:
+      - socket_proxy
+    environment:
+      TZ: $TZ
+      DOCKER_HOST: "tcp://media_socket-proxy:2375"
+      WATCHTOWER_CLEANUP: "true"
+      WATCHTOWER_INCLUDE_STOPPED: "true"
+      WATCHTOWER_REVIVE_STOPPED: "true"
+      WATCHTOWER_LOG_LEVEL: "info"
+      WATCHTOWER_POLL_INTERVAL: "3600" # Check for updates every hour
+      WATCHTOWER_TIMEOUT: "60s"

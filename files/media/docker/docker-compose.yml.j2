@@ -1,0 +1,24 @@
+# {{ ansible_managed }}
+networks:
+  # Containers part of the reverse proxy system
+  swarm_proxies:
+    driver: bridge
+    attachable: true
+    ipam:
+      config:
+        - subnet: 10.10.10.0/24
+
+  # network for the docker socket
+  socket_proxy:
+    driver: bridge
+    attachable: true
+    #ipam:
+    #  config:
+    #    - subnet: 192.168.91.0/24
+
+
+include:
+  - compose/core.yml
+  - compose/games.yml
+  - compose/maintenance.yml
+  - compose/immich.yml

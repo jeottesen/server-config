@@ -38,21 +38,25 @@
 - name: Setup docker-compose files
   become: true
   block:
-    - name: Create docker-compose.yml file
-      ansible.builtin.template:
-        src: "{{ templates_source }}/docker-compose.yml.j2"
-        dest: "{{ docker_dir }}/docker-compose.yml"
-        owner: "{{ docker_user }}"
-        group: "{{ docker_group }}"
-        mode: "0600"
+    - name: Ensure compose directory structure exists
+      ansible.builtin.file:
+        path: "{{ docker_dir }}/{{ item.path }}"
+        state: directory
+        mode: "0755"
+      loop: "{{ lookup('community.general.filetree', role_template_source) +
+                lookup('community.general.filetree', docker_templates_source) }}"
+      when: item.state is defined and item.state == 'directory'
 
-    - name: Create docker-compose .env file
+    - name: Ensure files are populated from compose templates
       ansible.builtin.template:
-        src: "{{ templates_source }}/.env.j2"
-        dest: "{{ docker_dir }}/.env"
-        owner: "{{ docker_user }}"
-        group: "{{ docker_group }}"
-        mode: "0600"
+        src: "{{ item.src }}"
+        dest: '{{ docker_dir }}/{{ item.path | regex_replace("\.j2$", "") }}'
+        mode: "0644"
+      loop: "{{ lookup('community.general.filetree', role_template_source) +
+                lookup('community.general.filetree', docker_templates_source) }}"
+      when:
+        - item.state is defined and item.state == 'file'
+        - item.path.endswith('.j2')
 
     - name: Pull and start docker-compose configuration
       community.docker.docker_compose_v2:
