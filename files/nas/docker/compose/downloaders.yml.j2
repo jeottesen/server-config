@@ -1,0 +1,59 @@
+{% include '_anchors.yml.j2' %}
+
+services:
+  qbt-public:
+    extends:
+      file: common.yml
+      service: common-keys-apps-vpn
+    image: lscr.io/linuxserver/qbittorrent
+    container_name: qbt-public
+    environment:
+      <<: *primary-tz-puid-pgid
+      WEBUI_PORT: 8080
+    volumes:
+      - $CONTAINER_APPDATA_DIR/qbt-public:/config
+      - $DATA_DIR/Torrents/public:$DATA_DIR/Torrents/public
+    deploy:
+      resources:
+          limits:
+            cpus: "0.50"
+            memory: 4096M
+    # traefik labels under wireguard
+
+  qbt-private:
+    extends:
+      file: common.yml
+      service: common-keys-apps-vpn
+    image: lscr.io/linuxserver/qbittorrent
+    container_name: qbt-private
+    environment:
+      <<: *primary-tz-puid-pgid
+      WEBUI_PORT: 8081
+    volumes:
+      - $CONTAINER_APPDATA_DIR/qbt-private:/config
+      - $DATA_DIR/Torrents/private:$DATA_DIR/Torrents/private
+    deploy:
+      resources:
+          limits:
+            cpus: "0.50"
+            memory: 2048M
+    # traefik labels under wireguard
+
+  qbt-books:
+    extends:
+      file: common.yml
+      service: common-keys-apps-vpn
+    image: lscr.io/linuxserver/qbittorrent
+    container_name: qbt-books
+    environment:
+      <<: *primary-tz-puid-pgid
+      WEBUI_PORT: 8082
+    volumes:
+      - $CONTAINER_APPDATA_DIR/qbt-books:/config
+      - $DATA_DIR/Torrents/books:$DATA_DIR/Torrents/books
+    deploy:
+      resources:
+          limits:
+            cpus: "0.50"
+            memory: 2048M
+    # traefik labels under wireguard

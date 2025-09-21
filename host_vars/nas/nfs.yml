@@ -1,3 +1,4 @@
 ---
-nfs_exports: ["/data    *(rw,sync,subtree_check,fsid=12643)",
-              "/data 192.168.50.8(rw,sync,subtree_check,fsid=12643,all_squash,anonuid=10000,anongid=10000)"]
+nfs_exports: ["/data    192.168.50.8(rw,sync,no_wdelay,subtree_check,fsid=12643,all_squash,anonuid=10000,anongid=10000)",
+              "/data    192.168.50.9(rw,sync,no_wdelay,subtree_check,fsid=12643)",
+              "/data 192.168.50.0/24(ro,insecure,no_subtree_check,fsid=12643)"]

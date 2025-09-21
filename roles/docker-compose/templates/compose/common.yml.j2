@@ -1,13 +1,13 @@
 services:
   common-keys-core:
     networks:
-      - swarm_proxies
+      - proxies
     security_opt:
       - no-new-privileges:true
 
   common-keys-apps:
     networks:
-      - swarm_proxies
+      - proxies
     security_opt:
       - no-new-privileges:true
 
@@ -30,7 +30,7 @@ services:
       file: hwaccel.ml.yml
       service: openvino
     networks:
-      - swarm_proxies
+      - proxies
     security_opt:
       - no-new-privileges:true
 
@@ -39,6 +39,6 @@ services:
       file: hwaccel.transcoding.yml
       service: quicksync
     networks:
-      - swarm_proxies
+      - proxies
     security_opt:
       - no-new-privileges:true

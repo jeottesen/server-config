@@ -1,3 +1,8 @@
+########################### EXTENSION FIELDS
+# Helps eliminate repetition of sections
+# More Info on how to use this: https://github.com/htpcBeginner/docker-traefik/pull/228
+
+# Common environment values
 x-default-environment: &default-tz-puid-pgid
   TZ: $TZ
   USER_ID:  0
@@ -11,3 +16,4 @@ x-primary-environment: &primary-tz-puid-pgid
   GROUP_ID: $PGID
   PUID: $PUID
   PGID: $PGID
+

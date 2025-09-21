@@ -26,7 +26,7 @@ media_data_path: /data
 radarr_url: http://wireguard:7878
 sonarr_url: http://wireguard:8989
 templates_source: "{{ inventory_hostname }}"
-role_template_source: "templates/compose/"
+role_template_source: "templates/"
 docker_templates_source: "{{ templates_source }}/docker/"
 appdata_templates_source: "{{ templates_source }}/appdata/"
 secrets_template_folder: "{{ templates_source }}/secrets/"

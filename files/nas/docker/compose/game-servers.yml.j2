@@ -1,0 +1,67 @@
+{% include '_anchors.yml.j2' %}
+
+services:
+  {# # Foundry VTT - A server for TTRPGS
+  foundry:
+    extends:
+      file: common.yml
+      service: common-keys-apps
+    image: felddy/foundryvtt:release
+    container_name: foundry
+    volumes:
+      - $CONTAINER_APPDATA_DIR/foundry:/data
+    environment:
+      FOUNDRY_UID: $PUID
+      FOUNDRY_GID: $PGID
+      TIMEZONE: $TZ
+      FOUNDRY_HOSTNAME: "foundry.$DOMAIN_NAME"
+      #FOUNDRY_PROXY_PORT: 443
+      FOUNDRY_PROXY_SSL: "true"
+      FOUNDRY_MINIFY_STATIC_FILES: "true"
+    secrets:
+      - source: foundry_config
+        target: config.json
+    labels:
+      - "traefik.enable=true"
+      ## HTTP Routers
+      - "traefik.http.routers.foundry-rtr.entrypoints=https"
+      - "traefik.http.routers.foundry-rtr.rule=Host(`foundry.$DOMAIN_NAME`)"
+      - "traefik.http.routers.foundry-rtr.tls=true"
+      ## Middlewares
+      - "traefik.http.routers.foundry-rtr.middlewares=chain-no-auth@file"
+      ## HTTP Services
+      - "traefik.http.routers.foundry-rtr.service=foundry-svc"
+      - "traefik.http.services.foundry-svc.loadbalancer.server.port=30000" #}
+
+  # Crafty Controller - Minecraft server manager
+  crafty-web:
+    extends:
+      file: common.yml
+      service: common-keys-apps
+    image: registry.gitlab.com/crafty-controller/crafty-4:latest
+    container_name: crafty
+    environment:
+      <<: *primary-tz-puid-pgid
+    ports:
+      - "8123:8123" # DYNMAP
+      - "19132:19132/udp" # BEDROCK
+      - "25500-25600:25500-25600" # MC SERV PORT RANGE
+    volumes:
+      - "$USER_DIR/minecraft/backups:/crafty/backups"
+      - "$USER_DIR/minecraft/logs:/crafty/logs"
+      - "$USER_DIR/minecraft/servers:/crafty/servers"
+      - "$USER_DIR/minecraft/config:/crafty/app/config"
+      - "$USER_DIR/minecraft/import:/crafty/import"
+    labels:
+      - "traefik.enable=true"
+      ## HTTP Routers
+      - "traefik.http.routers.crafty-rtr.entrypoints=https"
+      - "traefik.http.routers.crafty-rtr.rule=Host(`crafty.$DOMAIN_NAME`)"
+      - "traefik.http.routers.crafty-rtr.tls=true"
+      ## Middlewares
+      - "traefik.http.routers.crafty-rtr.middlewares=chain-oauth@file"
+      ## HTTP Services
+      - "traefik.http.routers.crafty-rtr.service=crafty-svc"
+      - "traefik.http.services.crafty-svc.loadbalancer.server.scheme=https"
+      - "traefik.http.services.crafty-svc.loadbalancer.server.port=8443"
+      - "traefik.http.services.crafty-svc.loadbalancer.serversTransport=isv-transport@file"
