@@ -1,17 +1,20 @@
 services:
   common-keys-core:
+    restart: always
     networks:
       - proxies
     security_opt:
       - no-new-privileges:true
 
   common-keys-apps:
+    restart: unless-stopped
     networks:
       - proxies
     security_opt:
       - no-new-privileges:true
 
   common-keys-core-vpn:
+    restart: always
     network_mode: "service:wireguard"
     depends_on:
       - wireguard
@@ -19,6 +22,7 @@ services:
       - no-new-privileges:true
 
   common-keys-apps-vpn:
+    restart: unless-stopped
     network_mode: "service:wireguard"
     depends_on:
       - wireguard
@@ -29,6 +33,7 @@ services:
     extends:
       file: hwaccel.ml.yml
       service: openvino
+    restart: unless-stopped
     networks:
       - proxies
     security_opt:
@@ -38,6 +43,7 @@ services:
     extends:
       file: hwaccel.transcoding.yml
       service: quicksync
+    restart: unless-stopped
     networks:
       - proxies
     security_opt:

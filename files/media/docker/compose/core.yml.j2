@@ -61,7 +61,7 @@ services:
       - socket_proxy
     environment:
       TZ: $TZ
-      DOCKER_HOST: "tcp://media_socket-proxy:2375"
+      DOCKER_HOST: "tcp://socket-proxy:2375"
       WATCHTOWER_CLEANUP: "true"
       WATCHTOWER_INCLUDE_STOPPED: "true"
       WATCHTOWER_REVIVE_STOPPED: "true"
