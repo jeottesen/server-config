@@ -1,0 +1,9 @@
+{
+  "recommendations": [
+    "wholroyd.jinja",
+    "redhat.ansible",
+    "dhoeric.ansible-vault",
+    "redhat.vscode-yaml",
+    "redhat.vscode-xml"
+  ]
+}
