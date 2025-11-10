@@ -1,0 +1,25 @@
+http:
+  routers:
+    code-login-rtr:
+      tls: "true"
+      rule: "Host(`code.{{ domain_name }}`)"
+      entryPoints:
+        - websecure
+      middlewares:
+        - chain-oauth
+        - back-to-home
+      service: code-svc
+    code-rtr:
+      tls: "true"
+      rule: "Host(`code.{{ domain_name }}`) && {{ allow_admin_rule }}"
+      entryPoints:
+        - websecure
+      middlewares:
+        - chain-oauth
+      service: code-svc
+  services:
+    code-svc:
+      loadBalancer:
+        servers:
+          - url: "http://{{ code_ip }}:8080"
+  

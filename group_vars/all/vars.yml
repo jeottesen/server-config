@@ -40,3 +40,5 @@ base_domain_name: "{{ vault_base_domain_name }}"
 sonarr_api_key: "{{ vault_sonarr_api_key }}"
 radarr_api_key: "{{ vault_radarr_api_key }}"
 traefik_auth_key: "{{ vault_traefik_auth_key }}"
+
+code_ip: "{{ vault_code_ip }}"

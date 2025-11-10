@@ -5,6 +5,7 @@
     path: "{{ traefik_directory }}/acme"
     owner: "{{ docker_user }}"
     group: "{{ docker_group }}"
+    force: false
     mode: "0700"
     state: directory
 
@@ -12,6 +13,8 @@
   ansible.builtin.copy:
     content: ""
     dest: "{{ traefik_directory }}/acme/acme.json"
+    owner: "{{ docker_user }}"
+    group: "{{ docker_group }}"
     force: false
     mode: "0600"
 

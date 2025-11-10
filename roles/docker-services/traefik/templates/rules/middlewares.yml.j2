@@ -1,5 +1,9 @@
 # {{ ansible_managed }}
 http:
+  serversTransports:
+    isv-transport:
+      insecureSkipVerify: true
+
   middlewares:
     middlewares-basic-auth:
       basicAuth:
@@ -23,6 +27,7 @@ http:
 
     middlewares-secure-headers:
       headers:
+        customFrameOptionsValue: "SAMEORIGIN"
         accessControlAllowMethods:
           - GET
           - OPTIONS
@@ -36,7 +41,6 @@ http:
         stsPreload: true
         forceSTSHeader: true
         # frameDeny: true #overwritten by customFrameOptionsValue
-        customFrameOptionsValue: "allow-from https:{{ domain_name }}" #CSP takes care of this but may be needed for organizr.
         contentTypeNosniff: true
         browserXssFilter: true
         # sslForceHost: true # add sslHost to all of the services

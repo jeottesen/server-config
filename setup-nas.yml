@@ -1,5 +1,6 @@
 ---
-- import_playbook: setup-common.yml
+- name: Setup Common Configuration
+  import_playbook: setup-common.yml
   vars:
     limit_hosts: nas
 
@@ -25,17 +26,18 @@
       tags: folders
     - name: common/email-setup
       tags: email
-    - name: geerlingguy.docker
-      tags: docker
 
 - name: Setup docker compose services and files
   hosts: nas
-  become: false
+  tags: docker
+  become: true
   roles:
+    - name: geerlingguy.docker
     - name: docker-services/traefik
     - name: docker-services/wireguard-client
     - name: docker-services/filebrowser
     - name: docker-compose
+      become: false
       tags: docker-compose
 
 - name: Configure nas cron jobs
