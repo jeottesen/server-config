@@ -1,0 +1,14 @@
+http:
+  routers:
+    tautulli-rtr:
+      rule: "Host(`tautulli.{{ domain_name }}`)"
+      entryPoints:
+        - websecure
+      middlewares:
+        - chain-oauth
+      service: tautulli-svc
+  services:
+    tautulli-svc:
+      loadBalancer:
+        servers:
+          - url: "http://{{ plex_hostname }}:8181/"

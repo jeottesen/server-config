@@ -14,26 +14,26 @@ services:
     volumes:
       - '$CONTAINER_APPDATA_DIR/plexautolanguages:/config'
 
-  tautulli:
-    extends:
-      file: common.yml
-      service: common-keys-apps
-    image: lscr.io/linuxserver/tautulli:latest
-    container_name: tautulli
-    environment:
-      <<: *default-tz-puid-pgid
-    volumes:
-      - '$CONTAINER_APPDATA_DIR/tautulli:/config'
-    labels:
-      - "traefik.enable=true"
-      ## HTTP Routers
-      - "traefik.http.routers.tautulli-rtr.entrypoints=websecure"
-      - "traefik.http.routers.tautulli-rtr.rule=Host(`tautulli.$DOMAIN_NAME`)"
-      ## Middlewares
-      - "traefik.http.routers.tautulli-rtr.middlewares=chain-oauth@file"
-      ## HTTP Services
-      - "traefik.http.routers.tautulli-rtr.service=tautulli-svc"
-      - "traefik.http.services.tautulli-svc.loadbalancer.server.port=8181"
+  # tautulli:
+  #   extends:
+  #     file: common.yml
+  #     service: common-keys-apps
+  #   image: lscr.io/linuxserver/tautulli:latest
+  #   container_name: tautulli
+  #   environment:
+  #     <<: *default-tz-puid-pgid
+  #   volumes:
+  #     - '$CONTAINER_APPDATA_DIR/tautulli:/config'
+  #   labels:
+  #     - "traefik.enable=true"
+  #     ## HTTP Routers
+  #     - "traefik.http.routers.tautulli-rtr.entrypoints=websecure"
+  #     - "traefik.http.routers.tautulli-rtr.rule=Host(`tautulli.$DOMAIN_NAME`)"
+  #     ## Middlewares
+  #     - "traefik.http.routers.tautulli-rtr.middlewares=chain-oauth@file"
+  #     ## HTTP Services
+  #     - "traefik.http.routers.tautulli-rtr.service=tautulli-svc"
+  #     - "traefik.http.services.tautulli-svc.loadbalancer.server.port=8181"
 
   ombi:
     extends:
