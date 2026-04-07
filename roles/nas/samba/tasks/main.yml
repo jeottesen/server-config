@@ -18,4 +18,81 @@
     owner: root
     group: root
     mode: "0644"
-  notify: [Check samba config]
+    validate: /usr/bin/testparm -s %s
+  notify:
+    - Reload smbd
+    - Reload nmbd
+
+- name: Create Linux system users
+  ansible.builtin.user:
+    name: "{{ item.username }}"
+    password: "{{ item.password | password_hash('sha512') }}"
+    update_password: on_create
+    shell: "{{ item.shell | default('/usr/sbin/nologin') }}"
+    state: present
+  loop: "{{ smb_users }}"
+  no_log: true
+
+- name: Set Samba passwords using stdin
+  ansible.builtin.command:
+    cmd: "smbpasswd -s -a {{ item.username }}"
+    stdin: |
+      {{ item.password }}
+      {{ item.password }}
+  loop: "{{ smb_users }}"
+  register: smb_output
+  changed_when: "'Added user' in smb_output.stdout or 'Modified user' in smb_output.stdout"
+  no_log: true
+
+- name: Map Linux users with usermap
+  ansible.builtin.lineinfile:
+    path: /etc/samba/smbusers
+    create: true
+    line: "{{ item.username }} = {{ item.usermap }}"
+    owner: root
+    group: root
+    mode: "0644"
+  loop: "{{ smb_users }}"
+  when: item.usermap is defined and item.usermap | length > 0
+  notify: Reload smbd
+  no_log: true
+
+- name: Install discovery services
+  ansible.builtin.package:
+    name:
+      - wsdd           # Windows Service Discovery (WSD)
+      - avahi-daemon   # mDNS / Bonjour
+      - avahi-utils
+    state: present
+
+- name: Configure Avahi to advertise Samba
+  ansible.builtin.copy:
+    dest: /etc/avahi/services/samba.service
+    owner: root
+    group: root
+    mode: '0644'
+    content: |
+      <?xml version="1.0" standalone='no'?>
+      <!DOCTYPE service-group SYSTEM "avahi-service.dtd">
+      <service-group>
+        <name replace-wildcards="yes">%h (Samba)</name>
+        <service>
+          <type>_smb._tcp</type>
+          <port>445</port>
+        </service>
+        <service>
+          <type>_device-info._tcp</type>
+          <port>0</port>
+          <txt-record>model=RackMac</txt-record>
+        </service>
+      </service-group>
+  notify: Restart Avahi
+
+- name: Enable and start discovery services
+  ansible.builtin.service:
+    name: "{{ item }}"
+    state: started
+    enabled: true
+  loop:
+    - wsdd
+    - avahi-daemon
