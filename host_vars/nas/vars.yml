@@ -71,6 +71,7 @@ google_drive_api_key: "{{ vault_google_drive_api_key }}"
 
 sub_domains:
   - ai
+  - bazarr
   - budget
   - crafty
   - code
