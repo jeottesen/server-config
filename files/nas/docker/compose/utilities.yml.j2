@@ -213,3 +213,36 @@ services:
       ## HTTP Services
       - "traefik.http.routers.syncthing-rtr.service=syncthing-svc"
       - "traefik.http.services.syncthing-svc.loadbalancer.server.port=8384"
+
+  actualbudget:
+    extends:
+      file: common.yml
+      service: common-keys-apps
+    image: docker.io/actualbudget/actual-server:latest
+    volumes:
+      - $CONTAINER_APPDATA_DIR/actualbudget:/data
+    secrets:
+      - actual_config
+    environment:
+      <<: *primary-tz-puid-pgid
+      ACTUAL_CONFIG_PATH: "/run/secrets/actual_config"
+    healthcheck:
+      test: ['CMD-SHELL', 'node src/scripts/health-check.js']
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    labels:
+      - "traefik.enable=true"
+      ## HTTP Routers
+      - "traefik.http.routers.actualbudget-rtr.entrypoints=websecure"
+      - "traefik.http.routers.actualbudget-rtr.rule=Host(`budget.$DOMAIN_NAME`)"
+      ## Middlewares
+      - "traefik.http.routers.actualbudget-rtr.middlewares=chain-no-auth@file"
+      ## HTTP Services
+      - "traefik.http.routers.actualbudget-rtr.service=actualbudget-svc"
+      - "traefik.http.services.actualbudget-svc.loadbalancer.server.port=5006"
+
+secrets:
+  actual_config:
+    file: ../secrets/actual_config.json
