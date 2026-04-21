@@ -30,7 +30,7 @@
     update_password: on_create
     shell: "{{ item.shell | default('/usr/sbin/nologin') }}"
     state: present
-  loop: "{{ smb_users }}"
+  loop: "{{ host_users }}"
   no_log: true
 
 - name: Set Samba passwords using stdin
@@ -39,7 +39,7 @@
     stdin: |
       {{ item.password }}
       {{ item.password }}
-  loop: "{{ smb_users }}"
+  loop: "{{ host_users }}"
   register: smb_output
   changed_when: "'Added user' in smb_output.stdout or 'Modified user' in smb_output.stdout"
   no_log: true
@@ -52,7 +52,7 @@
     owner: root
     group: root
     mode: "0644"
-  loop: "{{ smb_users }}"
+  loop: "{{ host_users }}"
   when: item.usermap is defined and item.usermap | length > 0
   notify: Reload smbd
   no_log: true

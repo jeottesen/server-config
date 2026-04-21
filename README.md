@@ -7,7 +7,7 @@ https://github.com/htpcBeginner/docker-traefik
 
 ## Ansible Commands
 Command to install ansible requirements:<br />
-`ansible-galaxy install -r requirements.yml`
+`ansible-galaxy collection install -r requirements.yml`
 
 Command to initialize a server:<br />
 `ansible-playbook setup-common.yml -l stormfront -e "ansible_user=debian" -k`

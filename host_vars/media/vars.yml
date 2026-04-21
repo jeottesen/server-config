@@ -18,7 +18,7 @@ plex_dir: /plex
 
 media_data_path: /data
 
-plex_token: "{{ secret_plex_token }}"
+plex_token: "{{ vault_plex_token }}"
 
 # Oauth
 oauth_client_id: "{{ vault_oauth_client_id }}"

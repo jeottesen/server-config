@@ -30,16 +30,18 @@ http:
           - middlewares-rate-limit
           - middlewares-https-redirectscheme
           - middlewares-secure-headers
+          - middlewares-oauth-errors
           - middlewares-oauth
           - middlewares-compress
 
-    chain-oauth-external:
+    chain-oauth-admin:
       chain:
         middlewares:
           - middlewares-rate-limit
           - middlewares-https-redirectscheme
           - middlewares-secure-headers
-          - middlewares-oauth-external
+          - middlewares-oauth-errors
+          - middlewares-oauth-admin
           - middlewares-compress
 
     chain-authelia:

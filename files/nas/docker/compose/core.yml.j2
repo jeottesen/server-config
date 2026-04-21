@@ -56,7 +56,7 @@ services:
       file: common.yml
       service: common-keys-core
     container_name: traefik
-    image: traefik:3.3
+    image: traefik:latest
     command: # CLI arguments
       - --global.checkNewVersion=true
       - --global.sendAnonymousUsage=false
@@ -148,29 +148,51 @@ services:
       #- "traefik.http.routers.traefik-rtr.middlewares=chain-auth-basic@file" # For Basic HTTP Authentication      
       - "traefik.http.routers.traefik-rtr.middlewares=chain-oauth@file" # For Google OAuth
       #- "traefik.http.routers.traefik-rtr.middlewares=chain-authelia@file" # For Authelia Authentication
-
+  
   oauth:
     extends:
       file: common.yml
       service: common-keys-core
-    image: ghcr.io/jordemort/traefik-forward-auth:latest
+    image: quay.io/oauth2-proxy/oauth2-proxy:latest
     container_name: oauth
+    secrets:
+      - oauth_client_secret
+      - oauth_cookie_secret
+      - oauth_whitelist_emails
     environment:
-      PROVIDERS_GOOGLE_CLIENT_ID: "{{ oauth_client_id }}"
-      PROVIDERS_GOOGLE_CLIENT_SECRET: "{{ oauth_client_secret }}"
-      SECRET: "{{ forward_auth_secret }}"
-      COOKIE_DOMAIN: $DOMAIN_NAME
-      AUTH_HOST: oauth.$DOMAIN_NAME
-      LIFETIME: 86400 # 1 day
-      INSECURE_COOKIE: "false"
-      LOG_LEVEL: info
-      WHITELIST: "{% for email in oauth_whitelist %}{{ email }},{% endfor %}{{ admin_email_address }}"
+      <<: *default-tz-puid-pgid
+      OAUTH2_PROXY_PROVIDER: "google"
+      OAUTH2_PROXY_CLIENT_ID: $OAUTH2_PROXY_CLIENT_ID
+      OAUTH2_PROXY_CLIENT_SECRET_FILE: "/run/secrets/oauth_client_secret"
+      OAUTH2_PROXY_COOKIE_SECRET_FILE: "/run/secrets/oauth_cookie_secret"
+      OAUTH2_PROXY_COOKIE_DOMAINS: "${DOMAIN_NAME},.${DOMAIN_NAME}"
+      OAUTH2_PROXY_WHITELIST_DOMAINS: "${DOMAIN_NAME},.${DOMAIN_NAME}"
+      OAUTH2_PROXY_REDIRECT_URL: "https://oauth.$DOMAIN_NAME/oauth2/callback"
+      # Emails allowed to authenticate
+      OAUTH2_PROXY_EMAIL_DOMAINS: "*" 
+      OAUTH2_PROXY_AUTHENTICATED_EMAILS_FILE: "/run/secrets/oauth_whitelist_emails" 
+      # Traefik specific config
+      OAUTH2_PROXY_UPSTREAMS: "static://202"
+      OAUTH2_PROXY_REVERSE_PROXY: "true"
+      OAUTH2_PROXY_HTTP_ADDRESS: "0.0.0.0:4181"
+      OAUTH2_PROXY_SKIP_PROVIDER_BUTTON: "true"
+      OAUTH2_PROXY_SET_XAUTHREQUEST: "true"
+      OAUTH2_PROXY_PASS_USER_HEADERS: "true"
+      OAUTH2_PROXY_PASS_BASIC-AUTH: "true"
     labels:
       - "traefik.enable=true"
       # HTTP Routers
       - "traefik.http.routers.oauth-rtr.tls=true"
       - "traefik.http.routers.oauth-rtr.entrypoints=websecure"
       - "traefik.http.routers.oauth-rtr.rule=Host(`oauth.$DOMAIN_NAME`)"
+      - "traefik.http.routers.oauth-rtr.service=oauth-svc"
+      
+      # Intercept all /oauth2 traffic on ANY domain and send to the proxy
+      - "traefik.http.routers.oauth-catchall.tls=true"
+      - "traefik.http.routers.oauth-catchall.entrypoints=websecure"
+      - "traefik.http.routers.oauth-catchall.rule=PathPrefix(`/oauth2`)"
+      - "traefik.http.routers.oauth-catchall.priority=100"
+      - "traefik.http.routers.oauth-catchall.service=oauth-svc"
       # Middlewares
       - "traefik.http.routers.oauth-rtr.middlewares=chain-oauth@file"
       # HTTP Services
@@ -202,18 +224,17 @@ services:
 
   {# # Traefik Whoami - a simple page to help debug headers and routing
   whoami:
-    <<: *common-keys-apps
+    extends:
+      file: common.yml
+      service: common-keys-apps
     image: "traefik/whoami"
     container_name: "whoami"
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.whoami-login-rtr.entrypoints=https"
-      - "traefik.http.routers.whoami-login-rtr.rule=Host(`whoami.$DOMAIN_NAME`)"
-      - "traefik.http.routers.whoami-rtr.entrypoints=https"
-      - "traefik.http.routers.whoami-rtr.rule=Host(`whoami.$DOMAIN_NAME`) && {{ allow_admin_rule }}"
+      - "traefik.http.routers.whoami-rtr.entrypoints=websecure"
+      - "traefik.http.routers.whoami-rtr.rule=Host(`whoami.$DOMAIN_NAME`)"
       ## Middlewares
-      - "traefik.http.routers.whoami-login-rtr.middlewares=chain-oauth@file,back-to-home@file"
-      - "traefik.http.routers.whoami-rtr.middlewares=chain-oauth@file"
+      - "traefik.http.routers.whoami-rtr.middlewares=chain-oauth-admin@file"
       ## HTTP Services
       - "traefik.http.routers.whoami-rtr.service=whoami-svc"
       - "traefik.http.services.whoami-svc.loadbalancer.server.port=80" #}
@@ -339,15 +360,11 @@ services:
 
       ### Prowlarr Routers
       ## HTTP Routers
-      - "traefik.http.routers.prowlarr-login-rtr.entrypoints=websecure"
-      - "traefik.http.routers.prowlarr-login-rtr.rule=Host(`prowlarr.$DOMAIN_NAME`)"
       - "traefik.http.routers.prowlarr-rtr.entrypoints=websecure"
-      - "traefik.http.routers.prowlarr-rtr.rule=Host(`prowlarr.$DOMAIN_NAME`) && {{ allow_admin_rule }}"
+      - "traefik.http.routers.prowlarr-rtr.rule=Host(`prowlarr.$DOMAIN_NAME`)"
       ## Middlewares
-      - "traefik.http.routers.prowlarr-login-rtr.middlewares=chain-oauth@file,back-to-home@file"
-      - "traefik.http.routers.prowlarr-rtr.middlewares=chain-oauth@file"
+      - "traefik.http.routers.prowlarr-rtr.middlewares=chain-oauth-admin@file"
       ## HTTP Services
-      - "traefik.http.routers.prowlarr-login-rtr.service=oauth-svc"
       - "traefik.http.routers.prowlarr-rtr.service=prowlarr-svc"
       - "traefik.http.services.prowlarr-svc.loadbalancer.server.port=9696"
 
@@ -368,3 +385,11 @@ services:
       WATCHTOWER_LOG_LEVEL: "info"
       WATCHTOWER_POLL_INTERVAL: "3600" # Check for updates every hour
       WATCHTOWER_TIMEOUT: "60s"
+
+secrets:
+  oauth_client_secret:
+    file: ../secrets/oauth_client_secret.txt
+  oauth_cookie_secret:
+    file: ../secrets/oauth_cookie_secret.txt
+  oauth_whitelist_emails:
+    file: ../secrets/oauth_whitelist_emails.txt

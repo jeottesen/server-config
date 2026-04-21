@@ -22,6 +22,8 @@ plex_hostname: "{{ vault_plex_hostname }}"
 immich_ip: "{{ vault_immich_ip }}"
 haos_ip: "{{ vault_haos_ip }}"
 
+host_users: "{{ vault_host_users }}"
+
 primary_user: jeremy
 primary_group: jeremy
 
@@ -61,9 +63,7 @@ route53_secret_access_key: "{{ vault_route53_secret_access_key }}"
 route53_region: us-west-1
 route53_zone_id: "{{ vault_route53_zone_id }}"
 
-plex_token: "{{ secret_plex_token }}"
-
-allow_admin_rule: "{{ vault_allow_admin_rule }}"
+plex_token: "{{ vault_plex_token }}"
 
 # Google Drive
 google_drive_client_id: "{{ vault_google_drive_client_id }}"
@@ -71,6 +71,7 @@ google_drive_api_key: "{{ vault_google_drive_api_key }}"
 
 sub_domains:
   - ai
+  - budget
   - crafty
   - code
   - factorio

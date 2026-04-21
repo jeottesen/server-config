@@ -13,7 +13,7 @@
       "problemMatcher": []
     },
     {
-      "label": "Run nas - Skip-Tag: compose-setup Tag: docker-compose",
+      "label": "Run nas - Tag: docker-compose, Skip-Tag: compose-setup",
       "type": "shell",
       "command": "ansible-playbook setup-nas.yml --skip-tag compose-setup --tag docker-compose",
       "group": {
@@ -22,18 +22,18 @@
       "problemMatcher": []
     },
     {
-      "label": "Run Stormfront- Tag: docker-compose",
+      "label": "Run media - Tag: docker-compose",
       "type": "shell",
-      "command": "ansible-playbook setup-stormfront.yml --tag docker-compose",
+      "command": "ansible-playbook setup-media.yml --tag docker-compose",
       "group": {
         "kind": "build"
       },
       "problemMatcher": []
     },
     {
-      "label": "Run Stormfront - Skip-Tag: compose-setup Tag: docker-compose",
+      "label": "Run media - Tag: docker-compose, Skip-Tag: compose-setup",
       "type": "shell",
-      "command": "ansible-playbook setup-stormfront.yml --skip-tag compose-setup --tag docker-compose",
+      "command": "ansible-playbook setup-media.yml --skip-tag compose-setup --tag docker-compose",
       "group": {
         "kind": "build"
       },
