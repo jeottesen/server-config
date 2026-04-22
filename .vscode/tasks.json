@@ -4,38 +4,47 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "Run nas - Tag: docker-compose",
+      "label": "Ansible: Run nas - Tag: docker-compose",
       "type": "shell",
       "command": "ansible-playbook setup-nas.yml --tag docker-compose",
       "group": {
         "kind": "build"
       },
+      "options": {
+        "cwd": "${workspaceFolder}/infrastructure/ansible"
+      },
       "problemMatcher": []
     },
     {
-      "label": "Run nas - Tag: docker-compose, Skip-Tag: compose-setup",
+      "label": "Ansible: Run nas - Tag: docker-compose, Skip-Tag: compose-setup",
       "type": "shell",
       "command": "ansible-playbook setup-nas.yml --skip-tag compose-setup --tag docker-compose",
       "group": {
         "kind": "build"
+      },"options": {
+        "cwd": "${workspaceFolder}/infrastructure/ansible"
       },
       "problemMatcher": []
     },
     {
-      "label": "Run media - Tag: docker-compose",
+      "label": "Ansible: Run media - Tag: docker-compose",
       "type": "shell",
       "command": "ansible-playbook setup-media.yml --tag docker-compose",
       "group": {
         "kind": "build"
+      },"options": {
+        "cwd": "${workspaceFolder}/infrastructure/ansible"
       },
       "problemMatcher": []
     },
     {
-      "label": "Run media - Tag: docker-compose, Skip-Tag: compose-setup",
+      "label": "Ansible: Run media - Tag: docker-compose, Skip-Tag: compose-setup",
       "type": "shell",
       "command": "ansible-playbook setup-media.yml --skip-tag compose-setup --tag docker-compose",
       "group": {
         "kind": "build"
+      },"options": {
+        "cwd": "${workspaceFolder}/infrastructure/ansible"
       },
       "problemMatcher": []
     }
