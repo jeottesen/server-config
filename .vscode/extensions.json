@@ -4,6 +4,7 @@
     "redhat.ansible",
     "dhoeric.ansible-vault",
     "redhat.vscode-yaml",
-    "redhat.vscode-xml"
+    "redhat.vscode-xml",
+    "4ops.terraform"
   ]
 }

@@ -13,73 +13,127 @@
         state: present
       tags: create-user
 
+- name: Create Tofu user and set up permissions.
+  hosts: proxmox
+  become: true
+  tags: tofu-setup
+  tasks:
+    - name: Ensure TofuProv role exists
+      ansible.builtin.command: pveum role add TofuProv
+      register: role_add
+      failed_when: false
+      changed_when: role_add.rc == 0
+
+    - name: Ensure privileges for TofuProv role
+      ansible.builtin.command: >
+        pveum role modify TofuProv -privs "Datastore.AllocateSpace Datastore.AllocateTemplate Datastore.Audit
+        Pool.Allocate Pool.Audit Sys.Audit Sys.Console Sys.Modify VM.Allocate VM.Audit VM.Clone
+        VM.Config.CDROM VM.Config.Cloudinit VM.Config.CPU VM.Config.Disk VM.Config.HWType
+        VM.Config.Memory VM.Config.Network VM.Config.Options VM.Migrate
+        VM.PowerMgmt SDN.Use"
+      changed_when: true
+
+    - name: Ensure Tofu User exists
+      ansible.builtin.command: pveum user add tofu-prov@pve
+      register: user_add
+      failed_when: false
+      changed_when: user_add.rc == 0
+
+    - name: Assign Role to Tofu User
+      ansible.builtin.command: pveum aclmod / -user tofu-prov@pve -role TofuProv
+      changed_when: false
+
+    - name: Ensure API Token exists
+      ansible.builtin.command: pveum user token add tofu-prov@pve provisioner --privsep 0 --output-format json
+      register: token_add
+      failed_when: false
+      changed_when: token_add.rc == 0
+
+    - name: Display API Token Secret (SAVE THIS!)
+      ansible.builtin.debug:
+        msg:
+          - "CRITICAL: Save this Token Secret! It will never be shown again."
+          - "Token ID: tofu-prov@pve!provisioner"
+          - "Secret: {{ (token_add.stdout | from_json).value }}"
+      when:
+        - token_add.rc == 0
+        - token_add.stdout != ""
+
+- name: Build Debian 12 Cloud-Init Template
+  hosts: proxmox
+  become: true
+  tags:
+    - template
+    - cloud-init
+  tasks:
+    - name: Check if Debian 12 Cloud-Init template exists (VM ID 9000)
+      ansible.builtin.command: qm status 9000
+      register: template_check
+      failed_when: false
+      changed_when: false
+
+    - name: Create Debian 12 Cloud-Init Template
+      when: template_check.rc != 0
+      block:
+        - name: Download Debian 12 Cloud image
+          ansible.builtin.get_url:
+            url: https://cloud.debian.org/images/cloud/bookworm/latest/debian-12-generic-amd64.qcow2
+            dest: /tmp/debian-12-generic-amd64.qcow2
+            mode: "0644"
+
+        - name: Create base VM (ID 9000)
+          ansible.builtin.command: >
+            qm create 9000 --name "debian-12-cloudinit" --memory 2048 --cores 2 --net0 virtio,bridge=vmbr0
+          changed_when: true
+
+        - name: Import disk to local-lvm
+          # Injects the raw downloaded image into Proxmox's block storage
+          ansible.builtin.command: >
+            qm importdisk 9000 /tmp/debian-12-generic-amd64.qcow2 local-lvm
+          changed_when: true
+
+        - name: Attach the imported disk to the VM
+          ansible.builtin.command: >
+            qm set 9000 --scsihw virtio-scsi-pci --scsi0 local-lvm:vm-9000-disk-0
+          changed_when: true
+
+        - name: Add Cloud-Init CD-ROM drive
+          ansible.builtin.command: >
+            qm set 9000 --ide2 local-lvm:cloudinit
+          changed_when: true
+
+        - name: Set boot order and enable serial console
+          # Serial console is required for Cloud-Init to display logs in the Proxmox UI
+          ansible.builtin.command: >
+            qm set 9000 --boot c --bootdisk scsi0 --serial0 socket --vga serial0
+          changed_when: true
+
+        - name: Convert VM to template
+          ansible.builtin.command: qm template 9000
+          changed_when: true
+
+        - name: Clean up downloaded image file
+          ansible.builtin.file:
+            path: /tmp/debian-12-generic-amd64.qcow2
+            state: absent
+
 - name: Run common roles
   hosts: proxmox
   become: true
-  tags: common-config
+  tags:
+    - common-config
   roles:
-    - name: proxmox/use-no-subscription-repos
-    - name: common/debian-sudo
-    - name: common/add-ssh-keys
+    - role: proxmox/use-no-subscription-repos # noqa: role-name[path]
+    - role: common/debian-sudo # noqa: role-name[path]
+    - role: common/add-ssh-keys # noqa: role-name[path]
       become: true
       tags: ssh
-    - name: devsec.hardening.ssh_hardening
+    - role: devsec.hardening.ssh_hardening
       vars:
         ssh_allow_tcp_forwarding: "yes"
         # ssh_server_password_login: true
         # sshd_authenticationmethods: publickey password
       tags: ssh
-    - name: common/update-all-packages
-    - name: grog.package
-      tags: packages
-
-- name: Setup VM
-  hosts: proxmox
-  become: false
-  tags: setup-vm
-  tasks:
-    - name: Create the media LXC
-      community.general.proxmox:
-        vmid: 100
-        node: "{{ nuk_node }}"
-        api_user: "{{ proxmox_api_user }}"
-        api_password: "{{ primary_user_pass }}"
-        api_host: "{{ nuk_host }}"
-        password: "{{ primary_user_pass }}"
-        hostname: "media"
-        onboot: "true"
-        startup: order=1,up=300 # Wait 5 min before starting
-        #ostemplate: 'local:vztmpl/debian-12-standard_12.7-1_amd64.tar.zst'
-        cores: 4
-        memory: 4096
-        disk: 'local-lvm:80'
-        netif:
-          net0: "name=eth0,gw=192.168.50.1,ip=192.168.50.10/24,bridge=vmbr0"
-        mounts:
-          mp0: "/data,mp=/data"
-          dev0: /dev/dri/renderD128,gid=104
-        features:
-          - keyctl=1
-          - nesting=1
-        update: true
-        state: present
-    - name: Start the media container
-      community.general.proxmox:
-        vmid: 100
-        api_user: "{{ proxmox_api_user }}"
-        api_password: "{{ primary_user_pass }}"
-        api_host: "{{ nuk_host }}"
-        state: started
-    # Manually enable ssh root login then run the setup-common playbook to create users and harden ssh.
-
-- name: Setup media vm
-  hosts: media
-  become: true
-  tags: setup-media
-  vars:
-    package_list:
-      - name: vim
-      - name: zsh
-  roles:
-    - name: grog.package
+    - role: common/update-all-packages # noqa: role-name[path]
+    - role: grog.package
       tags: packages

@@ -1,5 +1,4 @@
 ---
-
 no_subscription_ceph_repo:
   path: /etc/apt/sources.list.d/ceph.list
   repo: deb http://download.proxmox.com/debian/ceph-quincy {{ ansible_distribution_release }} no-subscription
