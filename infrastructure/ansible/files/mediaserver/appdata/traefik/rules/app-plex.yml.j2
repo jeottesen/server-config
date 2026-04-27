@@ -10,5 +10,6 @@ http:
   services:
     plex-svc:
       loadBalancer:
+        serversTransport: "isv-transport@file"
         servers:
-          - url: "https://{{ plex_hostname }}:32400/"
+          - url: "https://plex.direct:32400/"

@@ -1,9 +1,8 @@
 ---
 - name: Save iptables config
-  include_tasks: save-debian.yml
-
+  ansible.builtin.include_tasks: save-debian.yml
 - name: Restart docker service
-  service:
+  ansible.builtin.service:
     name: docker
     state: restarted
   ignore_errors: true

@@ -1,8 +1,11 @@
 {
     "editor.tabSize": 2,
-    "ansible.python.interpreterPath": "~/workspace/server-config/.venv/bin/python",
-    "python-envs.pythonProjects": [],
+    "python.defaultInterpreterPath": "${workspaceFolder}/.venv/bin/python",
+    "terminal.integrated.env.linux": {
+        "PATH": "${workspaceFolder}/.venv/bin:${env:PATH}"
+    },
+    "ansible.python.interpreterPath": "${workspaceFolder}/.venv/bin/python",
     "python-envs.defaultEnvManager": "ms-python.python:venv",
     "ansible.validation.lint.autoFixOnSave": false,
-    "ansible.validation.lint.arguments": "--write"
+    "ansible.validation.lint.arguments": "--write",
 }

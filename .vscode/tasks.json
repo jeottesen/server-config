@@ -4,9 +4,36 @@
   "version": "2.0.0",
   "tasks": [
     {
+        "label": "Bootstrap Workspace Environment",
+        "type": "shell",
+        "command": "if [ ! -d '.venv' ]; then echo 'Building Virtual Environment...' && python3 -m venv .venv; fi && echo 'Syncing dependencies...' && .venv/bin/pip install --upgrade pip && .venv/bin/pip install -r requirements.txt",
+        "runOptions": {
+            "runOn": "folderOpen"
+        },
+        "presentation": {
+            "reveal": "silent",
+            "panel": "shared",
+            "clear": true
+        }
+    },
+    {
+        "label": "Ansible: Encrypt Open File",
+        "type": "shell",
+        "command": "source ${workspaceFolder}/.venv/bin/activate && ansible-vault encrypt ${file} --vault-password-file=${workspaceFolder}/infrastructure/ansible/.vault-password",
+        "problemMatcher": [],
+        "group": "none"
+    },
+    {
+        "label": "Ansible: Decrypt Open File",
+        "type": "shell",
+        "command": "source ${workspaceFolder}/.venv/bin/activate && ansible-vault decrypt ${file} --vault-password-file=${workspaceFolder}/infrastructure/ansible/.vault-password",
+        "problemMatcher": [],
+        "group": "none"
+    },
+    {
       "label": "Ansible: Run nas - Tag: docker-compose",
       "type": "shell",
-      "command": "ansible-playbook setup-nas.yml --tag docker-compose",
+      "command": "source ${workspaceFolder}/.venv/bin/activate && ansible-playbook setup-nas.yml --tag docker-compose",
       "group": {
         "kind": "build"
       },
@@ -18,10 +45,13 @@
     {
       "label": "Ansible: Run nas - Tag: docker-compose, Skip-Tag: compose-setup",
       "type": "shell",
-      "command": "ansible-playbook setup-nas.yml --skip-tag compose-setup --tag docker-compose",
+      "command": "source ${workspaceFolder}/.venv/bin/activate && ansible-playbook setup-nas.yml --skip-tag compose-setup --tag docker-compose",
       "group": {
         "kind": "build"
       },"options": {
+        "env": {
+          "VIRTUAL_ENV": "${workspaceFolder}/venv"
+        },
         "cwd": "${workspaceFolder}/infrastructure/ansible"
       },
       "problemMatcher": []
@@ -29,7 +59,7 @@
     {
       "label": "Ansible: Run media - Tag: docker-compose",
       "type": "shell",
-      "command": "ansible-playbook setup-media.yml --tag docker-compose",
+      "command": "source ${workspaceFolder}/.venv/bin/activate && ansible-playbook setup-media.yml --tag docker-compose",
       "group": {
         "kind": "build"
       },"options": {
@@ -40,7 +70,7 @@
     {
       "label": "Ansible: Run media - Tag: docker-compose, Skip-Tag: compose-setup",
       "type": "shell",
-      "command": "ansible-playbook setup-media.yml --skip-tag compose-setup --tag docker-compose",
+      "command": "source ${workspaceFolder}/.venv/bin/activate && ansible-playbook setup-media.yml --skip-tag compose-setup --tag docker-compose",
       "group": {
         "kind": "build"
       },"options": {

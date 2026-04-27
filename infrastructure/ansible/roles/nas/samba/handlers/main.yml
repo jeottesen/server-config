@@ -1,4 +1,4 @@
-
+---
 - name: Reload nmbd
   ansible.builtin.service:
     name: nmbd

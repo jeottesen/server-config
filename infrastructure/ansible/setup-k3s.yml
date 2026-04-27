@@ -1,0 +1,28 @@
+---
+- name: Prepare K3s Node (OS Base)
+  hosts: k3s_cluster
+  become: true
+  tags:
+    - init
+  pre_tasks:
+    - name: Install QEMU Guest Agent for Proxmox integration
+      ansible.builtin.apt:
+        name: qemu-guest-agent
+        state: present
+        update_cache: true
+
+    - name: Ensure QEMU Guest Agent is running and enabled
+      ansible.builtin.systemd:
+        name: qemu-guest-agent
+        state: started
+        enabled: true
+  roles:
+    # ssh keys added through tofu
+    - name: devsec.hardening.ssh_hardening
+      vars:
+        ssh_allow_tcp_forwarding: "yes"
+
+- name: Deploy K3s via Official Collection
+  tags:
+    - k3s
+  ansible.builtin.import_playbook: k3s.orchestration.site

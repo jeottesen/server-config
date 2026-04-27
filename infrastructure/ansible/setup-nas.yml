@@ -2,10 +2,10 @@
 - name: Setup Common Configuration
   import_playbook: setup-common.yml
   vars:
-    limit_hosts: nas
+    limit_hosts: mediaserver
 
 - name: Setup nas server
-  hosts: nas
+  hosts: mediaserver
   become: true
   roles:
     - name: grog.package
@@ -28,7 +28,7 @@
       tags: email
 
 - name: Setup docker compose services and files
-  hosts: nas
+  hosts: mediaserver
   tags: docker
   become: true
   roles:
@@ -41,7 +41,7 @@
       tags: docker-compose
 
 - name: Configure nas cron jobs
-  hosts: nas
+  hosts: mediaserver
   become: true
   roles:
     - name: common/cron-backup
@@ -62,13 +62,13 @@
       tags: cron
   tasks:
     - name: Add the /usr/bin and /usr/sbin folders to the cron PATH needed for smartctl
-      cron:
+      ansible.builtin.cron:
         name: PATH
         env: true
         job: /usr/bin:/bin:/usr/bin:/usr/sbin
       tags: cron
     - name: Snapraid SMART emails
-      cron:
+      ansible.builtin.cron:
         name: snapraid scrub
         job: sudo snapraid smart | mail --subject='Snapraid SMART' {{ email_user }}+{{ ansible_hostname }}@gmail.com
         user: root
@@ -78,30 +78,29 @@
         dom: "*"
       tags: cron
 
-
 - name: Install hd-idle and configure it
-  hosts: nas
+  hosts: mediaserver
   become: true
   tags: hd-idle
   tasks:
     - name: Install hd-idle package
-      apt:
+      ansible.builtin.apt:
         name: hd-idle
         state: present
 
     - name: Append HD_IDLE_OPTS to /etc/default/hd-idle
-      lineinfile:
+      ansible.builtin.lineinfile:
         path: /etc/default/hd-idle
         line: 'HD_IDLE_OPTS="-i 600 -l /var/log/hd-idle.log"'
         create: true
 
     - name: Touch /var/log/hd-idle.log
-      file:
+      ansible.builtin.file:
         path: /var/log/hd-idle.log
         state: touch
 
     - name: Start and enable hd-idle service
-      systemd:
+      ansible.builtin.systemd:
         name: hd-idle
         state: started
         enabled: true

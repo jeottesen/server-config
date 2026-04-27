@@ -3,7 +3,6 @@
   become: true
   tags: compose-setup
   block:
-
     - name: Setup secrets
       ansible.builtin.include_tasks: secrets.yml
 
@@ -28,7 +27,7 @@
     - name: Copy appdata files
       ansible.builtin.copy:
         src: "{{ item.src }}"
-        dest: '{{ container_appdata_path }}/{{ item.path }}'
+        dest: "{{ container_appdata_path }}/{{ item.path }}"
         mode: "0644"
       loop: "{{ query('ansible.builtin.filetree', appdata_templates_source) }}"
       when:
@@ -43,8 +42,7 @@
         path: "{{ docker_dir }}/{{ item.path }}"
         state: directory
         mode: "0755"
-      loop: "{{ lookup('community.general.filetree', role_template_source) +
-                lookup('community.general.filetree', docker_templates_source) }}"
+      loop: "{{ lookup('community.general.filetree', role_template_source) + lookup('community.general.filetree', docker_templates_source) }}"
       when: item.state is defined and item.state == 'directory'
 
     - name: Ensure files are populated from compose templates
@@ -52,8 +50,7 @@
         src: "{{ item.src }}"
         dest: '{{ docker_dir }}/{{ item.path | regex_replace("\.j2$", "") }}'
         mode: "0644"
-      loop: "{{ lookup('community.general.filetree', role_template_source) +
-                lookup('community.general.filetree', docker_templates_source) }}"
+      loop: "{{ lookup('community.general.filetree', role_template_source) + lookup('community.general.filetree', docker_templates_source) }}"
       when:
         - item.state is defined and item.state == 'file'
         - item.path.endswith('.j2')

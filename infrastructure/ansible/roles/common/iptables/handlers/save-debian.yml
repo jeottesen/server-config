@@ -1,6 +1,6 @@
 ---
 - name: Get iptables_save output
-  ansible.builtin.shell: iptables-save
+  ansible.builtin.command: iptables-save
   register: iptables_save_output
 
 - name: Copy the output to a local file

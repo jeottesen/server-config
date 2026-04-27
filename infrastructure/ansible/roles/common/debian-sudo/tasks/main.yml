@@ -30,6 +30,6 @@
 
       # become root to install and setup sudo
       become: true
-      become_method: su
+      become_method: ansible.builtin.su
       become_user: root
       when: ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu'

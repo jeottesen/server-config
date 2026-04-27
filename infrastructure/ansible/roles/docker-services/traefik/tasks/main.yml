@@ -1,5 +1,4 @@
 ---
-
 - name: Create trafick acme dir
   ansible.builtin.file:
     path: "{{ traefik_directory }}/acme"

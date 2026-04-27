@@ -1,0 +1,4 @@
+ansible
+ansible-lint
+proxmoxer>=2.0.0
+requests

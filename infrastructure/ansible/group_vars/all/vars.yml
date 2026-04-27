@@ -1,5 +1,7 @@
 ---
 timezone: America/Denver
+local_domain: "samurai"
+
 primary_user: jotaro
 primary_group: jotaro
 # primary_user defined in home and remote group vars
@@ -7,10 +9,8 @@ primary_user_pass: "{{ vault_primary_user_pass }}"
 primary_user_pass_encoded: "{{ vault_primary_user_pass_encoded }}"
 primary_user_puid: 1000
 primary_user_guid: 1000
-ansible_user: "{{ primary_user }}"
-ssh_user: "{{ primary_user }}"
 
-media_ip: "{{ vault_media_ip }}"
+ssh_user: "{{ primary_user }}"
 
 sudo_users:
   - { user: "{{ primary_user }}", group: "{{ primary_user }}" }
@@ -40,5 +40,3 @@ base_domain_name: "{{ vault_base_domain_name }}"
 sonarr_api_key: "{{ vault_sonarr_api_key }}"
 radarr_api_key: "{{ vault_radarr_api_key }}"
 traefik_auth_key: "{{ vault_traefik_auth_key }}"
-
-code_ip: "{{ vault_code_ip }}"

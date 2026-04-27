@@ -62,7 +62,6 @@ resource "proxmox_vm_qemu" "k3s_server" {
           size     = "20G"
           storage  = "local-lvm"
           backup   = true
-          iothread = true
         }
       }
       scsi1 {
@@ -70,7 +69,6 @@ resource "proxmox_vm_qemu" "k3s_server" {
           size     = "100G"
           storage  = "local-lvm"
           backup   = true
-          iothread = true
         }
       }
     }
@@ -82,9 +80,19 @@ resource "proxmox_vm_qemu" "k3s_server" {
     bridge = "vmbr0"
   }
 
+  serial {
+    id   = 0
+    type = "socket"
+  }
+
+  # vga {
+  #   type = "serial0"
+  # }
+
   ipconfig0 = "ip=dhcp"
   ciuser    = "jotaro"
-  
+  ciupgrade = true
+
   sshkeys = <<-EOT
     ${file(pathexpand("~/.ssh/id_ed25519.pub"))}
     ${file(pathexpand("~/.ssh/ansible.pub"))}
