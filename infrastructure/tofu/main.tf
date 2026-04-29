@@ -21,7 +21,7 @@ resource "proxmox_vm_qemu" "k3s_server" {
   description = "Kubernetes Control Plane & Worker"
 
   os_type    = "cloud-init"
-  clone      = "debian-12-cloudinit"
+  clone      = "debian-13-cloudinit"
   full_clone = true
   agent      = 1 
 
@@ -88,6 +88,12 @@ resource "proxmox_vm_qemu" "k3s_server" {
   # vga {
   #   type = "serial0"
   # }
+
+  startup_shutdown {
+    order            = -1
+    shutdown_timeout = -1
+    startup_delay    = -1
+  }
 
   ipconfig0 = "ip=dhcp"
   ciuser    = "jotaro"

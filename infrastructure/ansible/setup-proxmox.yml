@@ -13,187 +13,12 @@
         state: present
       tags: create-user
 
-- name: Create Tofu user and set up permissions.
-  hosts: nuk
-  become: true
-  tags: tofu-setup
-  tasks:
-    - name: Ensure TofuProv role exists
-      ansible.builtin.command: pveum role add TofuProv
-      register: role_add
-      failed_when: false
-      changed_when: role_add.rc == 0
-
-    - name: Ensure privileges for TofuProv role
-      ansible.builtin.command: >
-        pveum role modify TofuProv -privs "Datastore.AllocateSpace Datastore.AllocateTemplate Datastore.Audit
-        Pool.Allocate Pool.Audit Sys.Audit Sys.Console Sys.Modify VM.Allocate VM.Audit VM.Clone
-        VM.Config.CDROM VM.Config.Cloudinit VM.Config.CPU VM.Config.Disk VM.Config.HWType
-        VM.Config.Memory VM.Config.Network VM.Config.Options VM.Migrate VM.Monitor
-        VM.PowerMgmt SDN.Use"
-      changed_when: true
-
-    - name: Ensure Tofu User exists
-      ansible.builtin.command: pveum user add tofu-prov@pve
-      register: user_add
-      failed_when: false
-      changed_when: user_add.rc == 0
-
-    - name: Assign Role to Tofu User
-      ansible.builtin.command: pveum aclmod / -user tofu-prov@pve -role TofuProv
-      changed_when: false
-
-    - name: Ensure API Token exists
-      ansible.builtin.command: pveum user token add tofu-prov@pve provisioner --privsep 0 --output-format json
-      register: token_add
-      failed_when: false
-      changed_when: token_add.rc == 0
-
-    - name: Display API Token Secret (SAVE THIS!)
-      ansible.builtin.debug:
-        msg:
-          - "CRITICAL: Save this Token Secret! It will never be shown again."
-          - "Token ID: tofu-prov@pve!provisioner"
-          - "Secret: {{ (token_add.stdout | from_json).value }}"
-      when:
-        - token_add.rc == 0
-        - token_add.stdout != ""
-
-- name: Build Debian 12 Cloud-Init Template
-  hosts: nuk
-  become: true
-  tags:
-    - template
-    - cloud-init
-
-  tasks:
-    # - name: Download Debian 12 Cloud image
-    #   ansible.builtin.get_url:
-    #     url: https://cloud.debian.org/images/cloud/bookworm/latest/debian-12-generic-amd64.qcow2
-    #     dest: /tmp/debian-12-generic-amd64.qcow2
-    #     mode: "0644"
-
-    # Manually add until bug preventing this from working is fixed
-    # - name: Ensure 'import' content type is enabled on 'local' storage
-    #   community.proxmox.proxmox_storage:
-    #     api_user: "{{ proxmox_api_user }}"
-    #     api_password: "{{ proxmox_api_password }}"
-    #     api_host: "{{ proxmox_api_host }}"
-    #     validate_certs: false
-    #     name: "local"
-    #     type: "dir"
-    #     state: present
-    #     nodes:
-    #       - nuk
-    #     dir_options:
-    #       path: "/var/lib/vz"
-    #     content:
-    #       - iso
-    #       - vztmpl
-    #       - backup
-    #       - import
-    #   delegate_to: localhost
-    #   vars:
-    #     ansible_python_interpreter: "{{ ansible_playbook_python }}"
-
-    - name: Download Debian 12 Cloud Image via Proxmox API
-      community.proxmox.proxmox_template:
-        api_user: "{{ proxmox_api_user }}"
-        api_password: "{{ proxmox_api_password }}"
-        api_host: "{{ proxmox_api_host }}"
-        validate_certs: false
-        node: nuk
-        storage: local
-        content_type: import
-        url: "https://cloud.debian.org/images/cloud/bookworm/latest/debian-12-generic-amd64.qcow2"
-        state: present
-        timeout: 600
-      delegate_to: localhost
-      vars:
-        ansible_python_interpreter: "{{ ansible_playbook_python }}"
-
-    - name: Create Base VM
-      community.proxmox.proxmox_kvm:
-        api_user: "{{ proxmox_api_user }}"
-        api_password: "{{ proxmox_api_password }}"
-        api_host: "{{ proxmox_api_host }}"
-        validate_certs: false
-        node: nuk
-        vmid: 9000
-        name: "debian-12-cloudinit"
-        memory: 2048
-        cores: 2
-        machine: q35
-        bios: ovmf
-        agent: 1
-        ostype: "l26"
-        scsihw: virtio-scsi-pci
-        net:
-          net0: "virtio,bridge=vmbr0"
-        ide:
-          ide2: "local:cloudinit,format=qcow2"
-        efidisk0:
-          storage: local-lvm
-          efitype: 4m
-          pre_enrolled_keys: true
-          format: raw
-        serial:
-          serial0: "socket"
-        #vga: "serial0"
-        state: present
-      delegate_to: localhost
-      vars:
-        ansible_python_interpreter: "{{ ansible_playbook_python }}"
-
-    - name: Import and Attach QCOW2
-      community.proxmox.proxmox_disk:
-        api_user: "{{ proxmox_api_user }}"
-        api_password: "{{ proxmox_api_password }}"
-        api_host: "{{ proxmox_api_host }}"
-        validate_certs: false
-        vmid: 9000
-        disk: scsi0
-        storage: local-lvm
-        import_from: "local:import/debian-12-generic-amd64.qcow2"
-        format: qcow
-        timeout: 600
-        state: present
-      delegate_to: localhost
-      vars:
-        ansible_python_interpreter: "{{ ansible_playbook_python }}"
-
-    - name: Finalize Boot Order
-      community.proxmox.proxmox_kvm:
-        api_user: "{{ proxmox_api_user }}"
-        api_password: "{{ proxmox_api_password }}"
-        api_host: "{{ proxmox_api_host }}"
-        validate_certs: false
-        node: nuk
-        vmid: 9000
-        boot: "order=scsi0"
-        update: true
-      delegate_to: localhost
-      vars:
-        ansible_python_interpreter: "{{ ansible_playbook_python }}"
-
-    - name: Convert VM to Template
-      community.proxmox.proxmox_kvm:
-        api_user: "{{ proxmox_api_user }}"
-        api_password: "{{ proxmox_api_password }}"
-        api_host: "{{ proxmox_api_host }}"
-        validate_certs: false
-        node: nuk
-        vmid: 9000
-        state: template
-      delegate_to: localhost
-      vars:
-        ansible_python_interpreter: "{{ ansible_playbook_python }}"
-
 - name: Run common roles
   hosts: nuk
   become: true
   tags:
     - common-config
+    - init
   roles:
     - role: proxmox/use-no-subscription-repos # noqa: role-name[path]
     - role: common/debian-sudo # noqa: role-name[path]
@@ -210,3 +35,18 @@
       tags: packages
     - role: grog.package
       tags: packages
+
+- name: Provision OpenTofu Service Account
+  hosts: nuk
+  become: true
+  roles:
+    - role: proxmox/tofu-setup # noqa: role-name[path]
+      tags: tofu-setup
+
+- name: Build Debian Cloud-Init Template
+  hosts: nuk
+  tags:
+    - template
+    - cloud-init
+  roles:
+    - role: proxmox/debian-template # noqa: role-name[path]

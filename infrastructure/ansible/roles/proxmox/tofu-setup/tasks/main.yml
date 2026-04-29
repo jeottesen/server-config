@@ -1,0 +1,76 @@
+---
+- name: Ensure Tofu role and privileges exist
+  community.proxmox.proxmox_role:
+    api_user: "{{ proxmox_api_user }}"
+    api_password: "{{ proxmox_api_password }}"
+    api_host: "{{ proxmox_api_host }}"
+    validate_certs: false
+    roleid: "{{ proxmox_tofu_role_name }}"
+    privs: "{{ proxmox_tofu_privileges | sort }}"
+    state: present
+  delegate_to: localhost
+  vars:
+    ansible_python_interpreter: "{{ ansible_playbook_python }}"
+
+- name: Ensure Tofu User exists
+  community.proxmox.proxmox_user:
+    api_user: "{{ proxmox_api_user }}"
+    api_password: "{{ proxmox_api_password }}"
+    api_host: "{{ proxmox_api_host }}"
+    validate_certs: false
+    userid: "{{ proxmox_tofu_user }}"
+    state: present
+  delegate_to: localhost
+  vars:
+    ansible_python_interpreter: "{{ ansible_playbook_python }}"
+
+- name: Assign Role to Tofu User
+  community.proxmox.proxmox_access_acl:
+    api_user: "{{ proxmox_api_user }}"
+    api_password: "{{ proxmox_api_password }}"
+    api_host: "{{ proxmox_api_host }}"
+    validate_certs: false
+    path: "/"
+    roleid: "{{ proxmox_tofu_role_name }}"
+    type: "user"
+    ugid: "{{ proxmox_tofu_user }}"
+    state: present
+  delegate_to: localhost
+  vars:
+    ansible_python_interpreter: "{{ ansible_playbook_python }}"
+
+- name: Retrieve Tofu User Info
+  community.proxmox.proxmox_user_info:
+    api_user: "{{ proxmox_api_user }}"
+    api_password: "{{ proxmox_api_password }}"
+    api_host: "{{ proxmox_api_host }}"
+    validate_certs: false
+    userid: "{{ proxmox_tofu_user }}"
+  delegate_to: localhost
+  register: proxmox_user_info
+  vars:
+    ansible_python_interpreter: "{{ ansible_playbook_python }}"
+
+- name: Create API Token
+  ansible.builtin.command: "pveum user token add {{ proxmox_tofu_user }} {{ proxmox_tofu_token_name }} --privsep 0 --output-format json"
+  register: proxmox_token_add
+  when: proxmox_tofu_token_name not in (proxmox_user_info.proxmox_users[0].tokens | default([]) | map(attribute='tokenid'))
+  changed_when: true
+
+- name: Save API Token to local OpenTofu variables file
+  ansible.builtin.copy:
+    dest: "./proxmox_credentials.auto.tfvars"
+    content: |
+      proxmox_api_token_id = "{{ proxmox_tofu_user }}!{{ proxmox_tofu_token_name }}"
+      proxmox_api_token_secret = "{{ (proxmox_token_add.stdout | from_json).value }}"
+    mode: "0600"
+  delegate_to: localhost
+  when: proxmox_token_add.stdout is defined
+
+- name: Warn if Token already existed
+  ansible.builtin.debug:
+    msg: >
+      The token '{{ proxmox_tofu_user }}!{{ proxmox_tofu_token_name }}' already exists.
+      Proxmox only shows the secret once, so the .tfvars file could not be generated.
+      If you lost the secret, you must delete the token in the Proxmox UI (or via CLI) and re-run this playbook.
+  when: proxmox_tofu_token_name in (user_info.proxmox_users[0].tokens | default([]) | map(attribute='tokenid'))

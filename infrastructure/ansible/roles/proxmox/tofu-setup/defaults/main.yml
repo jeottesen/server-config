@@ -1,0 +1,28 @@
+---
+proxmox_tofu_role_name: "TofuProv"
+proxmox_tofu_user: "tofu-prov@pve"
+proxmox_tofu_token_name: "provisioner"
+proxmox_tofu_privileges:
+  - Datastore.AllocateSpace
+  - Datastore.AllocateTemplate
+  - Datastore.Audit
+  - Pool.Allocate
+  - Pool.Audit
+  - SDN.Use
+  - Sys.Audit
+  - Sys.Console
+  - Sys.Modify
+  - VM.Allocate
+  - VM.Audit
+  - VM.Clone
+  - VM.Config.CDROM
+  - VM.Config.Cloudinit
+  - VM.Config.CPU
+  - VM.Config.Disk
+  - VM.Config.HWType
+  - VM.Config.Memory
+  - VM.Config.Network
+  - VM.Config.Options
+  - VM.Migrate
+  - VM.Monitor
+  - VM.PowerMgmt

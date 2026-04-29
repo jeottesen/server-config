@@ -1,0 +1,136 @@
+---
+    # Manually add until bug preventing this from working is fixed
+    # - name: Ensure 'import' content type is enabled on 'local' storage
+    #   community.proxmox.proxmox_storage:
+    #     api_user: "{{ proxmox_api_user }}"
+    #     api_password: "{{ proxmox_api_password }}"
+    #     api_host: "{{ proxmox_api_host }}"
+    #     validate_certs: false
+    #     name: "local"
+    #     type: "dir"
+    #     state: present
+    #     nodes:
+    #       - nuk
+    #     dir_options:
+    #       path: "/var/lib/vz"
+    #     content:
+    #       - iso
+    #       - vztmpl
+    #       - backup
+    #       - import
+    #   delegate_to: localhost
+    #   vars:
+    #     ansible_python_interpreter: "{{ ansible_playbook_python }}"
+
+- name: Ensure libguestfs-tools is install for image modification.
+  become: true
+  ansible.builtin.apt:
+    name: libguestfs-tools
+    state: present
+    update_cache: true
+
+- name: Download Debian Cloud Image
+  community.proxmox.proxmox_template:
+    api_user: "{{ proxmox_api_user }}"
+    api_password: "{{ proxmox_api_password }}"
+    api_host: "{{ proxmox_api_host }}"
+    validate_certs: false
+    node: "{{ proxmox_node }}"
+    storage: local
+    content_type: import
+    url: "{{ proxmox_cloud_image_url }}"
+    state: present
+    timeout: 600
+  delegate_to: localhost
+  vars:
+    ansible_python_interpreter: "{{ ansible_playbook_python }}"
+  register: proxmox_image_download
+
+- name: Prepare QCOW2 (Inject Agent and Scrub State) # noqa: no-handler
+  become: true
+  ansible.builtin.command: >
+    virt-customize -a /var/lib/vz/import/{{ proxmox_cloud_image_filename }} \
+    --install qemu-guest-agent \
+    --run-command "echo 'grub-efi-amd64 grub2/force_efi_extra_removable boolean true' | debconf-set-selections -v -u" \
+    --run-command "DEBIAN_FRONTEND=noninteractive apt-get install \
+    --reinstall -y grub-efi-amd64" \
+    --truncate /etc/machine-id \
+    --run-command "cloud-init clean"
+  when: proxmox_image_download.changed
+  changed_when: true
+
+- name: Create Base VM
+  community.proxmox.proxmox_kvm:
+    api_user: "{{ proxmox_api_user }}"
+    api_password: "{{ proxmox_api_password }}"
+    api_host: "{{ proxmox_api_host }}"
+    validate_certs: false
+    node: "{{ proxmox_node }}"
+    vmid: "{{ proxmox_template_vmid }}"
+    name: "{{ proxmox_template_name }}"
+    memory: "{{ proxmox_template_memory }}"
+    cores: "{{ proxmox_template_cores }}"
+    machine: q35
+    bios: ovmf
+    agent: 1
+    ostype: "l26"
+    scsihw: virtio-scsi-pci
+    net:
+      net0: "virtio,bridge=vmbr0"
+    ide:
+      ide2: "local:cloudinit,format=qcow2"
+    efidisk0:
+      storage: local-lvm
+      efitype: 4m
+      pre_enrolled_keys: true
+      format: raw
+    serial:
+      serial0: "socket"
+    state: present
+  delegate_to: localhost
+  vars:
+    ansible_python_interpreter: "{{ ansible_playbook_python }}"
+
+- name: Import and Attach QCOW2
+  community.proxmox.proxmox_disk:
+    api_user: "{{ proxmox_api_user }}"
+    api_password: "{{ proxmox_api_password }}"
+    api_host: "{{ proxmox_api_host }}"
+    validate_certs: false
+    vmid: "{{ proxmox_template_vmid }}"
+    disk: scsi0
+    storage: local-lvm
+    import_from: "local:import/{{ proxmox_cloud_image_filename }}"
+    format: raw
+    timeout: 600
+    state: present
+  delegate_to: localhost
+  vars:
+    ansible_python_interpreter: "{{ ansible_playbook_python }}"
+
+- name: Finalize Boot Order
+  community.proxmox.proxmox_kvm:
+    api_user: "{{ proxmox_api_user }}"
+    api_password: "{{ proxmox_api_password }}"
+    api_host: "{{ proxmox_api_host }}"
+    validate_certs: false
+    node: "{{ proxmox_node }}"
+    vmid: "{{ proxmox_template_vmid }}"
+    boot: "order=scsi0"
+    update: true
+  delegate_to: localhost
+  vars:
+    ansible_python_interpreter: "{{ ansible_playbook_python }}"
+
+- name: Convert VM to Template
+  community.proxmox.proxmox_kvm:
+    api_user: "{{ proxmox_api_user }}"
+    api_password: "{{ proxmox_api_password }}"
+    api_host: "{{ proxmox_api_host }}"
+    validate_certs: false
+    node: "{{ proxmox_node }}"
+    vmid: "{{ proxmox_template_vmid }}"
+    state: template
+  delegate_to: localhost
+  vars:
+    ansible_python_interpreter: "{{ ansible_playbook_python }}"

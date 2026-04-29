@@ -1,0 +1,14 @@
+---
+
+# Proxmox Target Settings
+proxmox_node: "nuk"
+proxmox_template_vmid: 9000
+proxmox_template_name: "debian-13-cloudinit"
+
+# Image Source Settings
+proxmox_cloud_image_filename: "debian-13-generic-amd64.qcow2"
+proxmox_cloud_image_url: "https://cloud.debian.org/images/cloud/trixie/latest/{{ proxmox_cloud_image_filename }}"
+
+# VM Hardware Settings
+proxmox_template_memory: 2048
+proxmox_template_cores: 2
