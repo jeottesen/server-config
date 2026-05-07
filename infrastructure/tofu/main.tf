@@ -1,106 +1,137 @@
 terraform {
   required_providers {
     proxmox = {
-      source = "Telmate/proxmox"
-      version = "3.0.2-rc07"
+      source  = "bpg/proxmox"
+      version = "0.104.0"
     }
   }
 }
 
 provider "proxmox" {
-  pm_api_url          = var.proxmox_api_url
-  pm_api_token_id     = var.proxmox_api_token_id
-  pm_api_token_secret = var.proxmox_api_token_secret
-  pm_debug            = true
-  pm_tls_insecure     = true
+  endpoint      = var.proxmox_api_url
+  api_token     = "${var.proxmox_api_token_id}=${var.proxmox_api_token_secret}"
+  insecure      = true
+  ssh {
+    agent = true
+    username = "jotaro"  # required when using api_token
+  }
 }
 
-resource "proxmox_vm_qemu" "k3s_server" {
+
+resource "proxmox_download_file" "debian_cloud_image" {
+  content_type = "import" # Usually 'iso' or 'import' depending on your storage
+  datastore_id = "local"
+  node_name    = var.proxmox_node
+  url          = var.proxmox_cloud_image_url
+}
+
+resource "proxmox_virtual_environment_vm" "k3s_server" {
   name        = "k3s-server-01"
-  target_node = "nuk"
   description = "Kubernetes Control Plane & Worker"
+  node_name   = "nuk"
+  #vm_id       = 101 # Optional: specific ID
 
-  os_type    = "cloud-init"
-  clone      = "debian-13-cloudinit"
-  full_clone = true
-  agent      = 1 
+  smbios {
+    # 'h' stands for hostname in NoCloud ds parameters
+    serial = "ds=nocloud;h=k3s-server-01" 
+  }
 
-  # Hardware specs
+  agent {
+    enabled = true
+  }
+
   cpu {
-    cores   = 2
-    sockets = 1
-    type    = "host"
+    cores = 2
+    type  = "host"
   }
 
-  # Top-level Memory settings
-  memory  = 4096
-  balloon = 1024
-  
-
-  bios    = "ovmf"
-  scsihw  = "virtio-scsi-pci"
-  boot    = "order=scsi0"
-  hotplug = "network,disk,usb"
-  
-  efidisk {
-    pre_enrolled_keys = true
-    efitype = "4m"
-    storage = "local-lvm"
+  memory {
+    dedicated = 4096
+    floating  = 1024 
   }
 
-  disks {
-    ide {
-      ide2 {
-        cloudinit {
-          storage = "local-lvm"
-        }
+  operating_system {
+    type = "l26"
+  }
+
+  initialization {
+    datastore_id = "local-lvm"
+    
+    ip_config {
+      ipv4 {
+        address = "dhcp"
       }
     }
-    scsi {
-      scsi0 {
-        disk {
-          size     = "20G"
-          storage  = "local-lvm"
-          backup   = true
-        }
-      }
-      scsi1 {
-        disk {
-          size     = "100G"
-          storage  = "local-lvm"
-          backup   = true
-        }
-      }
+
+    user_account {
+      username = "jotaro"
+      keys = [
+        trimspace(file(pathexpand("~/.ssh/id_ed25519.pub"))),
+        trimspace(file(pathexpand("~/.ssh/ansible.pub")))
+      ]
     }
+
+    # Pulls keys from your local machine
+    user_data_file_id = proxmox_virtual_environment_file.debian_cloud_config.id
   }
 
-  network {
-    id = 0
-    model  = "virtio"
+  disk {
+    datastore_id = "local-lvm"
+    import_from  = proxmox_download_file.debian_cloud_image.id
+    interface    = "scsi0"
+    size         = 20
+  }
+
+  disk {
+    datastore_id = "local-lvm"
+    interface    = "scsi1"
+    size         = 100
+  }
+
+  network_device {
     bridge = "vmbr0"
+    model  = "virtio"
   }
 
-  serial {
-    id   = 0
-    type = "socket"
+  # EFI settings
+  efi_disk {
+    datastore_id      = "local-lvm"
+    pre_enrolled_keys = true
+    type              = "4m"
   }
 
-  # vga {
-  #   type = "serial0"
-  # }
+  # Startup/Shutdown settings
+  # Note: -1 in old provider is represented by omitting or specific flags in bpg
+  on_boot = true 
+}
 
-  startup_shutdown {
-    order            = -1
-    shutdown_timeout = -1
-    startup_delay    = -1
+# Create a separate file resource for Cloud-Init
+resource "proxmox_virtual_environment_file" "debian_cloud_config" {
+  content_type = "snippets"
+  datastore_id = "local"
+  node_name    = var.proxmox_node
+
+  source_raw {
+    file_name = "debian-cloud-config.yaml"
+    data = <<EOF
+#cloud-config
+users:
+  - name: jotaro
+    groups: sudo
+    shell: /bin/bash
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    ssh-authorized-keys:
+      - ${trimspace(file(pathexpand("~/.ssh/id_ed25519.pub")))}
+      - ${trimspace(file(pathexpand("~/.ssh/ansible.pub")))}
+
+
+package_upgrade: true
+packages:
+  - qemu-guest-agent
+
+runcmd:
+  - apt modernize-sources
+  - systemctl enable --now qemu-guest-agent
+EOF
   }
-
-  ipconfig0 = "ip=dhcp"
-  ciuser    = "jotaro"
-  ciupgrade = true
-
-  sshkeys = <<-EOT
-    ${file(pathexpand("~/.ssh/id_ed25519.pub"))}
-    ${file(pathexpand("~/.ssh/ansible.pub"))}
-  EOT
 }

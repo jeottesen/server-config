@@ -3,6 +3,7 @@ proxmox_tofu_role_name: "TofuProv"
 proxmox_tofu_user: "tofu-prov@pve"
 proxmox_tofu_token_name: "provisioner"
 proxmox_tofu_privileges:
+  - Datastore.Allocate
   - Datastore.AllocateSpace
   - Datastore.AllocateTemplate
   - Datastore.Audit
