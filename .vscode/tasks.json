@@ -4,19 +4,6 @@
   "version": "2.0.0",
   "tasks": [
     {
-        "label": "Bootstrap Workspace Environment",
-        "type": "shell",
-        "command": "if [ ! -d '.venv' ]; then echo 'Building Virtual Environment...' && python3 -m venv .venv; fi && echo 'Syncing dependencies...' && .venv/bin/pip install --upgrade pip && .venv/bin/pip install -r requirements.txt",
-        "runOptions": {
-            "runOn": "folderOpen"
-        },
-        "presentation": {
-            "reveal": "silent",
-            "panel": "shared",
-            "clear": true
-        }
-    },
-    {
         "label": "Ansible: Encrypt Open File",
         "type": "shell",
         "command": "source ${workspaceFolder}/.venv/bin/activate && ansible-vault encrypt ${file} --vault-password-file=${workspaceFolder}/infrastructure/ansible/.vault-password",

@@ -4,18 +4,6 @@
   become: true
   tags:
     - init
-  pre_tasks:
-    - name: Install QEMU Guest Agent for Proxmox integration
-      ansible.builtin.apt:
-        name: qemu-guest-agent
-        state: present
-        update_cache: true
-
-    - name: Ensure QEMU Guest Agent is running and enabled
-      ansible.builtin.systemd:
-        name: qemu-guest-agent
-        state: started
-        enabled: true
   roles:
     # ssh keys added through tofu
     - name: devsec.hardening.ssh_hardening
@@ -25,4 +13,47 @@
 - name: Deploy K3s via Official Collection
   tags:
     - k3s
+    - init
   ansible.builtin.import_playbook: k3s.orchestration.site
+
+- name: Initialize ArgoCD
+  become: true
+  hosts: k3s_cluster
+  tags:
+    - k3s
+    - argocd
+  tasks:
+    - name: Deploy ArgoCD via K3s Auto-Deploy Template
+      ansible.builtin.template:
+        src: k3s_cluster/argocd.yaml.j2
+        dest: /var/lib/rancher/k3s/server/manifests/argocd.yaml
+        owner: root
+        group: root
+        mode: "0644"
+    - name: Deploy ArgoCD master-app
+      ansible.builtin.template:
+        src: k3s_cluster/master-app.yaml.j2
+        dest: /var/lib/rancher/k3s/server/manifests/master-app.yaml
+        owner: root
+        group: root
+        mode: "0644"
+
+- name: Setup local environment with k3s config
+  hosts: k3s_server-01
+  tags:
+    - k3s
+    - kubeconfig
+  tasks:
+    - name: Fetch K3s kubeconfig to local machine
+      become: true
+      ansible.builtin.fetch:
+        src: /etc/rancher/k3s/k3s.yaml
+        dest: ~/.kube/config
+        flat: true
+
+    - name: Update kubeconfig to point to the k3s server ip
+      delegate_to: localhost
+      ansible.builtin.replace:
+        path: ~/.kube/config
+        regexp: "127\\.0\\.0\\.1"
+        replace: "{{ ansible_host }}"
