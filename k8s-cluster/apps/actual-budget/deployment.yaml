@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: actual-server
+  namespace: actual-budget
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: actual-server
+  template:
+    metadata:
+      labels:
+        app: actual-server
+    spec:
+      containers:
+        - name: actual-server
+          image: actualbudget/actual-server:latest
+          ports:
+            - containerPort: 5006
+          volumeMounts:
+            - name: actual-data-vol
+              mountPath: /data
+      volumes:
+        - name: actual-data-vol
+          persistentVolumeClaim:
+            claimName: actual-data
