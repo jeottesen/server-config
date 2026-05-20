@@ -5,7 +5,7 @@ services:
     extends:
       file: common.yml
       service: common-keys-apps
-    image: remirigal/plex-auto-languages:latest
+    image: journeyover/plex-auto-languages:latest
     container_name: plexautolanguages
     environment:
       <<: *default-tz-puid-pgid
