@@ -3,6 +3,8 @@
 containers/*
 !containers/nginx
 
+.venv/
+
 # Ansible
 .vault-password
 .ansible/

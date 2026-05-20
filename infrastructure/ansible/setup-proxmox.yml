@@ -1,6 +1,6 @@
 ---
 - name: Apply standard config
-  hosts: nuk
+  hosts: hypervisors
   become: true
   tags: common-config
   tasks:
@@ -13,14 +13,16 @@
         state: present
       tags: create-user
 
+# Run the community setup script for fresh proxmox installs
+# https://community-scripts.org/scripts/post-pve-install?id=post-pve-install
+
 - name: Run common roles
-  hosts: nuk
+  hosts: hypervisors
   become: true
   tags:
     - common-config
     - init
   roles:
-    - role: proxmox/use-no-subscription-repos # noqa: role-name[path]
     - role: common/debian-sudo # noqa: role-name[path]
     - role: common/add-ssh-keys # noqa: role-name[path]
       become: true
@@ -37,7 +39,7 @@
       tags: packages
 
 - name: Provision OpenTofu Service Account
-  hosts: nuk
+  hosts: hypervisors
   become: true
   roles:
     - role: proxmox/tofu-setup # noqa: role-name[path]
