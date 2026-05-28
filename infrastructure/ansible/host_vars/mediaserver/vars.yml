@@ -82,6 +82,7 @@ sub_domains:
   - oauth
   - ombi
   - overseerr
+  - print
   - pasta
   - photos
   - plex
