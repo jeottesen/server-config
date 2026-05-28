@@ -1,0 +1,17 @@
+http:
+  routers:
+    print-rtr:
+      tls: "true"
+      rule: "Host(`print.{{ domain_name }}`)"
+      entryPoints:
+        - websecure
+      middlewares:
+        - chain-oauth
+      service: print-svc
+  services:
+    print-svc:
+      loadBalancer:
+        serversTransport: "isv-transport@file"
+        servers:
+          - url: "https://octopi.samurai"
+  
