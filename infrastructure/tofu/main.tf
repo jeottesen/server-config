@@ -12,10 +12,6 @@ provider "proxmox" {
   endpoint  = var.nuk01_api_url
   api_token = "${var.nuk01_api_token_id}=${var.nuk01_api_token_secret}"
   insecure  = true
-  ssh {
-    agent    = true
-    username = "jotaro"
-  }
 }
 
 # nuk-02 Provider
@@ -24,10 +20,6 @@ provider "proxmox" {
   endpoint  = var.nuk02_api_url
   api_token = "${var.nuk02_api_token_id}=${var.nuk02_api_token_secret}"
   insecure  = true
-  ssh {
-    agent    = true
-    username = "jotaro"
-  }
 }
 
 # --- Deploy to nuk ---

@@ -6,7 +6,12 @@
     api_host: "{{ proxmox_api_host }}"
     validate_certs: false
     roleid: "{{ proxmox_tofu_role_name }}"
-    privs: "{{ proxmox_tofu_privileges | sort }}"
+    privs: >-
+      {{
+        (proxmox_tofu_privileges +
+        (proxmox_tofu_privileges_v8 if ansible_distribution_release == 'bookworm' else proxmox_tofu_privileges_v9))
+        | sort
+      }}
     state: present
   delegate_to: localhost
   vars:
@@ -74,22 +79,3 @@
       Proxmox only shows the secret once, so the .tfvars file could not be generated.
       If you lost the secret, you must delete the token in the Proxmox UI (or via CLI) and re-run this playbook.
   when: proxmox_tofu_token_name in (user_info.proxmox_users[0].tokens | default([]) | map(attribute='tokenid'))
-
-- name: Ensure Proxmox snippets directory exists with root ownership
-  ansible.builtin.file:
-    path: /var/lib/vz/snippets
-    state: directory
-    owner: root
-    group: root
-    mode: "0755"
-  become: true
-
-- name: Grant specific user rwx access to snippets directory via ACL
-  ansible.posix.acl:
-    path: /var/lib/vz/snippets
-    entity: "{{ primary_user }}"
-    etype: user
-    permissions: rwx
-    state: present
-    recursive: false
-  become: true

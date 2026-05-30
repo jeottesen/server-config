@@ -25,5 +25,11 @@ proxmox_tofu_privileges:
   - VM.Config.Network
   - VM.Config.Options
   - VM.Migrate
-  # - VM.Monitor # Not available on proxmox 9
   - VM.PowerMgmt
+
+proxmox_tofu_privileges_v8:
+  - VM.Monitor
+
+proxmox_tofu_privileges_v9:
+  - VM.GuestAgent.Audit
+  - VM.GuestAgent.Unrestricted

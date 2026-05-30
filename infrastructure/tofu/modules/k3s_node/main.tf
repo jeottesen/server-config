@@ -2,7 +2,7 @@ terraform {
   required_providers {
     proxmox = {
       source  = "bpg/proxmox"
-      version = ">= 0.104.0"
+      version = "0.104.0"
     }
   }
 }
@@ -14,39 +14,11 @@ resource "proxmox_download_file" "debian_cloud_image" {
   url          = var.cloud_image_url
 }
 
-resource "proxmox_virtual_environment_file" "debian_cloud_config" {
-  content_type = "snippets"
-  datastore_id = "local"
-  node_name    = var.target_node
-
-  source_raw {
-    file_name = "${var.vm_name}-cloud-config.yaml"
-    data = <<EOF
-#cloud-config
-users:
-  - name: jotaro
-    groups: sudo
-    shell: /bin/bash
-    sudo: ALL=(ALL) NOPASSWD:ALL
-    ssh-authorized-keys:
-      - ${trimspace(file(pathexpand("~/.ssh/id_ed25519.pub")))}
-      - ${trimspace(file(pathexpand("~/.ssh/ansible.pub")))}
-
-package_upgrade: true
-packages:
-  - qemu-guest-agent
-
-runcmd:
-  - apt modernize-sources
-  - systemctl enable --now qemu-guest-agent
-EOF
-  }
-}
-
 resource "proxmox_virtual_environment_vm" "k3s_server" {
   name        = var.vm_name
   description = "Kubernetes Control Plane & Worker on ${var.target_node}"
   node_name   = var.target_node
+  bios        = "ovmf"
 
   smbios {
     serial = "ds=nocloud;h=${var.vm_name}" 
@@ -61,27 +33,10 @@ resource "proxmox_virtual_environment_vm" "k3s_server" {
 
   memory {
     dedicated = 4096
-    floating  = 1024 
+    floating  = 4096 
   }
 
-  operating_system { type = "l26" }
-
-  initialization {
-    datastore_id = "local-lvm"
-    
-    ip_config {
-      ipv4 { address = "dhcp" }
-    }
-
-    user_account {
-      username = "jotaro"
-      keys = [
-        trimspace(file(pathexpand("~/.ssh/id_ed25519.pub"))),
-        trimspace(file(pathexpand("~/.ssh/ansible.pub")))
-      ]
-    }
-    user_data_file_id = proxmox_virtual_environment_file.debian_cloud_config.id
-  }
+  scsi_hardware = "virtio-scsi-single"
 
   disk {
     datastore_id = "local-lvm"
@@ -95,6 +50,27 @@ resource "proxmox_virtual_environment_vm" "k3s_server" {
     interface    = "scsi1"
     size         = 100
   }
+
+  initialization {
+    #datastore_id = "local-lvm"
+    interface = "scsi3"
+
+    ip_config {
+      ipv4 { address = "dhcp" }
+    }
+
+    user_data_file_id = "local:snippets/debian-cloud-config.yml"
+  }
+
+  operating_system { 
+    type = "l26" 
+  }
+
+  tpm_state {
+    version = "v2.0"
+  }
+
+  serial_device {}
 
   network_device {
     bridge = "vmbr0"
