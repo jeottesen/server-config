@@ -12,14 +12,12 @@ users:
 
 package_update: true
 package_upgrade: true
-packages:
-  - qemu-guest-agent
 
 packages:
   - qemu-guest-agent
+  - spice-vdagent
   - net-tools
   - curl
 runcmd:
   - systemctl enable qemu-guest-agent
   - systemctl start qemu-guest-agent
-  - echo "done" > /tmp/cloud-config.done

@@ -83,5 +83,9 @@ resource "proxmox_virtual_environment_vm" "k3s_server" {
     type              = "4m"
   }
 
+  vga {
+    type = "qxl"
+  }
+
   on_boot = true 
 }
