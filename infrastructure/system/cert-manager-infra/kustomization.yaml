@@ -1,0 +1,10 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Files that should be deployed normally
+resources:
+  - cluster-issuer.yaml
+
+# Files that need to be decrypted and generated
+generators:
+  - secret-generator.yaml

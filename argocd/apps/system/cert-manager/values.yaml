@@ -1,0 +1,33 @@
+installCRDs: true
+
+# Enable prometheus metrics
+prometheus:
+  enabled: true
+  servicemonitor:
+    enabled: true
+
+# Resource limits
+resources:
+  requests:
+    cpu: 50m
+    memory: 128Mi
+  limits:
+    memory: 256Mi
+
+# Webhook configuration
+webhook:
+  resources:
+    requests:
+      cpu: 25m
+      memory: 64Mi
+    limits:
+      memory: 128Mi
+
+# CA injector
+cainjector:
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      memory: 256Mi

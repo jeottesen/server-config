@@ -1,0 +1,64 @@
+#Argo CD Values
+server:
+  service:
+    type: NodePort
+    nodePortHttp: 30080
+configs:
+  # Enable the health assessment of applications
+  cm:
+    resource.customizations.health.argoproj.io_Application: |
+      hs = {}
+      hs.status = "Progressing"
+      hs.message = ""
+      if obj.status ~= nil then
+        if obj.status.health ~= nil then
+          hs.status = obj.status.health.status
+          if obj.status.health.message ~= nil then
+            hs.message = obj.status.health.message
+          end
+        end
+      end
+      return hs      
+
+  # Patching the TLS because we want our SSL termination to happen on Ingress Gateway level
+  params:
+    server.insecure: true
+
+# =========================================================================
+# Repo Server Customizations for SOPS + KSOPS Decryption
+# =========================================================================
+repoServer:
+  # 1. Environment variables telling Kustomize and SOPS where keys and plugins live
+  env:
+    - name: SOPS_AGE_KEY_FILE
+      value: /home/argocd/.config/sops/age/keys.txt
+    - name: KUSTOMIZE_PLUGIN_HOME
+      value: /home/argocd/.config/kustomize/plugin
+
+  # 2. Automated Init Container to download the KSOPS binary
+  initContainers:
+    - name: install-ksops
+      image: viaductoss/ksops:v4.3.2
+      command: ["/bin/sh", "-c"]
+      args:
+        - mkdir -p /custom-tools/viaduct.ai/v1/ksops/;
+          cp /usr/local/bin/ksops /custom-tools/viaduct.ai/v1/ksops/;
+      volumeMounts:
+        - mountPath: /custom-tools
+          name: custom-tools
+
+  # 3. Extra Volume Mounts for the Repo Server container
+  volumeMounts:
+    - mountPath: /home/argocd/.config/kustomize/plugin
+      name: custom-tools
+    - mountPath: /home/argocd/.config/sops/age
+      name: sops-age
+      readOnly: true
+
+  # 4. Storage volumes (one for KSOPS binary sharing, one pulling your Kubernetes secret)
+  volumes:
+    - name: custom-tools
+      emptyDir: {}
+    - name: sops-age
+      secret:
+        secretName: sops-age-key

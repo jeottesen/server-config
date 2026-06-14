@@ -10,38 +10,30 @@
       vars:
         ssh_allow_tcp_forwarding: "yes"
 
+- name: Install Packages
+  hosts: k3s_cluster
+  become: true
+  tags:
+    - init
+    - packages
+  tasks:
+    - name: Install longhorn packages
+      ansible.builtin.package:
+        name:
+          - open-iscsi
+          - nfs-common
+        state: present
+
 - name: Deploy K3s via Official Collection
   tags:
     - k3s
     - init
   ansible.builtin.import_playbook: k3s.orchestration.site
 
-- name: Initialize ArgoCD
-  become: true
-  hosts: k3s_cluster:&server
-  tags:
-    - k3s
-    - argocd
-  tasks:
-    - name: Deploy ArgoCD via K3s Auto-Deploy Template
-      ansible.builtin.template:
-        src: k3s_cluster/argocd.yaml.j2
-        dest: /var/lib/rancher/k3s/server/manifests/argocd.yaml
-        owner: root
-        group: root
-        mode: "0644"
-    - name: Deploy ArgoCD master-app
-      ansible.builtin.template:
-        src: k3s_cluster/master-app.yaml.j2
-        dest: /var/lib/rancher/k3s/server/manifests/master-app.yaml
-        owner: root
-        group: root
-        mode: "0644"
-
 - name: Setup local environment with k3s config
   hosts: k3s-server-01
   tags:
-    - k3s
+    - init
     - kubeconfig
   tasks:
     - name: Fetch K3s kubeconfig to local machine
