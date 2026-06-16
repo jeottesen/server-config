@@ -10,7 +10,7 @@ spec:
     path: infrastructure/apps/actual-budget
     targetRevision: HEAD
   destination:
-    server: 'https://kubernetes.default.svc'
+    name: in-cluster
     namespace: actual-budget
   syncPolicy:
     syncOptions:

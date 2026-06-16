@@ -6,7 +6,7 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-wave: "-1"
 spec:
-  project: homelab-project
+  project: default
   source:
     repoURL: 'https://charts.jetstack.io'
     targetRevision: 1.7.2
@@ -15,7 +15,7 @@ spec:
       valueFiles:
         - values.yaml
   destination:
-    server: 'https://kubernetes.default.svc'
+    name: in-cluster
     namespace: cert-manager
   syncPolicy:
     automated:
