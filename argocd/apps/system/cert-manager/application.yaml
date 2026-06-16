@@ -17,3 +17,6 @@ spec:
   destination:
     name: in-cluster
     namespace: cert-manager
+  syncPolicy:
+    syncOptions:
+          - CreateNamespace=true
