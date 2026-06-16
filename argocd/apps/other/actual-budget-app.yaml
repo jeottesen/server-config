@@ -12,6 +12,3 @@ spec:
   destination:
     name: in-cluster
     namespace: actual-budget
-  syncPolicy:
-    syncOptions:
-      - CreateNamespace=true
