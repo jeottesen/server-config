@@ -13,5 +13,9 @@ spec:
     name: in-cluster
     namespace: actual-budget
   syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
     syncOptions:
       - CreateNamespace=true
+      - RespectIgnoreDifferences=true
