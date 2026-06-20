@@ -8,15 +8,12 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: 'https://charts.jetstack.io'
-    targetRevision: 1.7.2
-    chart: cert-manager
-    helm:
-      valueFiles:
-        - values.yaml
+    repoURL: 'https://github.com/jeottesen/server-config.git'
+    targetRevision: HEAD
+    path: "k8s-apps/cert-manager"
   destination:
     name: in-cluster
     namespace: cert-manager
   syncPolicy:
     syncOptions:
-          - CreateNamespace=true
+      - CreateNamespace=true
