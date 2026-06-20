@@ -30,4 +30,3 @@ spec:
     app: whoami
   ports:
     - port: 80
-      nodePort: 30080
