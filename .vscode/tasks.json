@@ -25,7 +25,7 @@
         "kind": "build"
       },
       "options": {
-        "cwd": "${workspaceFolder}/infrastructure/ansible"
+        "cwd": "${workspaceFolder}/ansible"
       },
       "problemMatcher": []
     },
@@ -39,7 +39,7 @@
         "env": {
           "VIRTUAL_ENV": "${workspaceFolder}/venv"
         },
-        "cwd": "${workspaceFolder}/infrastructure/ansible"
+        "cwd": "${workspaceFolder}/ansible"
       },
       "problemMatcher": []
     },
@@ -50,7 +50,7 @@
       "group": {
         "kind": "build"
       },"options": {
-        "cwd": "${workspaceFolder}/infrastructure/ansible"
+        "cwd": "${workspaceFolder}/ansible"
       },
       "problemMatcher": []
     },
@@ -61,7 +61,7 @@
       "group": {
         "kind": "build"
       },"options": {
-        "cwd": "${workspaceFolder}/infrastructure/ansible"
+        "cwd": "${workspaceFolder}/ansible"
       },
       "problemMatcher": []
     }

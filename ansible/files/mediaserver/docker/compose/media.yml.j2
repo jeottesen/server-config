@@ -43,6 +43,7 @@ services:
     container_name: ombi
     environment:
       <<: *primary-tz-puid-pgid
+      BASE_URL: "/"
     volumes:
       - $CONTAINER_APPDATA_DIR/ombi/config:/config
     labels:
