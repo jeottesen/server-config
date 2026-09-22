@@ -320,7 +320,7 @@ services:
       - "traefik.http.routers.sonarr-rtr.rule=Host(`sonarr.$DOMAIN_NAME`)"
       - "traefik.http.routers.sonarr-rtr.priority=99"
       ## Middlewares
-      - "traefik.http.routers.sonarr-rtr.middlewares=chain-oauth@file"
+      - "traefik.http.routers.sonarr-rtr.middlewares=chain-oauth-admin@file"
       ## HTTP Services
       - "traefik.http.routers.sonarr-rtr-bypass.service=sonarr-svc"
       - "traefik.http.routers.sonarr-rtr.service=sonarr-svc"
