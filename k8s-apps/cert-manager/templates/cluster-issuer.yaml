@@ -5,14 +5,15 @@ metadata:
 spec:
   acme:
     server: https://acme-v02.api.letsencrypt.org/directory
-    email: your-email@example.com
+    email: jeottesen@gmail.com
     privateKeySecretRef:
       name: letsencrypt-prod-dns-key
     solvers:
       - dns01:
           route53:
             region: us-east-1
-            accessKeyID: "YOUR_AWS_ACCESS_KEY_ID"
+            hostedZoneID: "Z04607582AKTMYOC63SWY"
+            accessKeyID: "AKIATTRNN2PSAHLSFEQ6"
             secretAccessKeySecretRef:
               name: aws-route53-secret
               key: secret-access-key
