@@ -166,16 +166,17 @@ services:
     container_name: crowdsec
     depends_on:
       - traefik
+    secrets:
+      - source: crowdsec_bouncer_key
+        target: bouncer_key_traefik
     environment:
       CUSTOM_HOSTNAME: crowdsec
       COLLECTIONS: "crowdsecurity/traefik crowdsecurity/http-cve crowdsecurity/http-dos"
     volumes:
       - $CONTAINER_APPDATA_DIR/crowdsec:/etc/crowdsec
-      - $CONTAINER_APPDATA_DIR/traefik/logs:/logs:ro 
-      - type: tmpfs
-        target: /var/lib/crowdsec/data/
-        tmpfs:
-          size: 524288000
+      - $CONTAINER_APPDATA_DIR/traefik/logs:/logs:ro
+      - $CONTAINER_APPDATA_DIR/crowdsec-data:/var/lib/crowdsec/data
+
 
 
 
