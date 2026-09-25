@@ -1,9 +1,0 @@
-apiVersion: v2
-name: sm-operator 
-description: Automatically manage secrets in Kubernetes using bitwarden
-type: application
-version: 0.1.0
-dependencies:
-  - name: sm-operator 
-    repository: https://charts.bitwarden.com/
-    version: 2.0.3
