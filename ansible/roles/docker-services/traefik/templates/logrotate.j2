@@ -1,0 +1,14 @@
+{{ traefik_directory }}/logs/*.log {
+    daily
+    rotate {{ traefik_log_retention_days }}
+    missingok
+    notifempty
+    compress
+    delaycompress
+    dateext
+    create 0640 {{ docker_user }} {{ docker_group }}
+    sharedscripts
+    postrotate
+        docker kill --signal=USR1 traefik >/dev/null 2>&1 || true
+    endscript
+}

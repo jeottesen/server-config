@@ -17,12 +17,27 @@
     force: false
     mode: "0600"
 
-- name: Ensure 'traefik/traefik.log' exists
-  ansible.builtin.copy:
-    content: ""
-    dest: "{{ traefik_directory }}/traefik.log"
-    force: false
-    mode: "0700"
+- name: Install logrotate
+  ansible.builtin.package:
+    name: logrotate
+    state: present
+
+- name: Create traefik logs dir
+  ansible.builtin.file:
+    path: "{{ traefik_directory }}/logs"
+    owner: "{{ docker_user }}"
+    group: "{{ docker_group }}"
+    mode: "0750"
+    state: directory
+
+- name: Install traefik logrotate config
+  ansible.builtin.template:
+    src: logrotate.j2
+    dest: /etc/logrotate.d/traefik
+    owner: root
+    group: root
+    mode: "0644"
+    validate: logrotate -d %s
 
 - name: Create trafick rules dir
   ansible.builtin.file:

@@ -3,6 +3,7 @@ docker_user: root
 docker_group: root
 
 traefik_directory: "{{ container_appdata_path }}/traefik"
+traefik_log_retention_days: 14
 
 # Template files
 traefik_rules_dir: templates/rules
