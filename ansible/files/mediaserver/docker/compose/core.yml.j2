@@ -52,20 +52,24 @@ services:
       - VOLUMES=1 # Portainer
 
   traefik:
-    extends:
-      file: common.yml
-      service: common-keys-core
+    restart: always
+    security_opt:
+      - no-new-privileges:true
     container_name: traefik
     image: traefik:latest
+    secrets:
+      - crowdsec_bouncer_key
     command: # CLI arguments
       - --global.checkNewVersion=true
       - --global.sendAnonymousUsage=false
       - --entrypoints.web.address=:80
+      - --entrypoints.web.http.aliasheadersstrategy=delete
       - --entrypoints.websecure.address=:443
       - --entrypoints.websecure.transport.respondingTimeouts.readTimeout=600s
       - --entrypoints.websecure.transport.respondingTimeouts.idleTimeout=600s
       - --entrypoints.websecure.transport.respondingTimeouts.writeTimeout=600s
-      - --entrypoints.traefik.address=:8080
+      - --entrypoints.websecure.http.aliasheadersstrategy=delete
+      #- --entrypoints.traefik.address=:8080
       - --entrypoints.websecure.http3=true
       - --entrypoints.web.http.redirections.entrypoint.to=websecure
       - --entrypoints.web.http.redirections.entrypoint.scheme=https
@@ -79,11 +83,12 @@ services:
       # - --serversTransport.insecureSkipVerify=true
       - --log=true
       - --log.filePath=/logs/traefik.log
-      - --log.level=WARN # (Default: error) DEBUG, INFO, WARN, ERROR, FATAL, PANIC
+      - --log.level=DEBUG # (Default: error) DEBUG, INFO, WARN, ERROR, FATAL, PANIC
       - --accessLog=true
+      - --accessLog.format=json
       - --accessLog.filePath=/logs/access.log
-      - --accessLog.bufferingSize=100 # Configuring a buffer of 100 lines
-      - --accessLog.filters.statusCodes=204-299,400-499,500-599
+      - --accessLog.bufferingSize=0
+      - --accessLog.filters.retryAttempts=true
       - --providers.docker=true
       # - --providers.docker.endpoint=unix:///var/run/docker.sock # Use Docker Socket Proxy instead for improved security
       - --providers.docker.endpoint=tcp://socket-proxy:2375
@@ -102,7 +107,10 @@ services:
       - --certificatesResolvers.dns-route53.acme.storage=/acme.json
       - --certificatesResolvers.dns-route53.acme.dnsChallenge.provider=route53
       - --certificatesResolvers.dns-route53.acme.dnsChallenge.resolvers=1.1.1.1:53,1.0.0.1:53
-      - --certificatesResolvers.dns-route53.acme.dnsChallenge.delayBeforeCheck=90 # To delay DNS check and reduce LE hitrate
+      - --certificatesresolvers.dns-route53.acme.dnschallenge.propagation.delaybeforechecks=90 # To delay DNS check and reduce LE hitrate
+      - --experimental.plugins.crowdsec-bouncer.modulename=github.com/maxlerebourg/crowdsec-bouncer-traefik-plugin
+      - --experimental.plugins.crowdsec-bouncer.version=v1.7.1
+
     networks:
       proxies:
         ipv4_address: 10.17.100.200
@@ -147,9 +155,31 @@ services:
       ## Middlewares
       #- "traefik.http.routers.traefik-rtr.middlewares=chain-no-auth@file" # For No Authentication
       #- "traefik.http.routers.traefik-rtr.middlewares=chain-auth-basic@file" # For Basic HTTP Authentication      
-      - "traefik.http.routers.traefik-rtr.middlewares=chain-oauth@file" # For Google OAuth
+      - "traefik.http.routers.traefik-rtr.middlewares=chain-oauth-admin@file" # For Google OAuth
       #- "traefik.http.routers.traefik-rtr.middlewares=chain-authelia@file" # For Authelia Authentication
   
+  
+  crowdsec:
+    extends:
+      file: common.yml
+      service: common-keys-core
+    image: crowdsecurity/crowdsec
+    container_name: crowdsec
+    depends_on:
+      - traefik
+    environment:
+      CUSTOM_HOSTNAME: crowdsec
+      COLLECTIONS: "crowdsecurity/traefik crowdsecurity/http-cve crowdsecurity/http-dos"
+    volumes:
+      - $CONTAINER_APPDATA_DIR/crowdsec:/etc/crowdsec
+      - $CONTAINER_APPDATA_DIR/traefik/logs:/logs:ro 
+      - type: tmpfs
+        target: /var/lib/crowdsec/data/
+        tmpfs:
+          size: 524288000
+
+
+
   oauth:
     extends:
       file: common.yml
@@ -223,7 +253,7 @@ services:
       DDNSR53_ROUTE53_RECORDSSET_{{ loop.index }}_TTL: 300
 {% endfor %}
 
-  {# # Traefik Whoami - a simple page to help debug headers and routing
+  # Traefik Whoami - a simple page to help debug headers and routing
   whoami:
     extends:
       file: common.yml
@@ -238,7 +268,7 @@ services:
       - "traefik.http.routers.whoami-rtr.middlewares=chain-oauth-admin@file"
       ## HTTP Services
       - "traefik.http.routers.whoami-rtr.service=whoami-svc"
-      - "traefik.http.services.whoami-svc.loadbalancer.server.port=80" #}
+      - "traefik.http.services.whoami-svc.loadbalancer.server.port=80"
 
   wireguard:
     restart: always
@@ -394,3 +424,5 @@ secrets:
     file: ../secrets/oauth_cookie_secret.txt
   oauth_whitelist_emails:
     file: ../secrets/oauth_whitelist_emails.txt
+  crowdsec_bouncer_key:
+    file: ../secrets/crowdsec_bouncer_key.txt

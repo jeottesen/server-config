@@ -119,3 +119,11 @@ http:
       redirectregex:
         regex: ".*"
         replacement: "https://{{ domain_name }}"
+    
+    crowdsec:
+      plugin:
+        crowdsec-bouncer:
+          enabled: false
+          crowdsecMode: stream 
+          crowdsecLapiKeyFile: /run/secrets/crowdsec_bouncer_key
+          

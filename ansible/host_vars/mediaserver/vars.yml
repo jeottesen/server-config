@@ -65,6 +65,8 @@ plex_token: "{{ vault_plex_token }}"
 google_drive_client_id: "{{ vault_google_drive_client_id }}"
 google_drive_api_key: "{{ vault_google_drive_api_key }}"
 
+crowdsec_bouncer_key: "{{ vault_crowdsec_bouncer_key }}"
+
 sub_domains:
   - ai
   - bazarr
