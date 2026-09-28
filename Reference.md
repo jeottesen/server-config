@@ -11,7 +11,13 @@
 - List all apps: `kubectl get application -n argocd`
 - Get Full Sync Details: `kubectl get application cert-manager -n argocd -o jsonpath='{.status.operationState}'`
 
-## Testing a Helm chart change BEFORE pushing
+## Helm
+
+- `helm repo add <alias> <repo-url>   # only needed once per repo`
+- `helm repo update`
+- Find chart version: `helm search repo <alias>`
+
+### Testing a Helm chart change BEFORE pushing
 
 Run from inside the actual chart folder (e.g. k8s-apps/cert-manager/)
 
