@@ -49,3 +49,17 @@ spec:
                 name: whoami
                 port:
                   number: 80
+---
+apiVersion: netbird.io/v1alpha1
+kind: NetworkResource
+metadata:
+  name: whoami
+  namespace: traefik
+spec:
+  networkRouterRef:
+    name: admin
+    namespace: netbird
+  serviceRef:
+    name: whoami
+  groups:
+    - name: k8s-admin

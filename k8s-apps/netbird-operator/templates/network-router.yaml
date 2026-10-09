@@ -1,0 +1,8 @@
+apiVersion: netbird.io/v1alpha1
+kind: NetworkRouter
+metadata:
+  name: admin
+  namespace: netbird
+spec:
+  dnsZoneRef:
+    name: admin.samurai

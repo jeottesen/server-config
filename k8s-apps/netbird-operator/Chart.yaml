@@ -1,0 +1,9 @@
+apiVersion: v2
+name: netbird-operator
+description: Expose services securely to a NetBird network
+type: application
+version: 0.1.0
+dependencies:
+  - name: netbird-operator
+    repository: oci://ghcr.io/netbirdio/helm-charts
+    version: 0.8.0

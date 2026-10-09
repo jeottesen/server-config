@@ -1,19 +1,19 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: cert-manager
+  name: netbird-operator
   namespace: argocd
   annotations:
-    argocd.argoproj.io/sync-wave: "-2"
+    argocd.argoproj.io/sync-wave: "-1"
 spec:
   project: default
   source:
     repoURL: 'https://github.com/jeottesen/server-config.git'
     targetRevision: HEAD
-    path: "k8s-apps/cert-manager"
+    path: "k8s-apps/netbird-operator"
   destination:
     name: in-cluster
-    namespace: cert-manager
+    namespace: netbird
   syncPolicy:
     automated:
       prune: true
