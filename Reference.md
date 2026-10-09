@@ -5,11 +5,12 @@
 - `argocd login <server>:30080`
 - `argocd app list`
 - `argocd app sync homelab-app`
+- `argocd app get netbird-operator`
 
 ## Kubernetes
 
 - List all apps: `kubectl get application -n argocd`
-- Get Full Sync Details: `kubectl get application cert-manager -n argocd -o jsonpath='{.status.operationState}'`
+- Get Full Sync Details: `kubectl describe application cert-manager -n argocd'`
 
 ## Helm
 
@@ -27,7 +28,12 @@ Run from inside the actual chart folder (e.g. k8s-apps/cert-manager/)
 
 ## Sealed Secrets
 
-- Create the plain secret locally (never applied, never committed):
-   `kubectl create secret generic <name> --namespace <target-namespace> --dry-run=client --from-literal=<key>='<value>' -o yaml plain.yaml`
-- Seal it: kubeseal --format yaml < plain.yaml > sealed.yaml
-- Delete the plaintext and commit sealed.yaml in place of the old secret file
+- Read the secret to an env var: `read -rs NB_API_KEY`
+- Create the secret from the var and pipe it directly to a sealed file.
+
+```bash
+kubectl create secret generic netbird-mgmt-api-key \
+  --namespace netbird --dry-run=client \
+  --from-literal=NB_API_KEY="$NB_API_KEY" -o yaml \
+  | kubeseal --format yaml > netbird-api-key-sealedsecret.yaml
+```
