@@ -1,38 +1,25 @@
 # server-config
-The server configurations that I use. Serves a variety of docker service through traefik and authenticates users using OAuth and Authelia.
 
-Docker configuration based on guide found here:<br />
-https://www.smarthomebeginner.com/traefik-2-docker-tutorial/ <br />
-https://github.com/htpcBeginner/docker-traefik
+The server configurations that I use. Serves a variety of services running in docker compose and reverse proxied through traefik. Servers are provisioned and configured using ansible. Currently working on transitioning some of the services to kubernetes and deploying them with argocd.
 
 ## Ansible Commands
-Command to install ansible requirements:<br />
+
+Command to install ansible requirements:
 `ansible-galaxy collection install -r requirements.yml`
 
-Command to initialize a server:<br />
+Command to initialize a server:
+
 `ansible-playbook setup-common.yml -l stormfront -e "ansible_user=debian" -k`
 
-Command to generate a hashed Authelia password:<br />
-`docker run authelia/authelia:latest authelia hash-password -- 'YOUR_PA$$WORD'`
+## First Time Server Setup
 
-## For server first setup
 Set `ansible_become_method='su'` in `hosts.ini`.
 run the playbook command with the `--ask-pass` flag.
 
-## Docker Folder Structure
-The docker folder is located in the users home directory.
+## References
 
-This is the structure for the docker folder:
-```
-|-- docker/
-|   |-- appdata/
-|   |   |-- nginx/
-|   |   |-- muximux/
-|   |   |-- .../
-|   |-- docker-compose.yml
-|   |-- .env
-```
+Docker compose configuration based on guide found here:
 
-The `docker-compose.yml` file contains the setup information for all the docker containers.
+[Smart Home Beginner Guide](https://www.smarthomebeginner.com/traefik-2-docker-tutorial/)
 
-The `appdata/` folder hold the config files for the containers. 
+[Smart Home Beginner Repo](https://github.com/htpcBeginner/docker-traefik)

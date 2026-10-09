@@ -16,13 +16,14 @@
 - `helm repo add <alias> <repo-url>   # only needed once per repo`
 - `helm repo update`
 - Find chart version: `helm search repo <alias>`
+- For OCI charts: `helm show chart oci:<link>`
 
 ### Testing a Helm chart change BEFORE pushing
 
 Run from inside the actual chart folder (e.g. k8s-apps/cert-manager/)
 
 - `helm dependency update`
-- `helm template <release-name> . -n <namespace> | kubectl apply --dry-run=server -f -`
+- `helm template <release-name> . -n <namespace> --include-crds | kubectl apply --dry-run=server -f -`
 
 ## Sealed Secrets
 
