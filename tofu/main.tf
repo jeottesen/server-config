@@ -22,6 +22,14 @@ provider "proxmox" {
   insecure  = true
 }
 
+# pve-dev Provider
+provider "proxmox" {
+  alias     = "pve_dev"
+  endpoint  = var.pve_dev_api_url
+  api_token = "${var.pve_dev_api_token_id}=${var.pve_dev_api_token_secret}"
+  insecure  = true
+}
+
 # --- Deploy to nuk ---
 module "k3s_nuk_01" {
   source = "./modules/k3s_node"
@@ -45,5 +53,18 @@ module "k3s_nuk_02" {
 
   target_node     = "nuk-02"
   vm_name         = "k3s-server-02"
+  cloud_image_url = var.proxmox_cloud_image_url
+}
+
+# --- Deploy to pve-dev ---
+module "ks3_pve_dev" {
+  source = "./modules/k3s_node"
+  
+  providers = {
+    proxmox = proxmox.pve_dev
+  }
+
+  target_node     = "pve-dev"
+  vm_name         = "ks3-server-dev"
   cloud_image_url = var.proxmox_cloud_image_url
 }

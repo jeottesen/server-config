@@ -45,11 +45,3 @@
     - tofu-setup
   roles:
     - role: proxmox/tofu-setup # noqa: role-name[path]
-  tasks:
-    - name: Create cloud-init file from template
-      ansible.builtin.template:
-        src: hypervisors/debian-cloud-config.yml.j2
-        dest: /var/lib/vz/snippets/debian-cloud-config.yml
-        owner: root
-        group: root
-        mode: "0644"

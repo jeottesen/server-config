@@ -1,7 +1,2 @@
 ---
-
-proxmox_api_user: "{{ vault_proxmox_api_user }}"
-proxmox_api_password: "{{ primary_user_pass }}"
-proxmox_api_host: "{{ ansible_host }}"
-proxmox_token_id: "{{ vault_proxmox_token_id }}"
 proxmox_token_value: "{{ vault_proxmox_token_value }}"

@@ -34,6 +34,24 @@ variable "nuk02_api_token_secret" {
   sensitive   = true
 }
 
+# --- nuk-02 (Aliased Provider) Variables ---
+
+variable "pve_dev_api_url" {
+  description = "The API URL for the second Proxmox node"
+  type        = string
+}
+
+variable "pve_dev_api_token_id" {
+  description = "The API Token ID for the second Proxmox node"
+  type        = string
+}
+
+variable "pve_dev_api_token_secret" {
+  description = "The API Token Secret for the second Proxmox node"
+  type        = string
+  sensitive   = true
+}
+
 # --- General Variables ---
 
 variable "proxmox_cloud_image_url" {

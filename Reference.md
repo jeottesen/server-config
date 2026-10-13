@@ -1,5 +1,10 @@
 # Command Reference
 
+## Tofu
+
+- `tofu init`
+- `tofu plan`
+
 ## Argo CD
 
 - `argocd login <server>:30080`
@@ -11,6 +16,8 @@
 
 - List all apps: `kubectl get application -n argocd`
 - Get Full Sync Details: `kubectl describe application cert-manager -n argocd'`
+- Restart deployment: `kubectl rollout restart deployment netbird-operator -n netbird`
+- Get Logs: `kubectl logs deploy/netbird-operator -n netbird -f`
 
 ## Helm
 
