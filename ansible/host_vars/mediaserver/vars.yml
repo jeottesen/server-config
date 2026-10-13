@@ -67,6 +67,9 @@ google_drive_api_key: "{{ vault_google_drive_api_key }}"
 
 crowdsec_bouncer_key: "{{ vault_crowdsec_bouncer_key }}"
 
+garage_rpc_secret: "{{ vault_garage_rpc_secret }}"
+garage_admin_token: "{{ vault_garage_admin_token }}"
+
 sub_domains:
   - ai
   - bazarr
@@ -76,6 +79,7 @@ sub_domains:
   - factorio
   - files
   - foundry
+  - garage
   - home
   - index
   - login

@@ -399,6 +399,42 @@ services:
       - "traefik.http.routers.prowlarr-rtr.service=prowlarr-svc"
       - "traefik.http.services.prowlarr-svc.loadbalancer.server.port=9696"
 
+    
+  garage:
+    extends:
+      file: common.yml
+      service: common-keys-core
+    image: dxflrs/garage:v2.4.1
+    container_name: garage
+    ports:
+      - "3900:3900"   # S3 API
+    volumes:
+      - $CONTAINER_APPDATA_DIR/garage/garage.toml:/etc/garage.toml:ro
+      - $CONTAINER_APPDATA_DIR/garage/meta:/var/lib/garage/meta   # small; SSD if you have one
+      - $DATADIR/.backup/garage:/var/lib/garage/data 
+
+  garage-webui:
+    extends:
+      file: common.yml
+      service: common-keys-apps
+    image: khairul169/garage-webui:1.1.0
+    container_name: garage-webui
+    volumes:
+      - $CONTAINER_APPDATA_DIR/garage/garage.toml:/etc/garage.toml:ro
+    environment:
+      API_BASE_URL: "http://garage:3903"
+      S3_ENDPOINT_URL: "http://garage:3900"
+    labels:
+      - "traefik.enable=true"
+      ## HTTP Routers
+      - "traefik.http.routers.garage-rtr.entrypoints=websecure"
+      - "traefik.http.routers.garage-rtr.rule=Host(`garage.$DOMAIN_NAME`)"
+      ## Middlewares
+      - "traefik.http.routers.garage-rtr.middlewares=chain-oauth-admin@file"
+      ## HTTP Services
+      - "traefik.http.routers.garage-rtr.service=garage-svc"
+      - "traefik.http.services.garage-svc.loadbalancer.server.port=3909"
+
   watchtower:
     extends:
       file: common.yml
