@@ -45,3 +45,26 @@
     - tofu-setup
   roles:
     - role: proxmox/tofu-setup # noqa: role-name[path]
+  tasks:
+    - name: Get content types enabled on local storage
+      ansible.builtin.command: pvesh get /storage/local --output-format json
+      register: local_storage
+      changed_when: false
+
+    - name: Enable snippets and import content on local storage
+      ansible.builtin.command: >-
+        pvesm set local --content
+        {{ (local_storage.stdout | from_json).content.split(',')
+           | union(['snippets', 'import']) | sort | join(',') }}
+      when: >-
+        'snippets' not in (local_storage.stdout | from_json).content.split(',')
+        or 'import' not in (local_storage.stdout | from_json).content.split(',')
+      changed_when: true
+
+    - name: Create cloud-init file from template
+      ansible.builtin.template:
+        src: hypervisors/debian-cloud-config.yml.j2
+        dest: /var/lib/vz/snippets/debian-cloud-config.yml
+        owner: root
+        group: root
+        mode: "0644"

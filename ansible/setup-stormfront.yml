@@ -30,12 +30,12 @@
   tags: create-secondary-user
   tasks:
     - name: Create group {{ secondary_group }}
-      group:
+      ansible.builtin.group:
         name: "{{ secondary_group }}"
         gid: "{{ secondary_user_guid }}"
         state: present
     - name: Create user {{ secondary_user }}
-      user:
+      ansible.builtin.user:
         name: "{{ secondary_user }}"
         password: "{{ secondary_user_pass }}"
         group: "{{ secondary_group }}"
@@ -43,7 +43,7 @@
         shell: /bin/bash
         state: present
     - name: Add "{{ secondary_user }}" ssh key to authorized keys on host
-      authorized_key:
+      ansible.posix.authorized_key:
         user: "{{ secondary_user }}"
         key: "{{ secondary_user_ssh_identity_key }}"
 
@@ -53,7 +53,7 @@
   tags: setup-share
   tasks:
     - name: Create share dir
-      file:
+      ansible.builtin.file:
         path: /home/share
         owner: "{{ primary_user }}"
         group: "{{ primary_group }}"
@@ -68,8 +68,8 @@
         recursive: true
         default: true
         state: present
-    - name: create directory symlinks
-      file:
+    - name: Create directory symlinks
+      ansible.builtin.file:
         src: /home/share
         dest: /home/{{ item }}/share
         owner: "{{ item }}"
@@ -85,6 +85,6 @@
   tags: setup-remote
   tasks:
     - name: Add "remote_fileshare" ssh key to authorized keys on host
-      authorized_key:
+      ansible.posix.authorized_key:
         user: "{{ ssh_user }}"
         key: "{{ remote_ssh_identity_key }}"
