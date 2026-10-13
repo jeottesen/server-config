@@ -243,6 +243,29 @@ services:
       - "traefik.http.routers.actualbudget-rtr.service=actualbudget-svc"
       - "traefik.http.services.actualbudget-svc.loadbalancer.server.port=5006"
 
+  resticprofile:
+    extends:
+      file: common.yml
+      service: common-keys-apps         
+    image: ttionya/resticprofile:0.33.1 
+    container_name: resticprofile
+    hostname: mediaserver               
+    user: "1000:1000"
+    entrypoint: /bin/sh
+    command: ["-c", "resticprofile schedule --all && exec supercronic /tmp/crontab"]
+    secrets:
+      - restic_vaultwarden_key
+      - restic_vaultwarden_env
+    volumes:
+      - $CONTAINER_APPDATA_DIR/resticprofile/profiles.yaml:/resticprofile/profiles.yaml:ro
+      - $CONTAINER_APPDATA_DIR/resticprofile/staging:/staging
+      - $CONTAINER_APPDATA_DIR/resticprofile/cache:/cache
+      - $CONTAINER_APPDATA_DIR/vaultwarden:/data/vaultwarden 
+
 secrets:
   actual_config:
     file: ../secrets/actual_config.json
+  restic_vaultwarden_key:
+    file: ../secrets/restic_vaultwarden_key.txt
+  restic_vaultwarden_env:
+    file: ../secrets/restic_vaultwarden_env.txt

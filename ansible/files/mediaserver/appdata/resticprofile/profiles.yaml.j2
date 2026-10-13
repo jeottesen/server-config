@@ -1,0 +1,57 @@
+version: "1"
+
+global:
+  # supercronic reads this crontab; /tmp is writable by uid 1000 and rebuilt on each start
+  scheduler: "crontab:-:/tmp/crontab"
+  priority: low
+
+# Shared settings for profiles that back up to Garage (not run directly)
+garage:
+  initialize: true
+  cache-dir: /cache
+  env:
+    AWS_DEFAULT_REGION: garage
+
+vaultwarden:
+  inherit: garage
+  repository: "s3:http://garage:3900/vaultwarden"
+  password-file: /run/secrets/restic_vaultwarden_key
+  env-file: /run/secrets/restic_vaultwarden_env
+
+  backup:
+    run-before: >-
+      sqlite3 /data/vaultwarden/db.sqlite3
+      ".backup '/staging/vaultwarden-db.sqlite3'"
+    source:
+      - /data/vaultwarden
+      - /staging/vaultwarden-db.sqlite3
+    exclude:
+      - /data/vaultwarden/db.sqlite3*     # live db + -wal/-shm; the copy above is used instead
+      - /data/vaultwarden/icon_cache
+    tag:
+      - vaultwarden
+    schedule: "03:00"
+    schedule-permission: user
+    schedule-lock-wait: 1h
+
+    # Optional: alerts. Healthchecks.io (or self-hosted) also alerts if a backup never runs.
+    # send-after:
+    #   method: HEAD
+    #   url: https://hc-ping.com/<uuid>
+    # send-after-fail:
+    #   method: POST
+    #   url: https://hc-ping.com/<uuid>/fail
+    #   body: "${ERROR}\n\n${ERROR_STDERR}"
+
+  retention:
+    after-backup: true
+    keep-daily: 7
+    keep-weekly: 4
+    keep-monthly: 6
+    prune: true
+    tag: true
+
+  check:
+    read-data-subset: "5%"
+    schedule: "Sun 04:00"
+    schedule-permission: user

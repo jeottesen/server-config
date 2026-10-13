@@ -411,7 +411,7 @@ services:
     volumes:
       - $CONTAINER_APPDATA_DIR/garage/garage.toml:/etc/garage.toml:ro
       - $CONTAINER_APPDATA_DIR/garage/meta:/var/lib/garage/meta   # small; SSD if you have one
-      - $DATADIR/.backup/garage:/var/lib/garage/data 
+      - $DATA_DIR/.garage:/var/lib/garage/data 
 
   garage-webui:
     extends:
