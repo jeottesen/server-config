@@ -74,6 +74,9 @@ restic_vaultwarden_password: "{{ vault_restic_vaultwarden_password }}"
 garage_vaultwarden_key_id: "{{ vault_garage_vaultwarden_key_id }}"
 garage_vaultwarden_secret_key: "{{ vault_garage_vaultwarden_secret_key }}"
 
+kuma_backups_token: "{{ vault_kuma_backups_token }}"
+kuma_checks_token: "{{ vault_kuma_checks_token }}"
+
 sub_domains:
   - ai
   - bazarr
@@ -104,6 +107,7 @@ sub_domains:
   - readarr
   - sonarr
   - speedtest
+  - status
   - sync
   - tautulli
   - unifi

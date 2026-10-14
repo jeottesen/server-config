@@ -253,14 +253,45 @@ services:
     user: "1000:1000"
     entrypoint: /bin/sh
     command: ["-c", "resticprofile schedule --all && exec supercronic /tmp/crontab"]
+    networks:
+      - socket_proxy
     secrets:
       - restic_vaultwarden_key
       - restic_vaultwarden_env
+    environment:
+      <<: *primary-tz-puid-pgid
     volumes:
       - $CONTAINER_APPDATA_DIR/resticprofile/profiles.yaml:/resticprofile/profiles.yaml:ro
       - $CONTAINER_APPDATA_DIR/resticprofile/staging:/staging
       - $CONTAINER_APPDATA_DIR/resticprofile/cache:/cache
       - $CONTAINER_APPDATA_DIR/vaultwarden:/data/vaultwarden 
+
+  uptime-kuma:
+    extends:
+      file: common.yml
+      service: common-keys-apps
+    image: louislam/uptime-kuma:2
+    container_name: uptime-kuma
+    environment:
+      <<: *primary-tz-puid-pgid
+    volumes:
+      - $CONTAINER_APPDATA_DIR/uptime-kuma:/app/data
+    labels:
+      - "traefik.enable=true"
+      ## Push endpoint: no OAuth, so other hosts can send heartbeats through Traefik
+      - "traefik.http.routers.kuma-push-rtr.entrypoints=websecure"
+      - "traefik.http.routers.kuma-push-rtr.rule=Host(`status.$DOMAIN_NAME`) && PathPrefix(`/api/push/`)"
+      - "traefik.http.routers.kuma-push-rtr.priority=100"
+      - "traefik.http.routers.kuma-push-rtr.middlewares=chain-no-auth@file"
+      - "traefik.http.routers.kuma-push-rtr.service=kuma-svc"
+      ## Web UI
+      - "traefik.http.routers.kuma-rtr.entrypoints=websecure"
+      - "traefik.http.routers.kuma-rtr.rule=Host(`status.$DOMAIN_NAME`)"
+      - "traefik.http.routers.kuma-rtr.priority=99"
+      - "traefik.http.routers.kuma-rtr.middlewares=chain-oauth-admin@file"
+      - "traefik.http.routers.kuma-rtr.service=kuma-svc"
+      ## HTTP Services
+      - "traefik.http.services.kuma-svc.loadbalancer.server.port=3001"
 
 secrets:
   actual_config:

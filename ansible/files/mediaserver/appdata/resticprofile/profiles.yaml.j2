@@ -1,3 +1,4 @@
+# If Ansible templates are required alongside resticprofiles go templates then wrap resticprofiles in {% raw %}…{% endraw %} 
 version: "1"
 
 global:
@@ -5,12 +6,28 @@ global:
   scheduler: "crontab:-:/tmp/crontab"
   priority: low
 
-# Shared settings for profiles that back up to Garage (not run directly)
+# Shared settings for profiles that back up to Garage
 garage:
   initialize: true
   cache-dir: /cache
   env:
     AWS_DEFAULT_REGION: garage
+  
+  # Every profile reports to the same Kuma push monitors
+  backup:
+    send-after:
+      method: GET
+      url: "http://uptime-kuma:3001/api/push/{{ kuma_backups_token }}?status=up&msg={% raw %}{{ .Profile.Name }}{% endraw %}+backup+ok"
+    send-after-fail:
+      method: GET
+      url: "http://uptime-kuma:3001/api/push/{{ kuma_backups_token }}?status=down&msg={% raw %}{{ .Profile.Name }}{% endraw %}+backup+FAILED"
+  check:
+    send-after:
+      method: GET
+      url: "http://uptime-kuma:3001/api/push/{{ kuma_checks_token }}?status=up&msg={% raw %}{{ .Profile.Name }}{% endraw %}+check+ok"
+    send-after-fail:
+      method: GET
+      url: "http://uptime-kuma:3001/api/push/{{ kuma_checks_token }}?status=down&msg={% raw %}{{ .Profile.Name }}{% endraw %}+check+FAILED"
 
 vaultwarden:
   inherit: garage
@@ -34,14 +51,26 @@ vaultwarden:
     schedule-permission: user
     schedule-lock-wait: 1h
 
-    # Optional: alerts. Healthchecks.io (or self-hosted) also alerts if a backup never runs.
-    # send-after:
-    #   method: HEAD
-    #   url: https://hc-ping.com/<uuid>
-    # send-after-fail:
-    #   method: POST
-    #   url: https://hc-ping.com/<uuid>/fail
-    #   body: "${ERROR}\n\n${ERROR_STDERR}"
+  restore:
+    target: /staging/restore
+    run-before:
+      # Stop Vaultwarden (204 = stopped, 304 = already stopped; both succeed)
+      - curl -fsS -X POST http://socket-proxy:2375/containers/vaultwarden/stop
+      - rm -rf /staging/restore
+    run-after:
+      - >-
+        test "$(sqlite3 /staging/restore/staging/vaultwarden-db.sqlite3 'PRAGMA integrity_check;')" = ok
+      - find /data/vaultwarden -mindepth 1 -delete
+      - cp -a /staging/restore/data/vaultwarden/. /data/vaultwarden/
+      - cp /staging/restore/staging/vaultwarden-db.sqlite3 /data/vaultwarden/db.sqlite3
+      - curl -fsS -X POST http://socket-proxy:2375/containers/vaultwarden/start
+    run-after-fail:
+      - 'echo "Restore FAILED: $ERROR_MESSAGE. Vaultwarden left stopped."'
+
+  check:
+    read-data-subset: "5%"
+    schedule: "Sun 04:00"
+    schedule-permission: user
 
   retention:
     after-backup: true
@@ -50,8 +79,3 @@ vaultwarden:
     keep-monthly: 6
     prune: true
     tag: true
-
-  check:
-    read-data-subset: "5%"
-    schedule: "Sun 04:00"
-    schedule-permission: user

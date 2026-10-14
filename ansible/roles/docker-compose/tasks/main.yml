@@ -9,6 +9,8 @@
     - name: Ensure appdata directory structure exists
       ansible.builtin.file:
         path: "{{ container_appdata_path }}/{{ item.path }}"
+        owner: "{{ docker_user }}"
+        group: "{{ docker_group }}"
         state: directory
         mode: "0755"
       loop: "{{ query('ansible.builtin.filetree', appdata_templates_source) }}"
@@ -18,6 +20,8 @@
       ansible.builtin.template:
         src: "{{ item.src }}"
         dest: '{{ container_appdata_path }}/{{ item.path | regex_replace("\.j2$", "") }}'
+        owner: "{{ docker_user }}"
+        group: "{{ docker_group }}"
         mode: "0644"
       loop: "{{ query('ansible.builtin.filetree', appdata_templates_source) }}"
       when:
@@ -28,6 +32,8 @@
       ansible.builtin.copy:
         src: "{{ item.src }}"
         dest: "{{ container_appdata_path }}/{{ item.path }}"
+        owner: "{{ docker_user }}"
+        group: "{{ docker_group }}"
         mode: "0644"
       loop: "{{ query('ansible.builtin.filetree', appdata_templates_source) }}"
       when:
@@ -40,6 +46,8 @@
     - name: Ensure compose directory structure exists
       ansible.builtin.file:
         path: "{{ docker_dir }}/{{ item.path }}"
+        owner: "{{ docker_user }}"
+        group: "{{ docker_group }}"
         state: directory
         mode: "0755"
       loop: "{{ lookup('community.general.filetree', role_template_source) + lookup('community.general.filetree', docker_templates_source) }}"
@@ -49,6 +57,8 @@
       ansible.builtin.template:
         src: "{{ item.src }}"
         dest: '{{ docker_dir }}/{{ item.path | regex_replace("\.j2$", "") }}'
+        owner: "{{ docker_user }}"
+        group: "{{ docker_group }}"
         mode: "0644"
       loop: "{{ lookup('community.general.filetree', role_template_source) + lookup('community.general.filetree', docker_templates_source) }}"
       when:

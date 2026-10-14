@@ -44,3 +44,8 @@ kubectl create secret generic netbird-mgmt-api-key \
   --from-literal=NB_API_KEY="$NB_API_KEY" -o yaml \
   | kubeseal --format yaml > netbird-api-key-sealedsecret.yaml
 ```
+
+## Resticprofiles backup and restore
+
+- `docker exec resticprofile resticprofile vaultwarden.backup`
+- `docker exec resticprofile resticprofile vaultwarden.restore latest`

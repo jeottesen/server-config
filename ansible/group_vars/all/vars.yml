@@ -15,8 +15,8 @@ ssh_user: "{{ primary_user }}"
 sudo_users:
   - { user: "{{ primary_user }}", group: "{{ primary_user }}" }
 
-docker_users:
-  - "{{ primary_user }}"
+docker_user: "{{ primary_user }}"
+docker_group: "{{ primary_group }}"
 compose_puid: "{{ primary_user_puid }}"
 compose_guid: "{{ primary_user_guid }}"
 
