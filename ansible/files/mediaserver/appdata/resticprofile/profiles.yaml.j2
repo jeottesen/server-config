@@ -117,9 +117,13 @@ vaultwarden:
       - icon_cache
     tag:
       - vaultwarden
-
+  ls:
+    tag:
+      - vaultwarden
   restore:
     target: /staging/restore/vaultwarden
+    tag:
+      - vaultwarden
     run-before:
       - echo "==> [vaultwarden] stopping container"
       # 204 = stopped, 304 = already stopped; both succeed
@@ -176,7 +180,7 @@ apps-common:
       - echo "==> [{{ profile }}] copying sqlite databases"
       - >-
         rm -rf "/staging/{{ profile }}" && mkdir -p "/staging/{{ profile }}" &&
-        find /appdata/{{ app }} -type f \( -name '*.db' -o -name '*.sqlite' -o -name '*.sqlite3' \) -print0 |
+        find /appdata/{{ app }} -type f \( -name '*.db' -o -name '*.sqlite' -o -name '*.sqlite3' -o -name '*.blb' \) -print0 |
         xargs -0 -r -n1 sh -c 'set -e; d="/staging/{{ profile }}$(dirname "$1")"; mkdir -p "$d";
         echo "    $1"; sqlite3 -cmd ".timeout 30000" "$1" ".backup \"$d/$(basename "$1")\""' _ ||
         { echo "!! [{{ profile }}] sqlite copy failed, backup aborted" >&2; exit 1; }
@@ -198,6 +202,8 @@ apps-common:
       - "/appdata/**/*.sqlite3"
       - "/appdata/**/*.sqlite3-shm"
       - "/appdata/**/*.sqlite3-wal"
+      - "/appdata/**/*.blb"
+      - "/appdata/**/*.blb-journal"
       - "*.pid"
       - lockfile
       - logs
@@ -212,8 +218,13 @@ apps-common:
       - "custom-*.d.*"    # empty linuxserver.io leftovers
     tag:
       - {{ app }}
+  ls:
+    tag:
+      - {{ app }}
   restore:
     target: /staging/restore/{{ app }}
+    tag:
+      - {{ app }}
     run-before:
 {% if app not in no_container %}
       - echo "==> [{{ app }}] stopping container"
@@ -238,6 +249,9 @@ apps-common:
 {% endif %}
       - echo "==> [{{ app }}] replacing /appdata/{{ app }}"
       - find /appdata/{{ app }} -mindepth 1 -delete
+      - >-
+        [ -z "$(ls -A /appdata/{{ app }})" ] ||
+        { echo "!! [{{ app }}] could not clear /appdata/{{ app }}, restore stopped" >&2; exit 1; }
       - cp -a /staging/restore/{{ app }}/appdata/{{ app }}/. /appdata/{{ app }}/
 {% if app in sqlite_apps %}
       - echo "==> [{{ app }}] putting database copies back"
@@ -267,8 +281,13 @@ unifi:
       - /appdata/unifi/data/backup/autobackup
     tag:
       - unifi
+  ls:
+    tag:
+      - unifi
   restore:
     target: /staging/restore/unifi
+    tag:
+      - unifi
     run-before:
       - rm -rf /staging/restore/unifi
     run-after:
@@ -295,6 +314,7 @@ unifi:
 {% for dest in destinations %}
 apps-{{ dest }}:
   inherit: base
+  initialize: false
   repository: "rclone:{{ dest }}:cobalt-apps"
   password-file: /run/secrets/restic_apps_key
   prune:

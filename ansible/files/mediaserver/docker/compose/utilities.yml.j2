@@ -181,6 +181,7 @@ services:
       - $CONTAINER_APPDATA_DIR/actualbudget:/data
     secrets:
       - actual_config
+    user: "1000:1000"
     environment:
       <<: *primary-tz-puid-pgid
       ACTUAL_CONFIG_PATH: "/run/secrets/actual_config"
@@ -269,6 +270,7 @@ services:
       service: common-keys-apps
     image: louislam/uptime-kuma:2
     container_name: uptime-kuma
+    user: "1000:1000"
     environment:
       <<: *primary-tz-puid-pgid
     volumes:

@@ -47,5 +47,6 @@ kubectl create secret generic netbird-mgmt-api-key \
 
 ## Resticprofiles backup and restore
 
-- `docker exec resticprofile resticprofile vaultwarden.backup`
-- `docker exec resticprofile resticprofile vaultwarden.restore latest`
+- `docker exec resticprofile resticprofile vaultwarden-b2.backup`
+- `docker exec resticprofile resticprofile vaultwarden-garage.restore latest`
+- `docker exec resticprofile resticprofile unifi-garage.ls latest`
