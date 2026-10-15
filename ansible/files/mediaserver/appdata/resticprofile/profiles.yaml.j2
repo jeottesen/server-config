@@ -17,7 +17,15 @@
     restic_vaultwarden_key  restic password, Vaultwarden repositories
     restic_apps_key         restic password, shared apps repositories
 #}
-{% set apps = ['sonarr', 'radarr', 'prowlarr', 'bazarr', 'qbt-public', 'qbt-private', 'qbt-books'] %}
+{# Regular apps: plain file copy #}
+{% set apps = ['sonarr', 'radarr', 'prowlarr', 'bazarr', 'qbt-public', 'qbt-private', 'qbt-books', 'syncthing'] %}
+{# Apps with live SQLite databases: each db is copied with sqlite3 .backup before the backup #}
+{% set sqlite_apps = ['actualbudget', 'uptime-kuma', 'ombi', 'organizr', 'beets'] %}
+{# Apps without a container to stop/start on restore (run as one-off commands) #}
+{% set no_container = ['beets'] %}
+
+{# resticprofile's own template variable for the running profile's name; Ansible outputs it as literal text #}
+{% set profile = '{{ .Profile.Name }}' %}
 
 {% set destinations = ['garage', 'b2'] %}
 {% set backup_time = '03:00' %}
@@ -39,34 +47,36 @@ base:
   cache-dir: /cache
   retry-lock: 30m          # wait for a locked repository instead of failing
   env-file: /run/secrets/restic_remotes_env
+  env:
+    RCLONE_LOG_LEVEL: ERROR   # hide rclone NOTICE lines (missing config file, lock lookups)
 
   backup:
     schedule-permission: user
     schedule-lock-wait: 1h
     send-after:
       method: GET
-      url: "http://uptime-kuma:3001/api/push/{{ kuma_backups_token }}?status=up&msg={% raw %}{{ .Profile.Name }}{% endraw %}+backup+ok"
+      url: "http://uptime-kuma:3001/api/push/{{ kuma_backups_token }}?status=up&msg={{ profile }}+backup+ok"
     send-after-fail:
       method: GET
-      url: "http://uptime-kuma:3001/api/push/{{ kuma_backups_token }}?status=down&msg={% raw %}{{ .Profile.Name }}{% endraw %}+backup+FAILED"
+      url: "http://uptime-kuma:3001/api/push/{{ kuma_backups_token }}?status=down&msg={{ profile }}+backup+FAILED"
 
   check:
     schedule-permission: user
     send-after:
       method: GET
-      url: "http://uptime-kuma:3001/api/push/{{ kuma_checks_token }}?status=up&msg={% raw %}{{ .Profile.Name }}{% endraw %}+check+ok"
+      url: "http://uptime-kuma:3001/api/push/{{ kuma_checks_token }}?status=up&msg={{ profile }}+check+ok"
     send-after-fail:
       method: GET
-      url: "http://uptime-kuma:3001/api/push/{{ kuma_checks_token }}?status=down&msg={% raw %}{{ .Profile.Name }}{% endraw %}+check+FAILED"
+      url: "http://uptime-kuma:3001/api/push/{{ kuma_checks_token }}?status=down&msg={{ profile }}+check+FAILED"
 
   prune:
     schedule-permission: user
     send-after:
       method: GET
-      url: "http://uptime-kuma:3001/api/push/{{ kuma_checks_token }}?status=up&msg={% raw %}{{ .Profile.Name }}{% endraw %}+prune+ok"
+      url: "http://uptime-kuma:3001/api/push/{{ kuma_checks_token }}?status=up&msg={{ profile }}+prune+ok"
     send-after-fail:
       method: GET
-      url: "http://uptime-kuma:3001/api/push/{{ kuma_checks_token }}?status=down&msg={% raw %}{{ .Profile.Name }}{% endraw %}+prune+FAILED"
+      url: "http://uptime-kuma:3001/api/push/{{ kuma_checks_token }}?status=down&msg={{ profile }}+prune+FAILED"
 
   retention:
     after-backup: true
@@ -89,19 +99,19 @@ vaultwarden:
 
   backup:
     run-before:
-      - echo "==> [{% raw %}{{ .Profile.Name }}{% endraw %}] copying live database"
+      - echo "==> [{{ profile }}] copying live database"
       - >-
         sqlite3 /appdata/vaultwarden/db.sqlite3
-        ".backup '/staging/{% raw %}{{ .Profile.Name }}{% endraw %}-db.sqlite3'" ||
-        { echo "!! [{% raw %}{{ .Profile.Name }}{% endraw %}] database copy failed, backup aborted" >&2; exit 1; }
-      - echo "==> [{% raw %}{{ .Profile.Name }}{% endraw %}] backing up /appdata/vaultwarden"
+        ".backup '/staging/{{ profile }}-db.sqlite3'" ||
+        { echo "!! [{{ profile }}] database copy failed, backup aborted" >&2; exit 1; }
+      - echo "==> [{{ profile }}] backing up /appdata/vaultwarden"
     run-after:
-      - echo "==> [{% raw %}{{ .Profile.Name }}{% endraw %}] backup complete"
+      - echo "==> [{{ profile }}] backup complete"
     run-after-fail:
-      - 'echo "!! [{% raw %}{{ .Profile.Name }}{% endraw %}] BACKUP FAILED: $ERROR_MESSAGE"'
+      - 'echo "!! [{{ profile }}] BACKUP FAILED: $ERROR_MESSAGE"'
     source:
       - /appdata/vaultwarden
-      - "/staging/{% raw %}{{ .Profile.Name }}{% endraw %}-db.sqlite3"
+      - "/staging/{{ profile }}-db.sqlite3"
     exclude:
       - db.sqlite3*     # live db + -wal/-shm; the copy above is used instead
       - icon_cache
@@ -119,13 +129,13 @@ vaultwarden:
     run-after:
       - echo "==> [vaultwarden] checking database copy"
       - >-
-        test "$(sqlite3 '/staging/restore/vaultwarden/staging/{% raw %}{{ .Profile.Name }}{% endraw %}-db.sqlite3' 'PRAGMA integrity_check;')" = ok ||
+        test "$(sqlite3 '/staging/restore/vaultwarden/staging/{{ profile }}-db.sqlite3' 'PRAGMA integrity_check;')" = ok ||
         { echo "!! [vaultwarden] database copy missing or damaged, live data left untouched" >&2; exit 1; }
       - echo "==> [vaultwarden] replacing /appdata/vaultwarden"
       - find /appdata/vaultwarden -mindepth 1 -delete
       - cp -a /staging/restore/vaultwarden/appdata/vaultwarden/. /appdata/vaultwarden/
       - >-
-        cp '/staging/restore/vaultwarden/staging/{% raw %}{{ .Profile.Name }}{% endraw %}-db.sqlite3'
+        cp '/staging/restore/vaultwarden/staging/{{ profile }}-db.sqlite3'
         /appdata/vaultwarden/db.sqlite3
       - echo "==> [vaultwarden] starting container"
       - curl -fsS -X POST http://socket-proxy:2375/containers/vaultwarden/start
@@ -156,21 +166,38 @@ apps-common:
     prune: false    # forget only; pruning the shared repository is done by apps-<dest>
 
 
-{% for app in apps %}
+{% for app in apps + sqlite_apps %}
 {{ app }}:
   inherit: apps-common
   backup:
     skip-if-unchanged: true
+{% if app in sqlite_apps %}
+    run-before:
+      - echo "==> [{{ profile }}] copying sqlite databases"
+      - >-
+        rm -rf "/staging/{{ profile }}" && mkdir -p "/staging/{{ profile }}" &&
+        find /appdata/{{ app }} -type f \( -name '*.db' -o -name '*.sqlite' -o -name '*.sqlite3' \) -print0 |
+        xargs -0 -r -n1 sh -c 'set -e; d="/staging/{{ profile }}$(dirname "$1")"; mkdir -p "$d";
+        echo "    $1"; sqlite3 -cmd ".timeout 30000" "$1" ".backup \"$d/$(basename "$1")\""' _ ||
+        { echo "!! [{{ profile }}] sqlite copy failed, backup aborted" >&2; exit 1; }
+{% endif %}
     source:
       - /appdata/{{ app }}
+{% if app in sqlite_apps %}
+      - "/staging/{{ profile }}"
+{% endif %}
     exclude:
-      - "*.db"
-      - "*.db-shm"
-      - "*.db-wal"
-      - "*.db-journal"
-      - "*.sqlite"
-      - "*.sqlite-shm"
-      - "*.sqlite-wal"
+      # live databases, only under /appdata (the copies in /staging must stay in the backup)
+      - "/appdata/**/*.db"
+      - "/appdata/**/*.db-shm"
+      - "/appdata/**/*.db-wal"
+      - "/appdata/**/*.db-journal"
+      - "/appdata/**/*.sqlite"
+      - "/appdata/**/*.sqlite-shm"
+      - "/appdata/**/*.sqlite-wal"
+      - "/appdata/**/*.sqlite3"
+      - "/appdata/**/*.sqlite3-shm"
+      - "/appdata/**/*.sqlite3-wal"
       - "*.pid"
       - lockfile
       - logs
@@ -181,15 +208,18 @@ apps-common:
       - Sentry            # arr crash reporting
       - MediaCover        # arr poster cache, re-downloaded
       - GeoDB             # qBittorrent GeoIP db, re-downloaded
+      - index-v2          # syncthing index, rebuilt automatically
       - "custom-*.d.*"    # empty linuxserver.io leftovers
     tag:
       - {{ app }}
   restore:
     target: /staging/restore/{{ app }}
     run-before:
+{% if app not in no_container %}
       - echo "==> [{{ app }}] stopping container"
       # 204 = stopped, 304 = already stopped; both succeed
       - curl -fsS -X POST http://socket-proxy:2375/containers/{{ app }}/stop
+{% endif %}
       - rm -rf /staging/restore/{{ app }}
       - echo "==> [{{ app }}] restoring snapshot into /staging/restore/{{ app }}"
     run-after:
@@ -197,22 +227,59 @@ apps-common:
       - >-
         test -n "$(ls -A /staging/restore/{{ app }}/appdata/{{ app }} 2>/dev/null)" ||
         { echo "!! [{{ app }}] nothing restored, live data left untouched" >&2; exit 1; }
+{% if app in sqlite_apps %}
+      - echo "==> [{{ app }}] checking restored database copies"
+      - >-
+        [ -n "$(find "/staging/restore/{{ app }}/staging/{{ profile }}" -type f 2>/dev/null)" ] ||
+        { echo "!! [{{ app }}] no database copies in this snapshot, live data left untouched" >&2; exit 1; };
+        find "/staging/restore/{{ app }}/staging/{{ profile }}" -type f | while read -r f; do
+        [ "$(sqlite3 "$f" 'PRAGMA integrity_check;')" = ok ] ||
+        { echo "!! [{{ app }}] damaged database copy $f, live data left untouched" >&2; exit 1; }; done
+{% endif %}
       - echo "==> [{{ app }}] replacing /appdata/{{ app }}"
       - find /appdata/{{ app }} -mindepth 1 -delete
       - cp -a /staging/restore/{{ app }}/appdata/{{ app }}/. /appdata/{{ app }}/
+{% if app in sqlite_apps %}
+      - echo "==> [{{ app }}] putting database copies back"
+      - cp -a "/staging/restore/{{ app }}/staging/{{ profile }}/appdata/{{ app }}/." /appdata/{{ app }}/
+{% endif %}
+{% if app not in no_container %}
       - echo "==> [{{ app }}] starting container"
       - curl -fsS -X POST http://socket-proxy:2375/containers/{{ app }}/start
+{% endif %}
       - echo "==> [{{ app }}] restore complete"
     run-after-fail:
       - 'echo "!! [{{ app }}] RESTORE FAILED: $ERROR_MESSAGE. Container left stopped."'
+
 {% endfor %}
+
+# UniFi: only its own .unf autobackups (the live MongoDB can't be copied safely).
+# Needs an ACL so uid 1000 can read appdata/unifi/data/backup.
+# sudo setfacl -m u:1000:x appdata/unifi appdata/unifi/data
+# sudo setfacl -R -m u:1000:rX appdata/unifi/data/backup
+# sudo setfacl -R -d -m u:1000:rX appdata/unifi/data/backup
+# Restore by hand: copy a .unf out of /staging/restore/unifi and upload it in UniFi's setup wizard.
+unifi:
+  inherit: apps-common
+  backup:
+    skip-if-unchanged: true
+    source:
+      - /appdata/unifi/data/backup/autobackup
+    tag:
+      - unifi
+  restore:
+    target: /staging/restore/unifi
+    run-before:
+      - rm -rf /staging/restore/unifi
+    run-after:
+      - echo "==> [unifi] .unf files restored under /staging/restore/unifi, copy one out with docker cp and upload it in UniFi"
 
 
 # =============================================================================
 # Apps scheduled backups
 # =============================================================================
 {% for dest in destinations %}
-{% for app in apps %}
+{% for app in apps + sqlite_apps + ['unifi'] %}
 {{ app }}-{{ dest }}:
   inherit: {{ app }}
   repository: "rclone:{{ dest }}:cobalt-apps"
