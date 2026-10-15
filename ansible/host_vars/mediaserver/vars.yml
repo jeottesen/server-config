@@ -70,9 +70,21 @@ crowdsec_bouncer_key: "{{ vault_crowdsec_bouncer_key }}"
 garage_rpc_secret: "{{ vault_garage_rpc_secret }}"
 garage_admin_token: "{{ vault_garage_admin_token }}"
 
+# --- Backups: restic passwords ---
 restic_vaultwarden_password: "{{ vault_restic_vaultwarden_password }}"
+restic_apps_password: "{{ vault_restic_apps_password }}"
+
+# --- Backups: Garage keys ---
 garage_vaultwarden_key_id: "{{ vault_garage_vaultwarden_key_id }}"
 garage_vaultwarden_secret_key: "{{ vault_garage_vaultwarden_secret_key }}"
+garage_apps_key_id: "{{ vault_garage_apps_key_id }}"
+garage_apps_secret_key: "{{ vault_garage_apps_secret_key }}"
+
+# --- Backups: Backblaze B2 keys ---
+b2_vaultwarden_key_id: "{{ vault_b2_vaultwarden_key_id }}"
+b2_vaultwarden_app_key: "{{ vault_b2_vaultwarden_app_key }}"
+b2_apps_key_id: "{{ vault_b2_apps_key_id }}"
+b2_apps_app_key: "{{ vault_b2_apps_app_key }}"
 
 kuma_backups_token: "{{ vault_kuma_backups_token }}"
 kuma_checks_token: "{{ vault_kuma_checks_token }}"

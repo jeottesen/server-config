@@ -258,13 +258,16 @@ services:
     secrets:
       - restic_vaultwarden_key
       - restic_vaultwarden_env
+      - restic_apps_key
+      - restic_remotes_env
     environment:
       <<: *primary-tz-puid-pgid
     volumes:
       - $CONTAINER_APPDATA_DIR/resticprofile/profiles.yaml:/resticprofile/profiles.yaml:ro
-      - $CONTAINER_APPDATA_DIR/resticprofile/staging:/staging
-      - $CONTAINER_APPDATA_DIR/resticprofile/cache:/cache
-      - $CONTAINER_APPDATA_DIR/vaultwarden:/data/vaultwarden 
+      - $CONTAINER_APPDATA_DIR:/appdata
+    tmpfs:
+      - /cache:uid=1000,gid=1000
+      - /staging:uid=1000,gid=1000
 
   uptime-kuma:
     extends:
@@ -300,3 +303,7 @@ secrets:
     file: ../secrets/restic_vaultwarden_key.txt
   restic_vaultwarden_env:
     file: ../secrets/restic_vaultwarden_env.txt
+  restic_apps_key:
+    file: ../secrets/restic_apps_key.txt
+  restic_remotes_env:
+    file: ../secrets/restic_remotes_env.txt

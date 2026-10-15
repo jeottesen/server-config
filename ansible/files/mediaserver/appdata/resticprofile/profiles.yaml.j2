@@ -1,4 +1,29 @@
-# If Ansible templates are required alongside resticprofiles go templates then wrap resticprofiles in {% raw %}…{% endraw %} 
+{#
+  resticprofile config, rendered by Ansible.
+  Ansible Jinja: {{ var }}, {% ... %}   resticprofile Go templates: wrap in {% raw %}...{% endraw %}
+
+  Bucket names are identical on every destination; only the rclone remote differs:
+    shared apps:  rclone:<dest>:cobalt-apps
+    vaultwarden:  rclone:<dest>vault:cobalt-vaultwarden
+
+  Run these commands to initialize new repositories and verify that they are empty:
+  docker exec resticprofile resticprofile apps-<dest>.init
+  docker exec resticprofile resticprofile apps-<dest>.snapshots   # empty list, no error = OK
+  
+
+  Secrets (/run/secrets):
+    restic_remotes_env      rclone remotes: garage, b2                (shared keys)
+    restic_vaultwarden_env  rclone remotes: garagevault, b2vault      (Vaultwarden-only keys)
+    restic_vaultwarden_key  restic password, Vaultwarden repositories
+    restic_apps_key         restic password, shared apps repositories
+#}
+{% set apps = ['sonarr', 'radarr', 'prowlarr', 'bazarr', 'qbt-public', 'qbt-private', 'qbt-books'] %}
+
+{% set destinations = ['garage', 'b2'] %}
+{% set backup_time = '03:00' %}
+{% set prune_time = 'Sun 05:00' %}
+{% set check_time = 'Mon 05:00' %}
+
 version: "1"
 
 global:
@@ -6,22 +31,27 @@ global:
   scheduler: "crontab:-:/tmp/crontab"
   priority: low
 
-# Shared settings for profiles that back up to Garage
-garage:
+# =============================================================================
+# Base: shared by every profile. Not scheduled.
+# =============================================================================
+base:
   initialize: true
   cache-dir: /cache
-  env:
-    AWS_DEFAULT_REGION: garage
-  
-  # Every profile reports to the same Kuma push monitors
+  retry-lock: 30m          # wait for a locked repository instead of failing
+  env-file: /run/secrets/restic_remotes_env
+
   backup:
+    schedule-permission: user
+    schedule-lock-wait: 1h
     send-after:
       method: GET
       url: "http://uptime-kuma:3001/api/push/{{ kuma_backups_token }}?status=up&msg={% raw %}{{ .Profile.Name }}{% endraw %}+backup+ok"
     send-after-fail:
       method: GET
       url: "http://uptime-kuma:3001/api/push/{{ kuma_backups_token }}?status=down&msg={% raw %}{{ .Profile.Name }}{% endraw %}+backup+FAILED"
+
   check:
+    schedule-permission: user
     send-after:
       method: GET
       url: "http://uptime-kuma:3001/api/push/{{ kuma_checks_token }}?status=up&msg={% raw %}{{ .Profile.Name }}{% endraw %}+check+ok"
@@ -29,53 +59,182 @@ garage:
       method: GET
       url: "http://uptime-kuma:3001/api/push/{{ kuma_checks_token }}?status=down&msg={% raw %}{{ .Profile.Name }}{% endraw %}+check+FAILED"
 
-vaultwarden:
-  inherit: garage
-  repository: "s3:http://garage:3900/vaultwarden"
-  password-file: /run/secrets/restic_vaultwarden_key
-  env-file: /run/secrets/restic_vaultwarden_env
-
-  backup:
-    run-before: >-
-      sqlite3 /data/vaultwarden/db.sqlite3
-      ".backup '/staging/vaultwarden-db.sqlite3'"
-    source:
-      - /data/vaultwarden
-      - /staging/vaultwarden-db.sqlite3
-    exclude:
-      - /data/vaultwarden/db.sqlite3*     # live db + -wal/-shm; the copy above is used instead
-      - /data/vaultwarden/icon_cache
-    tag:
-      - vaultwarden
-    schedule: "03:00"
+  prune:
     schedule-permission: user
-    schedule-lock-wait: 1h
-
-  restore:
-    target: /staging/restore
-    run-before:
-      # Stop Vaultwarden (204 = stopped, 304 = already stopped; both succeed)
-      - curl -fsS -X POST http://socket-proxy:2375/containers/vaultwarden/stop
-      - rm -rf /staging/restore
-    run-after:
-      - >-
-        test "$(sqlite3 /staging/restore/staging/vaultwarden-db.sqlite3 'PRAGMA integrity_check;')" = ok
-      - find /data/vaultwarden -mindepth 1 -delete
-      - cp -a /staging/restore/data/vaultwarden/. /data/vaultwarden/
-      - cp /staging/restore/staging/vaultwarden-db.sqlite3 /data/vaultwarden/db.sqlite3
-      - curl -fsS -X POST http://socket-proxy:2375/containers/vaultwarden/start
-    run-after-fail:
-      - 'echo "Restore FAILED: $ERROR_MESSAGE. Vaultwarden left stopped."'
-
-  check:
-    read-data-subset: "5%"
-    schedule: "Sun 04:00"
-    schedule-permission: user
+    send-after:
+      method: GET
+      url: "http://uptime-kuma:3001/api/push/{{ kuma_checks_token }}?status=up&msg={% raw %}{{ .Profile.Name }}{% endraw %}+prune+ok"
+    send-after-fail:
+      method: GET
+      url: "http://uptime-kuma:3001/api/push/{{ kuma_checks_token }}?status=down&msg={% raw %}{{ .Profile.Name }}{% endraw %}+prune+FAILED"
 
   retention:
     after-backup: true
     keep-daily: 7
     keep-weekly: 4
     keep-monthly: 6
-    prune: true
+    prune: true             # own-repository profiles prune after backup; shared-repo apps override this
     tag: true
+    group-by: "host,tags"   # group snapshots by tag, not by exact paths
+
+# =============================================================================
+# Vaultwarden: own repositories and keys on every destination
+# =============================================================================
+vaultwarden:
+  inherit: base
+  password-file: /run/secrets/restic_vaultwarden_key
+  env-file:
+    - /run/secrets/restic_remotes_env
+    - /run/secrets/restic_vaultwarden_env
+
+  backup:
+    backup:
+    run-before:
+      - echo "==> [{% raw %}{{ .Profile.Name }}{% endraw %}] copying live database"
+      - >-
+        sqlite3 /appdata/vaultwarden/db.sqlite3
+        ".backup '/staging/{% raw %}{{ .Profile.Name }}{% endraw %}-db.sqlite3'" ||
+        { echo "!! [{% raw %}{{ .Profile.Name }}{% endraw %}] database copy failed, backup aborted" >&2; exit 1; }
+      - echo "==> [{% raw %}{{ .Profile.Name }}{% endraw %}] backing up /appdata/vaultwarden"
+    run-after:
+      - echo "==> [{% raw %}{{ .Profile.Name }}{% endraw %}] backup complete"
+    run-after-fail:
+      - 'echo "!! [{% raw %}{{ .Profile.Name }}{% endraw %}] BACKUP FAILED: $ERROR_MESSAGE"'
+    source:
+      - /appdata/vaultwarden
+      - "/staging/{% raw %}{{ .Profile.Name }}{% endraw %}-db.sqlite3"
+    exclude:
+      - db.sqlite3*     # live db + -wal/-shm; the copy above is used instead
+      - icon_cache
+    tag:
+      - vaultwarden
+
+  restore:
+    target: /staging/restore/vaultwarden
+    run-before:
+      - echo "==> [vaultwarden] stopping container"
+      # 204 = stopped, 304 = already stopped; both succeed
+      - curl -fsS -X POST http://socket-proxy:2375/containers/vaultwarden/stop
+      - rm -rf /staging/restore/vaultwarden
+      - echo "==> [vaultwarden] restoring snapshot into /staging/restore/vaultwarden"
+    run-after:
+      - echo "==> [vaultwarden] checking database copy"
+      - >-
+        test "$(sqlite3 '/staging/restore/vaultwarden/staging/{% raw %}{{ .Profile.Name }}{% endraw %}-db.sqlite3' 'PRAGMA integrity_check;')" = ok ||
+        { echo "!! [vaultwarden] database copy missing or damaged, live data left untouched" >&2; exit 1; }
+      - echo "==> [vaultwarden] replacing /appdata/vaultwarden"
+      - find /appdata/vaultwarden -mindepth 1 -delete
+      - cp -a /staging/restore/vaultwarden/appdata/vaultwarden/. /appdata/vaultwarden/
+      - >-
+        cp '/staging/restore/vaultwarden/staging/{% raw %}{{ .Profile.Name }}{% endraw %}-db.sqlite3'
+        /appdata/vaultwarden/db.sqlite3
+      - echo "==> [vaultwarden] starting container"
+      - curl -fsS -X POST http://socket-proxy:2375/containers/vaultwarden/start
+      - echo "==> [vaultwarden] restore complete"
+    run-after-fail:
+      - 'echo "!! [vaultwarden] RESTORE FAILED: $ERROR_MESSAGE. Container left stopped."'
+
+{% for dest in destinations %}
+vaultwarden-{{ dest }}:
+  inherit: vaultwarden
+  repository: "rclone:{{ dest }}vault:cobalt-vaultwarden"
+  backup:
+    schedule: "{{ backup_time }}"
+  check:
+    read-data-subset: "5%"
+    schedule: "{{ check_time }}"
+
+{% endfor %}
+
+# =============================================================================
+# Regular apps: shared repository per destination, separated by tags
+# =============================================================================
+apps-common:
+  inherit: base
+  initialize: false # Manually initialize the shared repository once per destination
+  password-file: /run/secrets/restic_apps_key
+  retention:
+    prune: false    # forget only; pruning the shared repository is done by apps-<dest>
+
+
+{% for app in apps %}
+{{ app }}:
+  inherit: apps-common
+  backup:
+    skip-if-unchanged: true
+    source:
+      - /appdata/{{ app }}
+    exclude:
+      - "*.db"
+      - "*.db-shm"
+      - "*.db-wal"
+      - "*.db-journal"
+      - "*.sqlite"
+      - "*.sqlite-shm"
+      - "*.sqlite-wal"
+      - "*.pid"
+      - lockfile
+      - logs
+      - Logs
+      - log
+      - .cache
+      - cache
+      - Sentry            # arr crash reporting
+      - MediaCover        # arr poster cache, re-downloaded
+      - GeoDB             # qBittorrent GeoIP db, re-downloaded
+      - "custom-*.d.*"    # empty linuxserver.io leftovers
+    tag:
+      - {{ app }}
+  restore:
+    target: /staging/restore/{{ app }}
+    run-before:
+      - echo "==> [{{ app }}] stopping container"
+      # 204 = stopped, 304 = already stopped; both succeed
+      - curl -fsS -X POST http://socket-proxy:2375/containers/{{ app }}/stop
+      - rm -rf /staging/restore/{{ app }}
+      - echo "==> [{{ app }}] restoring snapshot into /staging/restore/{{ app }}"
+    run-after:
+      - echo "==> [{{ app }}] checking restored files"
+      - >-
+        test -n "$(ls -A /staging/restore/{{ app }}/appdata/{{ app }} 2>/dev/null)" ||
+        { echo "!! [{{ app }}] nothing restored, live data left untouched" >&2; exit 1; }
+      - echo "==> [{{ app }}] replacing /appdata/{{ app }}"
+      - find /appdata/{{ app }} -mindepth 1 -delete
+      - cp -a /staging/restore/{{ app }}/appdata/{{ app }}/. /appdata/{{ app }}/
+      - echo "==> [{{ app }}] starting container"
+      - curl -fsS -X POST http://socket-proxy:2375/containers/{{ app }}/start
+      - echo "==> [{{ app }}] restore complete"
+    run-after-fail:
+      - 'echo "!! [{{ app }}] RESTORE FAILED: $ERROR_MESSAGE. Container left stopped."'
+{% endfor %}
+
+
+# =============================================================================
+# Apps scheduled backups
+# =============================================================================
+{% for dest in destinations %}
+{% for app in apps %}
+{{ app }}-{{ dest }}:
+  inherit: {{ app }}
+  repository: "rclone:{{ dest }}:cobalt-apps"
+  backup:
+    schedule: "{{ backup_time }}"
+
+{% endfor %}
+{% endfor %}
+
+# =============================================================================
+# Shared apps repository maintenance: one prune + check per destination
+# =============================================================================
+{% for dest in destinations %}
+apps-{{ dest }}:
+  inherit: base
+  repository: "rclone:{{ dest }}:cobalt-apps"
+  password-file: /run/secrets/restic_apps_key
+  prune:
+    schedule: "{{ prune_time }}"
+  check:
+    read-data-subset: "5%"
+    schedule: "{{ check_time }}"
+
+{% endfor %}
