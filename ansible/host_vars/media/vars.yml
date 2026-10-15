@@ -1,0 +1,22 @@
+---
+# grog.package role
+package_list:
+  - name: rclone
+  - name: bzip2 # unpacks the restic release binary
+
+# --- Backups: resticprofile, installed natively (no Docker on this LXC) ---
+restic_version: "0.19.1"
+resticprofile_version: "0.33.1"
+
+plex_data_dir: "/plex/config/Library/Application Support/Plex Media Server"
+tautulli_data_dir: "/opt/Tautulli"
+
+restic_plex_password: "{{ vault_restic_plex_password }}"
+
+garage_plex_key_id: "{{ vault_garage_plex_key_id }}"
+garage_plex_secret_key: "{{ vault_garage_plex_secret_key }}"
+
+b2_plex_key_id: "{{ vault_b2_plex_key_id }}"
+b2_plex_app_key: "{{ vault_b2_plex_app_key }}"
+
+kuma_plex_token: "{{ vault_kuma_plex_token }}"

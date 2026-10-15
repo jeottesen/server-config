@@ -1,0 +1,100 @@
+---
+- name: Setup Common Configuration
+  import_playbook: setup-common.yml
+  vars:
+    limit_hosts: media
+
+- name: Setup media server
+  hosts: media
+  become: true
+  roles:
+    - name: grog.package
+      tags: packages
+
+# Temporary until Plex moves to k3s: restic + resticprofile installed natively.
+- name: Setup Plex backups
+  hosts: media
+  become: true
+  tags: backups
+  tasks:
+    # restic: Debian 12's package is too old (0.14) and has self-update disabled
+    - name: Download restic {{ restic_version }}
+      ansible.builtin.get_url:
+        url: "https://github.com/restic/restic/releases/download/v{{ restic_version }}/restic_{{ restic_version }}_linux_amd64.bz2"
+        dest: "/usr/local/src/restic_{{ restic_version }}.bz2"
+        owner: "{{ primary_user }}"
+        group: "{{ primary_group }}"
+        mode: "0644"
+
+    - name: Unpack restic {{ restic_version }}
+      ansible.builtin.shell: >-
+        bunzip2 -c /usr/local/src/restic_{{ restic_version }}.bz2 > /usr/local/bin/restic-{{ restic_version }}.tmp &&
+        chmod 0755 /usr/local/bin/restic-{{ restic_version }}.tmp &&
+        mv /usr/local/bin/restic-{{ restic_version }}.tmp /usr/local/bin/restic-{{ restic_version }}
+      args:
+        creates: "/usr/local/bin/restic-{{ restic_version }}"
+
+    - name: Link /usr/local/bin/restic to {{ restic_version }}
+      ansible.builtin.file:
+        src: "/usr/local/bin/restic-{{ restic_version }}"
+        dest: /usr/local/bin/restic
+        state: link
+
+    - name: Create /opt/resticprofile-{{ resticprofile_version }}
+      ansible.builtin.file:
+        path: "/opt/resticprofile-{{ resticprofile_version }}"
+        owner: "{{ primary_user }}"
+        group: "{{ primary_group }}"
+        state: directory
+        mode: "0755"
+
+    - name: Download and unpack resticprofile {{ resticprofile_version }}
+      ansible.builtin.unarchive:
+        src: "https://github.com/creativeprojects/resticprofile/releases/download/v{{ resticprofile_version }}/resticprofile_{{ resticprofile_version }}_linux_amd64.tar.gz"
+        dest: "/opt/resticprofile-{{ resticprofile_version }}"
+        remote_src: true
+        include:
+          - resticprofile
+        creates: "/opt/resticprofile-{{ resticprofile_version }}/resticprofile"
+
+    - name: Link /usr/local/bin/resticprofile to {{ resticprofile_version }}
+      ansible.builtin.file:
+        src: "/opt/resticprofile-{{ resticprofile_version }}/resticprofile"
+        dest: /usr/local/bin/resticprofile
+        state: link
+
+    - name: Create /usr/local/etc/resticprofile
+      ansible.builtin.file:
+        path: /usr/local/etc/resticprofile
+        state: directory
+        owner: "{{ primary_user }}"
+        group: "{{ primary_group }}"
+        mode: "0700"
+
+    - name: Template resticprofile config and rclone remotes
+      ansible.builtin.template:
+        src: "{{ playbook_dir }}/files/{{ inventory_hostname }}/resticprofile/{{ item.src }}"
+        dest: "/usr/local/etc/resticprofile/{{ item.dest }}"
+        owner: "{{ primary_user }}"
+        group: "{{ primary_group }}"
+        mode: "0600"
+      loop:
+        - { src: profiles.yaml.j2, dest: profiles.yaml }
+        - { src: remotes.env.j2, dest: remotes.env }
+      register: resticprofile_config
+
+    - name: Write restic password file
+      ansible.builtin.copy:
+        content: "{{ restic_plex_password }}"
+        dest: /usr/local/etc/resticprofile/restic-password
+        owner: "{{ primary_user }}"
+        group: "{{ primary_group }}"
+        mode: "0600"
+      no_log: true
+
+    # resticprofile creates its own systemd timers from the schedule: lines in profiles.yaml
+    - name: Recreate resticprofile schedules
+      ansible.builtin.shell: >-
+        resticprofile unschedule --all &&
+        resticprofile schedule --all
+      when: resticprofile_config is changed

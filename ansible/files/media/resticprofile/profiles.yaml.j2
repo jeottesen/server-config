@@ -1,0 +1,127 @@
+{#
+  resticprofile config for the Plex LXC, rendered by Ansible.
+  Runs natively as root (no Docker here); schedules are systemd timers created by
+  `resticprofile schedule --all`.
+
+    rclone:garage:cobalt-plex           Plex databases + Preferences.xml, Tautulli   (Garage)
+    rclone:b2:cobalt-plex               same, offsite                                (B2)
+    rclone:garage:cobalt-plex-metadata  artwork, thumbnails, the rest of Plex        (Garage only)
+
+  Restore by hand (no automation; this LXC is temporary):
+    systemctl stop plexmediaserver tautulli
+    resticprofile plex-garage.restore latest --target /root/restore
+    copy the files back from /root/restore/<original path>, keep owners (cp -a)
+    systemctl start plexmediaserver tautulli
+#}
+{# resticprofile's own template variable for the running profile's name; Ansible outputs it as literal text #}
+{% set profile = '{{ .Profile.Name }}' %}
+{% set kuma_url = 'https://status.' ~ base_domain_name ~ '/api/push/' ~ kuma_plex_token %}
+
+version: "1"
+
+global:
+  priority: low
+
+# =============================================================================
+# Base: shared by every profile. Not scheduled.
+# =============================================================================
+base:
+  initialize: true          # each repository has a single writer, so auto-init is safe
+  password-file: /usr/local/etc/resticprofile/restic-password
+  env-file: /usr/local/etc/resticprofile/remotes.env
+  retry-lock: 30m
+  env:
+    RCLONE_LOG_LEVEL: ERROR
+
+  backup:
+    schedule-permission: system
+    schedule-lock-wait: 1h
+    send-after:
+      method: GET
+      url: "{{ kuma_url }}?status=up&msg={{ profile }}+backup+ok"
+    send-after-fail:
+      method: GET
+      url: "{{ kuma_url }}?status=down&msg={{ profile }}+backup+FAILED"
+
+  check:
+    schedule-permission: system
+    read-data-subset: "5%"
+    send-after:
+      method: GET
+      url: "{{ kuma_url }}?status=up&msg={{ profile }}+check+ok"
+    send-after-fail:
+      method: GET
+      url: "{{ kuma_url }}?status=down&msg={{ profile }}+check+FAILED"
+
+  retention:
+    after-backup: true
+    keep-daily: 7
+    keep-weekly: 4
+    keep-monthly: 6
+    prune: true
+    tag: true
+    group-by: "host,tags"
+
+# =============================================================================
+# Plex databases + Tautulli: both services are stopped during the backup
+# =============================================================================
+plex:
+  inherit: base
+  backup:
+    run-before:
+      - systemctl stop plexmediaserver tautulli
+    run-finally:
+      - systemctl start plexmediaserver tautulli
+    source:
+      - "{{ plex_data_dir }}/Plug-in Support/Databases"
+      - "{{ plex_data_dir }}/Preferences.xml"
+      - "{{ tautulli_data_dir }}/config.ini"
+      - "{{ tautulli_data_dir }}/data"
+    exclude:
+      - "*.db-20*"                            # Plex's own dated db copies (…library.db-2026-10-12)
+      - "{{ tautulli_data_dir }}/data/backups"     # Tautulli's own db copies
+      - "{{ tautulli_data_dir }}/data/cache"
+      - "{{ tautulli_data_dir }}/data/logs"
+    tag:
+      - plex
+
+plex-garage:
+  inherit: plex
+  repository: "rclone:garage:cobalt-plex"
+  backup:
+    schedule: "03:00"
+  check:
+    schedule: "Mon 05:00"
+
+# plex-b2:
+#   inherit: plex
+#   repository: "rclone:b2:cobalt-plex"
+#   backup:
+#     schedule: "03:30"
+#   check:
+#     schedule: "Mon 05:30"
+
+# =============================================================================
+# Plex metadata: big and replaceable, Garage only, Plex keeps running
+# =============================================================================
+plex-metadata-garage:
+  inherit: base
+  repository: "rclone:garage:cobalt-plex-metadata"
+  backup:
+    schedule: "04:30"
+    source:
+      - "{{ plex_data_dir }}"
+    exclude:
+      - "{{ plex_data_dir }}/Plug-in Support/Databases"   # in cobalt-plex
+      - "{{ plex_data_dir }}/Cache"
+      - "{{ plex_data_dir }}/Codecs"
+      - "{{ plex_data_dir }}/Crash Reports"
+      - "{{ plex_data_dir }}/Diagnostics"
+      - "{{ plex_data_dir }}/Drivers"
+      - "{{ plex_data_dir }}/Logs"
+      - "{{ plex_data_dir }}/Logs.old"
+      - "{{ plex_data_dir }}/Updates"
+    tag:
+      - plex-metadata
+  check:
+    schedule: "Mon 06:00"
