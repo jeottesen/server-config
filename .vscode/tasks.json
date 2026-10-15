@@ -30,9 +30,9 @@
       "problemMatcher": []
     },
     {
-      "label": "Ansible: Run media - Tag: docker-compose",
+      "label": "Ansible: Run rakugo - Tag: docker-compose",
       "type": "shell",
-      "command": "source ${workspaceFolder}/.venv/bin/activate && ansible-playbook setup-media.yml --tag docker-compose",
+      "command": "source ${workspaceFolder}/.venv/bin/activate && ansible-playbook setup-rakugo.yml --tag docker-compose",
       "group": {
         "kind": "build"
       },"options": {
@@ -41,9 +41,9 @@
       "problemMatcher": []
     },
     {
-      "label": "Ansible: Run media - Tag: docker-compose, Skip-Tag: compose-setup",
+      "label": "Ansible: Run rakugo - Tag: docker-compose, Skip-Tag: compose-setup",
       "type": "shell",
-      "command": "source ${workspaceFolder}/.venv/bin/activate && ansible-playbook setup-media.yml --skip-tag compose-setup --tag docker-compose",
+      "command": "source ${workspaceFolder}/.venv/bin/activate && ansible-playbook setup-rakugo.yml --skip-tag compose-setup --tag docker-compose",
       "group": {
         "kind": "build"
       },"options": {
