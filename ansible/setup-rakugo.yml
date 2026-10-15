@@ -1,10 +1,10 @@
 ---
 - import_playbook: setup-common.yml
   vars:
-    limit_hosts: media
+    limit_hosts: rakugo
 
 - name: Setup server
-  hosts: media
+  hosts: rakugo
   become: true
   roles:
     - name: grog.package
@@ -15,15 +15,12 @@
       tags: docker
 
 - name: Setup docker compose services and files
-  hosts: media
+  hosts: rakugo
   become: true
   roles:
     - name: docker-services/traefik
     - name: docker-compose
       tags: docker-compose
-
-# Configure igpu passthrough.
-# https://www.michaelstinkerings.org/gpu-virtualization-with-intel-12th-gen-igpu-uhd-730/
 
 # - name: Configure nas cron jobs
 #   hosts: media
