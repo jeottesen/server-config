@@ -88,7 +88,6 @@ vaultwarden:
     - /run/secrets/restic_vaultwarden_env
 
   backup:
-    backup:
     run-before:
       - echo "==> [{% raw %}{{ .Profile.Name }}{% endraw %}] copying live database"
       - >-
