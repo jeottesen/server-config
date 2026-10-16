@@ -82,7 +82,10 @@ plex:
       - "{{ plex_data_dir }}/Plug-in Support/Databases"
       - "{{ plex_data_dir }}/Preferences.xml"
     exclude:
-      - "*.db-20*"        # Plex's own dated db copies (…library.db-2026-10-12)
+       exclude:
+      - "*.db-20*"                 # Plex's own dated db copies (…library.db-2026-10-12)
+      - "com.plexapp.dlna.db*"     # rebuilt by Plex → in cobalt-plex-metadata
+      - "Music Analysis*"          # sonic analysis, rebuildable → in cobalt-plex-metadata
     tag:
       - plex
 
@@ -149,7 +152,7 @@ plex-metadata-garage:
     source:
       - "{{ plex_data_dir }}"
     exclude:
-      - "{{ plex_data_dir }}/Plug-in Support/Databases"   # in cobalt-plex
+      - "{{ plex_data_dir }}/Plug-in Support/Databases/com.plexapp.plugins.library*"   # in cobalt-plex
       - "{{ plex_data_dir }}/Cache"
       - "{{ plex_data_dir }}/Codecs"
       - "{{ plex_data_dir }}/Crash Reports"
