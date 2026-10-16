@@ -23,9 +23,8 @@
 - **Minimal footprint.** Only touch the files necessary for the task at hand. Do not refactor, reformat, "clean up," or edit unrelated files even if you notice something you'd change.
 - **Keep the session branch clean.** In cloud sessions, never merge or pull `main` into the working
   branch just to read it: that leaves commits on the branch that aren't yours and the stop hook asks
-  to push them. Fetch and read `origin/main` instead. If the branch already has only `main`'s commits,
-  reset it to its own remote ref (`git reset --hard origin/<branch>`), after checking they're all on
-  `origin/main`.
+   to push them. Fetch and read `origin/main` instead. If it happens anyway, say so once and
+  ignore the stop hook for the rest of the session; never push those commits.
 
 ## ArgoCD / Helm pattern used in this repo
 
