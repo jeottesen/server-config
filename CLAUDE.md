@@ -11,7 +11,9 @@
   writing any of it. Then go one step at a time.
 - Only send a whole file when I ask for it and it is too large for the chat.
 - Keep it simple. Don't add features or extra hardening that wasn't ask for; suggest them instead.
-- Always `git pull` and read the current file before suggesting changes to it. User push to `main` often.
+- Do not assume the user has pushed to main. They might be working from local and testing before pushing.
+  Use `git fetch origin main` and read from `origin/main` (`git show origin/main:<path>`, `git diff`);
+  don't pull or merge `main` into the session branch.
 - Prefer Docker secrets over `.env` values for anything sensitive.
 
 ## Git / Branch Rules
@@ -19,10 +21,11 @@
 - **Never modify `main` directly.** No commits, no pushes, no merges into `main`, under any circumstances.
 - **Only work on a branch when explicitly told to.** Don't create or switch branches on your own initiative.
 - **Minimal footprint.** Only touch the files necessary for the task at hand. Do not refactor, reformat, "clean up," or edit unrelated files even if you notice something you'd change.
-- **Never merge anything.** Not a branch into `main`, not a PR — merging is done by a human only.
-- **Pull requests require explicit go-ahead.** You may open a PR if it seems useful, but only after being told it's okay to do so for that specific piece of work. Don't open one proactively.
-
-If a task seems to require touching `main`, merging, or opening a PR without having been given permission, stop and ask instead of proceeding.
+- **Keep the session branch clean.** In cloud sessions, never merge or pull `main` into the working
+  branch just to read it: that leaves commits on the branch that aren't yours and the stop hook asks
+  to push them. Fetch and read `origin/main` instead. If the branch already has only `main`'s commits,
+  reset it to its own remote ref (`git reset --hard origin/<branch>`), after checking they're all on
+  `origin/main`.
 
 ## ArgoCD / Helm pattern used in this repo
 
