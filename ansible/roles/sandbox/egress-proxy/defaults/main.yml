@@ -1,0 +1,17 @@
+# roles/sandbox/egress-proxy/defaults/main.yml
+---
+# Where Squid listens (shared with the egress-firewall role via group_vars)
+sandbox_proxy_host: 127.0.0.1
+sandbox_proxy_port: 3128
+
+sandbox_adguard_version: v0.107.76
+sandbox_adguard_arch: amd64
+# UI on the LAN IP only, so the sandbox user can't reach it via 127.0.0.1
+sandbox_adguard_ui_ip: "{{ ansible_default_ipv4.address }}"
+sandbox_adguard_ui_port: 80
+sandbox_adguard_user: "{{ primary_user }}"
+sandbox_adguard_initial_allowlist: []
+
+# Required, no default (set in group_vars):
+#   sandbox_adguard_password
+#   sandbox_adguard_upstream_dns

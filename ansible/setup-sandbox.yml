@@ -37,3 +37,5 @@
   roles:
     - name: sandbox/egress-firewall
       tags: egress-firewall
+    - name: sandbox/egress-proxy
+      tags: egress-proxy

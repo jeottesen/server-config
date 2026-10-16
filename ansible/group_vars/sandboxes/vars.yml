@@ -8,16 +8,16 @@ sandbox_proxy_host: 127.0.0.1
 sandbox_proxy_port: 3128
 
 # AdGuard Home (local, temporary until the cluster version)
-adguard_version: v0.107.79
-adguard_ui_port: 3000
-adguard_upstream_dns:
-  - 192.168.1.1 # TODO: your router's IP
-adguard_user: "{{ primary_user }}"
-adguard_password: "{{ vault_adguard_password }}"
+sandbox_adguard_version: v0.107.79
+
+sandbox_adguard_upstream_dns:
+  - 9.9.9.9
+sandbox_adguard_user: "{{ primary_user }}"
+sandbox_adguard_password: "{{ vault_adguard_password }}"
 
 # Seeded into AdGuard on first install only; after that the UI owns the list.
 # A domain here also allows its subdomains.
-adguard_initial_allowlist:
+sandbox_adguard_initial_allowlist:
   - anthropic.com
   - claude.ai
   - claude.com

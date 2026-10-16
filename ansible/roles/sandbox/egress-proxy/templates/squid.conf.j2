@@ -1,0 +1,29 @@
+# {{ ansible_managed }}
+# Egress proxy for the sandbox user. Every hostname is resolved by AdGuard Home,
+# so only allowlisted domains work.
+
+http_port {{ sandbox_proxy_host }}:{{ sandbox_proxy_port }}
+
+# Resolve only through AdGuard, never /etc/hosts
+dns_nameservers 127.0.0.1
+hosts_file none
+
+# Forward only, no caching
+cache deny all
+
+acl SSL_ports port 443
+acl Safe_ports port 80 443
+acl CONNECT method CONNECT
+
+# Bare IPv4 or IPv6 addresses would skip the DNS check
+acl ip_literal dstdom_regex -n ^[0-9.]+$ :
+
+# Unspecified, LAN, CGNAT/NetBird, loopback, link-local
+acl private_dst dst 0.0.0.0/8 10.0.0.0/8 100.64.0.0/10 127.0.0.0/8 169.254.0.0/16 172.16.0.0/12 192.168.0.0/16 ::/128 ::1 fc00::/7 fe80::/10
+
+http_access deny !Safe_ports
+http_access deny CONNECT !SSL_ports
+http_access deny ip_literal
+http_access deny private_dst
+http_access allow localhost
+http_access deny all
