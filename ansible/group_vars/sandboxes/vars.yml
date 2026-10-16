@@ -1,0 +1,27 @@
+---
+# Claude sandbox user (moved here from the play vars in setup-sandbox.yml)
+sandbox_user: claude
+
+# Egress proxy the sandbox user is forced through.
+# Local for now; when it moves to k3s, point the host at Squid's LAN/NetBird IP.
+sandbox_proxy_host: 127.0.0.1
+sandbox_proxy_port: 3128
+
+# AdGuard Home (local, temporary until the cluster version)
+adguard_version: v0.107.79
+adguard_ui_port: 3000
+adguard_upstream_dns:
+  - 192.168.1.1 # TODO: your router's IP
+adguard_user: "{{ primary_user }}"
+adguard_password: "{{ vault_adguard_password }}"
+
+# Seeded into AdGuard on first install only; after that the UI owns the list.
+# A domain here also allows its subdomains.
+adguard_initial_allowlist:
+  - anthropic.com
+  - claude.ai
+  - claude.com
+  - github.com
+  - githubusercontent.com
+  - npmjs.org
+  - npmjs.com

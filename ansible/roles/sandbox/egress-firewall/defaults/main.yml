@@ -1,0 +1,7 @@
+---
+# User whose outbound traffic is restricted
+sandbox_user: claude
+
+# The only off-loopback address the sandbox user may reach
+sandbox_proxy_host: 127.0.0.1
+sandbox_proxy_port: 3128

@@ -1,0 +1,12 @@
+# {{ ansible_managed }}
+# Send the sandbox user's traffic through the egress proxy.
+# The nftables rules are what enforce it.
+if [ "$(id -un)" = "{{ sandbox_user }}" ]; then
+  export HTTP_PROXY="http://{{ sandbox_proxy_host }}:{{ sandbox_proxy_port }}"
+  export HTTPS_PROXY="$HTTP_PROXY"
+  export NO_PROXY="localhost,127.0.0.1,::1"
+  # Some tools (curl, apt-style libs) only read the lowercase names
+  export http_proxy="$HTTP_PROXY"
+  export https_proxy="$HTTPS_PROXY"
+  export no_proxy="$NO_PROXY"
+fi

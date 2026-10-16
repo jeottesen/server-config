@@ -12,8 +12,6 @@
   hosts: sandboxes
   become: true
   tags: sandbox-user
-  vars:
-    sandbox_user: claude
   tasks:
     # No password (locked) and no authorized_keys: only reachable via `sudo -iu claude`
     - name: Create user {{ sandbox_user }}
@@ -32,3 +30,10 @@
       loop:
         - "{{ primary_user }}"
         - "{{ sandbox_user }}"
+
+- name: Sandbox egress
+  hosts: sandboxes
+  become: true
+  roles:
+    - name: sandbox/egress-firewall
+      tags: egress-firewall

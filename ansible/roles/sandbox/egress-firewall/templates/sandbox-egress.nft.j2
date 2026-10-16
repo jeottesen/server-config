@@ -1,0 +1,29 @@
+#!/usr/sbin/nft -f
+# {{ ansible_managed }}
+# Egress rules for the sandbox user. Only touches its own table.
+
+# Declare + delete makes reloads idempotent without flushing other tables
+table inet sandbox_egress
+delete table inet sandbox_egress
+
+table inet sandbox_egress {
+  chain output {
+    type filter hook output priority filter; policy accept;
+
+    # Everyone except the sandbox user is untouched
+    meta skuid != "{{ sandbox_user }}" accept
+
+    # The egress proxy
+    ip daddr {{ sandbox_proxy_host }} tcp dport {{ sandbox_proxy_port }} accept
+
+    # No direct DNS: names only resolve through the proxy
+    meta l4proto { tcp, udp } th dport 53 reject
+
+    # Its own local dev servers
+    ip daddr 127.0.0.0/8 accept
+    ip6 daddr ::1 accept
+
+    # Everything else
+    reject
+  }
+}

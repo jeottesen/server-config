@@ -1,0 +1,44 @@
+---
+- name: Install nftables
+  ansible.builtin.apt:
+    name: nftables
+    state: present
+
+- name: Create /etc/nftables.d
+  ansible.builtin.file:
+    path: /etc/nftables.d
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Install sandbox egress rules
+  ansible.builtin.template:
+    src: sandbox-egress.nft.j2
+    dest: /etc/nftables.d/sandbox-egress.nft
+    owner: root
+    group: root
+    mode: "0644"
+    validate: nft -c -f %s
+  notify: Reload nftables
+
+- name: Include /etc/nftables.d from the main nftables config
+  ansible.builtin.lineinfile:
+    path: /etc/nftables.conf
+    line: 'include "/etc/nftables.d/*.nft"'
+    insertafter: EOF
+  notify: Reload nftables
+
+- name: Enable and start nftables
+  ansible.builtin.systemd_service:
+    name: nftables
+    enabled: true
+    state: started
+
+- name: Set proxy environment for {{ sandbox_user }}
+  ansible.builtin.template:
+    src: sandbox-proxy.sh.j2
+    dest: /etc/profile.d/sandbox-proxy.sh
+    owner: root
+    group: root
+    mode: "0644"
