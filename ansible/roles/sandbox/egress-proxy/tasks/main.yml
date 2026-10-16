@@ -21,6 +21,9 @@
     enabled: true
     state: started
 
+- name: Apply squid config
+  ansible.builtin.meta: flush_handlers
+
 # --- AdGuard Home ---
 - name: Download and unpack AdGuard Home {{ sandbox_adguard_version }}
   ansible.builtin.unarchive:
