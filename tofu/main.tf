@@ -5,6 +5,24 @@ terraform {
       version = "0.104.0"
     }
   }
+  backend "s3" {
+    bucket = "cobalt-tofu-state"
+    key    = "proxmox/terraform.tfstate"
+    region = "garage"
+    profile = "garage-tofu"
+
+    endpoints = {
+      s3 = "http://mediaserver.samurai:3900"
+    }
+    use_path_style = true
+
+    # Garage isn't AWS: skip the AWS-only checks
+    skip_credentials_validation = true
+    skip_region_validation      = true
+    skip_requesting_account_id  = true
+    skip_metadata_api_check     = true
+    skip_s3_checksum            = true
+  }
 }
 
 # nuk Provider
