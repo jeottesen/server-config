@@ -1,0 +1,34 @@
+---
+- name: Harden SSH
+  hosts: sandboxes
+  become: true
+  tags: ssh
+  roles:
+    - role: devsec.hardening.ssh_hardening
+      vars:
+        ssh_allow_tcp_forwarding: "yes"
+
+- name: Setup Claude sandbox user
+  hosts: sandboxes
+  become: true
+  tags: sandbox-user
+  vars:
+    sandbox_user: claude
+  tasks:
+    # No password (locked) and no authorized_keys: only reachable via `sudo -iu claude`
+    - name: Create user {{ sandbox_user }}
+      ansible.builtin.user:
+        name: "{{ sandbox_user }}"
+        shell: /bin/bash
+        create_home: true
+        state: present
+
+    - name: Lock down home directories
+      ansible.builtin.file:
+        path: "/home/{{ item }}"
+        state: directory
+        owner: "{{ item }}"
+        mode: "0700"
+      loop:
+        - "{{ primary_user }}"
+        - "{{ sandbox_user }}"
