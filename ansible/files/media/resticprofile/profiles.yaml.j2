@@ -63,27 +63,52 @@ base:
     group-by: "host,tags"
 
 # =============================================================================
-# Plex databases + Tautulli: both services are stopped during the backup
+# Plex + Tautulli: shared bucket cobalt-plex, separated by tags.
 # =============================================================================
 plex:
   inherit: base
+  ls:
+    tag:
+      - plex
+  restore:
+    tag:
+      - plex
   backup:
     run-before:
-      - systemctl stop plexmediaserver tautulli
+      - systemctl stop plexmediaserver
     run-finally:
-      - systemctl start plexmediaserver tautulli
+      - systemctl start plexmediaserver
     source:
       - "{{ plex_data_dir }}/Plug-in Support/Databases"
       - "{{ plex_data_dir }}/Preferences.xml"
+    exclude:
+      - "*.db-20*"        # Plex's own dated db copies (…library.db-2026-10-12)
+    tag:
+      - plex
+
+tautulli:
+  inherit: base
+  ls:
+    tag:
+      - tautulli
+  restore:
+    tag:
+      - tautulli
+  backup:
+    run-before:
+      - systemctl stop tautulli
+    run-finally:
+      - systemctl start tautulli
+    source:
       - "{{ tautulli_data_dir }}/config.ini"
       - "{{ tautulli_data_dir }}/data"
     exclude:
-      - "*.db-20*"                            # Plex's own dated db copies (…library.db-2026-10-12)
-      - "{{ tautulli_data_dir }}/data/backups"     # Tautulli's own db copies
+      - "{{ tautulli_data_dir }}/data/backups"   # Tautulli's own db copies
       - "{{ tautulli_data_dir }}/data/cache"
       - "{{ tautulli_data_dir }}/data/logs"
+      - "{{ tautulli_data_dir }}/data/interfaces" 
     tag:
-      - plex
+      - tautulli
 
 plex-garage:
   inherit: plex
@@ -91,7 +116,13 @@ plex-garage:
   backup:
     schedule: "03:00"
   check:
-    schedule: "Mon 05:00"
+    schedule: "Mon 05:00"   # checks the whole cobalt-plex repo, Tautulli included
+
+tautulli-garage:
+  inherit: tautulli
+  repository: "rclone:garage:cobalt-plex"
+  backup:
+    schedule: "03:15"
 
 # plex-b2:
 #   inherit: plex
@@ -100,6 +131,12 @@ plex-garage:
 #     schedule: "03:30"
 #   check:
 #     schedule: "Mon 05:30"
+
+# tautulli-b2:
+#   inherit: tautulli
+#   repository: "rclone:b2:cobalt-plex"
+#   backup:
+#     schedule: "03:15"
 
 # =============================================================================
 # Plex metadata: big and replaceable, Garage only, Plex keeps running
