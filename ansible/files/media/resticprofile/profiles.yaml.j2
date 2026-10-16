@@ -126,19 +126,19 @@ tautulli-garage:
   backup:
     schedule: "03:15"
 
-# plex-b2:
-#   inherit: plex
-#   repository: "rclone:b2:cobalt-plex"
-#   backup:
-#     schedule: "03:30"
-#   check:
-#     schedule: "Mon 05:30"
+plex-b2:
+  inherit: plex
+  repository: "rclone:b2:cobalt-plex"
+  backup:
+    schedule: "03:30"
+  check:
+    schedule: "Mon 05:30"
 
-# tautulli-b2:
-#   inherit: tautulli
-#   repository: "rclone:b2:cobalt-plex"
-#   backup:
-#     schedule: "03:15"
+tautulli-b2:
+  inherit: tautulli
+  repository: "rclone:b2:cobalt-plex"
+  backup:
+    schedule: "03:45"
 
 # =============================================================================
 # Plex metadata: big and replaceable, Garage only, Plex keeps running
@@ -152,13 +152,13 @@ plex-metadata-garage:
       - "{{ plex_data_dir }}"
     exclude:
       - "{{ plex_data_dir }}/Plug-in Support/Databases/com.plexapp.plugins.library*"   # in cobalt-plex
+      - "{{ plex_data_dir }}/Media" # thumbnails, artwork, etc. (built by plex not manually selected overrides)
       - "{{ plex_data_dir }}/Cache"
       - "{{ plex_data_dir }}/Codecs"
       - "{{ plex_data_dir }}/Crash Reports"
       - "{{ plex_data_dir }}/Diagnostics"
       - "{{ plex_data_dir }}/Drivers"
       - "{{ plex_data_dir }}/Logs"
-      - "{{ plex_data_dir }}/Logs.old"
       - "{{ plex_data_dir }}/Updates"
     tag:
       - plex-metadata
