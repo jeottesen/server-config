@@ -26,3 +26,15 @@ sandbox_adguard_initial_allowlist:
   - github.com
   - githubusercontent.com
   - registry.npmjs.org
+
+# Baseline tools for the sandbox
+sandbox_packages:
+  - git
+  - gh
+  - unzip
+  - jq
+  - build-essential
+  - python3-venv
+  - python3-pip
+  - nodejs
+  - npm

@@ -3,6 +3,14 @@
 sandbox_claude_code_channel: stable
 sandbox_claude_code_key_fingerprint: 31DDDE24DDFAB679F42D7BD2BAA929FF1A7ECACE
 
+# Needed by Claude Code itself: the sandbox (bubblewrap, socat) and the key check (gnupg)
+sandbox_claude_code_packages:
+  - bubblewrap
+  - socat
+  - gnupg
+
+# Extra tools for the sandbox user
+sandbox_packages: []
 # Loaded as managed CLAUDE.md, so Claude reads proxy refusals correctly
 sandbox_claude_code_md: |
   # Network on this machine

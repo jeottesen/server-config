@@ -1,10 +1,7 @@
 ---
-- name: Install sandbox dependencies
+- name: Install Claude Code dependencies and sandbox tools
   ansible.builtin.apt:
-    name:
-      - bubblewrap
-      - socat
-      - gnupg # only to verify the signing key below
+    name: "{{ sandbox_claude_code_packages + sandbox_packages }}"
     state: present
 
 - name: Create /etc/apt/keyrings
