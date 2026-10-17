@@ -39,3 +39,10 @@
       tags: egress-firewall
     - name: sandbox/egress-proxy
       tags: egress-proxy
+
+- name: Setup Claude Code
+  hosts: sandboxes
+  become: true
+  roles:
+    - name: sandbox/claude-code
+      tags: claude-code

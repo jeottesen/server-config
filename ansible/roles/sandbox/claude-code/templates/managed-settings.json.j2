@@ -1,0 +1,22 @@
+{
+  "sandbox": {
+    "enabled": true,
+    "failIfUnavailable": true,
+    "allowUnsandboxedCommands": false,
+    "credentials": {
+      "files": [
+        { "path": "~/.claude/.credentials.json", "mode": "deny" }
+      ]
+    },
+    "network": {
+        "allowedDomains": ["github.com", "*.github.com", "*.githubusercontent.com", "registry.npmjs.org"]
+    }
+  },
+  "isolatePeerMachines": true,
+  "claudeMd": {{ sandbox_claude_code_md | to_json }},
+  "env": {
+    "HTTPS_PROXY": "http://{{ sandbox_proxy_host }}:{{ sandbox_proxy_port }}",
+    "HTTP_PROXY": "http://{{ sandbox_proxy_host }}:{{ sandbox_proxy_port }}",
+    "NO_PROXY": "localhost,127.0.0.1,::1"
+  }
+}

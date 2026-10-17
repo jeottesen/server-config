@@ -85,7 +85,7 @@
         body_format: json
         body:
           upstream_dns: "{{ sandbox_adguard_upstream_dns }}"
-          blocking_mode: nxdomain
+          blocking_mode: null_ip
       register: sandbox_adguard_result
       until: sandbox_adguard_result.status == 200
       retries: 10

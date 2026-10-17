@@ -1,0 +1,15 @@
+---
+# apt channel: stable (about a week behind, skips bad releases) or latest
+sandbox_claude_code_channel: stable
+sandbox_claude_code_key_fingerprint: 31DDDE24DDFAB679F42D7BD2BAA929FF1A7ECACE
+
+# Loaded as managed CLAUDE.md, so Claude reads proxy refusals correctly
+sandbox_claude_code_md: |
+  # Network on this machine
+  - Outbound access is limited to an allowlist of hosts.
+  - If the sandbox refuses a host, request it for the command the usual way.
+  - If a host still fails after that, with a proxy error (such as HTTP 403, 502 or 503)
+    or a DNS error, it isn't on the allowlist. Treat that as "not allowed", not as a
+    temporary outage: don't retry it, switch to another host or mirror, or try to get
+    around the restriction. Tell the user which host was blocked so they can decide
+    whether to allow it.

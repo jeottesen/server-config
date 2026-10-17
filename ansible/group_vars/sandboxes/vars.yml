@@ -18,10 +18,11 @@ sandbox_adguard_password: "{{ vault_adguard_password }}"
 # Seeded into AdGuard on first install only; after that the UI owns the list.
 # A domain here also allows its subdomains.
 sandbox_adguard_initial_allowlist:
-  - anthropic.com
+  - api.anthropic.com
+  - mcp-proxy.anthropic.com
   - claude.ai
   - claude.com
+  - frame.claudeusercontent.com
   - github.com
   - githubusercontent.com
-  - npmjs.org
-  - npmjs.com
+  - registry.npmjs.org
