@@ -12,14 +12,11 @@ sandbox_claude_code_packages:
 # Extra tools for the sandbox user
 sandbox_packages: []
 sandbox_allowlist: []
-# Loaded as managed CLAUDE.md, so Claude reads proxy refusals correctly
-sandbox_claude_code_md: |-
-  # Network on this machine
-  This is a local machine, not a cloud environment. The user manages its network allowlist directly; claude.ai environment settings don't apply.
+# Workspace where sessions start, in the sandbox user's home; repos and worktrees live under it
+sandbox_claude_code_workspace_name: workspace
+sandbox_claude_code_workspace: "/home/{{ sandbox_user }}/{{ sandbox_claude_code_workspace_name }}"
 
-  - A `403` with the header `X-Proxy-Error: blocked-by-allowlist` comes from this session's sandbox. Request the host for the command the usual way.
-  - A `502 Bad Gateway` (or "Tunnel connection failed: 502") after you've requested the host means the machine's allowlist blocks it. Don't retry, switch to another host or mirror, or try to get around it on your own. Tell the user which hosts were blocked, including any download hosts the tool also needs (for example `files.pythonhosted.org` for pip), so they can decide whether to allow them.
-  - Any other proxy error, such as `407`, isn't an allowlist block. Check the tool's proxy settings before reporting it as blocked.
-  - These rules only stop you from working around a block yourself. When the user asks you to run, test or retry something, or says they've changed the allowlist, do it.
-  - Don't install or upgrade system-wide tools yourself (for example `npm install -g` or `pip install` outside a venv). Tell the user what's missing; system tools are installed by the machine's setup.
-  - Use mise for language runtimes and their versions (for example `mise use node@22` in the project). Don't install runtimes another way.
+# Run `claude remote-control` as a systemd service
+sandbox_claude_code_remote_control: false
+sandbox_claude_code_remote_control_name: "{{ inventory_hostname }}"
+sandbox_claude_code_remote_control_mode: auto

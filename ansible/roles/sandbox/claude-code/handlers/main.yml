@@ -1,0 +1,7 @@
+---
+- name: Restart Remote Control
+  ansible.builtin.systemd_service:
+    name: claude-remote-control
+    state: restarted
+    daemon_reload: true
+  when: sandbox_claude_code_remote_control

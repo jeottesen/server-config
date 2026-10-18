@@ -49,6 +49,14 @@
     group: root
     mode: "0755"
 
+- name: Install managed CLAUDE.md
+  ansible.builtin.template:
+    src: managed-CLAUDE.md.j2
+    dest: "/etc/claude-code/CLAUDE.md"
+    owner: "root"
+    group: "root"
+    mode: "0644"
+
 - name: Install managed settings
   ansible.builtin.template:
     src: managed-settings.json.j2
@@ -99,3 +107,41 @@
     - .local/share/mise
     - .local/state
     - .local/state/mise
+
+- name: Create workspace directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ sandbox_user }}"
+    group: "{{ sandbox_user }}"
+    mode: "0755"
+  loop:
+    - "{{ sandbox_claude_code_workspace }}"
+    - "{{ sandbox_claude_code_workspace }}/repos"
+    - "{{ sandbox_claude_code_workspace }}/worktrees"
+
+- name: Install workspace CLAUDE.md
+  ansible.builtin.template:
+    src: workspace-CLAUDE.md.j2
+    dest: "{{ sandbox_claude_code_workspace }}/CLAUDE.md"
+    owner: "{{ sandbox_user }}"
+    group: "{{ sandbox_user }}"
+    mode: "0644"
+
+- name: Install Remote Control service
+  ansible.builtin.template:
+    src: claude-remote-control.service.j2
+    dest: /etc/systemd/system/claude-remote-control.service
+    owner: root
+    group: root
+    mode: "0644"
+  when: sandbox_claude_code_remote_control
+  notify: Restart Remote Control
+
+- name: Enable and start Remote Control
+  ansible.builtin.systemd_service:
+    name: claude-remote-control
+    enabled: true
+    state: started
+    daemon_reload: true
+  when: sandbox_claude_code_remote_control
