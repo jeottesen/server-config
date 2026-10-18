@@ -65,6 +65,7 @@
     group: root
     mode: "0644"
     validate: python3 -m json.tool %s
+  notify: Restart Remote Control
 
 - name: Remove Debian's nodejs and npm (mise provides Node)
   ansible.builtin.apt:
@@ -126,6 +127,25 @@
     dest: "{{ sandbox_claude_code_workspace }}/CLAUDE.md"
     owner: "{{ sandbox_user }}"
     group: "{{ sandbox_user }}"
+    mode: "0644"
+
+- name: Install GitHub token for Remote Control
+  ansible.builtin.copy:
+    dest: /etc/claude-code/github.env
+    content: "GH_TOKEN={{ sandbox_github_token }}\n"
+    owner: root
+    group: root
+    mode: "0600"
+  no_log: true
+  when: sandbox_github_token | length > 0
+  notify: Restart Remote Control
+
+- name: Install system git config (identity and gh credential helper)
+  ansible.builtin.template:
+    src: gitconfig.j2
+    dest: /etc/gitconfig
+    owner: root
+    group: root
     mode: "0644"
 
 - name: Install Remote Control service

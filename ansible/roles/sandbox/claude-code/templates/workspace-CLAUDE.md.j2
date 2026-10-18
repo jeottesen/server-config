@@ -5,3 +5,4 @@
   `git -C repos/<name> worktree add ../../worktrees/<name>-<branch> -b <branch>`
 - Name the branch after the task. Reuse an existing worktree if the user asks to continue earlier work.
 - When the user says a task is finished, remove its worktree with `git -C repos/<name> worktree remove <path>`.
+- Push your work to a branch and open a pull request with `gh pr create`. Don't push to the default branch.

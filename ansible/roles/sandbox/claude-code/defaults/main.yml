@@ -12,6 +12,11 @@ sandbox_claude_code_packages:
 # Extra tools for the sandbox user
 sandbox_packages: []
 sandbox_allowlist: []
+# GitHub access for the sandbox user; the GitHub tasks are skipped when the token is empty
+sandbox_github_token: ""
+sandbox_git_user_name: Claude
+sandbox_git_user_email: noreply@anthropic.com
+
 # Workspace where sessions start, in the sandbox user's home; repos and worktrees live under it
 sandbox_claude_code_workspace_name: workspace
 sandbox_claude_code_workspace: "/home/{{ sandbox_user }}/{{ sandbox_claude_code_workspace_name }}"
