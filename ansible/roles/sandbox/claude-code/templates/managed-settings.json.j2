@@ -18,10 +18,10 @@
       ]
     },
     "filesystem": {
-      "allowWrite": ["~/.npm", "~/.cache"]
+      "allowWrite": ["~/.npm", "~/.cache", "~/.config/mise", "~/.local/share/mise", "~/.local/state/mise"]
     },
     "network": {
-        "allowedDomains": ["github.com", "*.github.com", "*.githubusercontent.com", "registry.npmjs.org"]
+      "allowedDomains": {{ (sandbox_allowlist + (sandbox_allowlist | map('regex_replace', '^', '*.') | list)) | to_json }}
     }
   },
   "isolatePeerMachines": true,
@@ -29,6 +29,7 @@
   "env": {
     "HTTPS_PROXY": "http://{{ sandbox_proxy_host }}:{{ sandbox_proxy_port }}",
     "HTTP_PROXY": "http://{{ sandbox_proxy_host }}:{{ sandbox_proxy_port }}",
-    "NO_PROXY": "localhost,127.0.0.1,::1"
+    "NO_PROXY": "localhost,127.0.0.1,::1",
+    "PATH": "/home/{{ sandbox_user }}/.local/share/mise/shims:/usr/local/bin:/usr/bin:/bin"
   }
 }

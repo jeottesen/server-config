@@ -11,6 +11,7 @@ sandbox_claude_code_packages:
 
 # Extra tools for the sandbox user
 sandbox_packages: []
+sandbox_allowlist: []
 # Loaded as managed CLAUDE.md, so Claude reads proxy refusals correctly
 sandbox_claude_code_md: |-
   # Network on this machine
@@ -21,3 +22,4 @@ sandbox_claude_code_md: |-
   - Any other proxy error, such as `407`, isn't an allowlist block. Check the tool's proxy settings before reporting it as blocked.
   - These rules only stop you from working around a block yourself. When the user asks you to run, test or retry something, or says they've changed the allowlist, do it.
   - Don't install or upgrade system-wide tools yourself (for example `npm install -g` or `pip install` outside a venv). Tell the user what's missing; system tools are installed by the machine's setup.
+  - Use mise for language runtimes and their versions (for example `mise use node@22` in the project). Don't install runtimes another way.

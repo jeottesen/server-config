@@ -17,15 +17,25 @@ sandbox_adguard_password: "{{ vault_adguard_password }}"
 
 # Seeded into AdGuard on first install only; after that the UI owns the list.
 # A domain here also allows its subdomains.
-sandbox_adguard_initial_allowlist:
+# Hosts Claude Code itself connects to. AdGuard only; sandboxed commands don't need them.
+sandbox_claude_code_hosts:
   - api.anthropic.com
   - mcp-proxy.anthropic.com
   - claude.ai
   - claude.com
   - frame.claudeusercontent.com
+
+# Hosts the sandbox user's own work may reach: used by AdGuard and the Claude Code sandbox.
+# Each entry also allows its subdomains.
+# AdGuard only reads this on first install; after that, also add new hosts in its UI.
+sandbox_allowlist:
   - github.com
   - githubusercontent.com
   - registry.npmjs.org
+  - nodejs.org
+  - mise-versions.jdx.dev
+  - pypi.org
+  - files.pythonhosted.org
 
 # Baseline tools for the sandbox
 sandbox_packages:
@@ -34,7 +44,3 @@ sandbox_packages:
   - unzip
   - jq
   - build-essential
-  - python3-venv
-  - python3-pip
-  - nodejs
-  - npm

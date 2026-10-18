@@ -57,3 +57,45 @@
     group: root
     mode: "0644"
     validate: python3 -m json.tool %s
+
+- name: Remove Debian's nodejs and npm (mise provides Node)
+  ansible.builtin.apt:
+    name:
+      - npm
+      - nodejs
+    state: absent
+
+- name: Install extrepo
+  ansible.builtin.apt:
+    name: extrepo
+    state: present
+
+- name: Enable the mise apt repository
+  ansible.builtin.command:
+    cmd: extrepo enable mise
+    creates: /etc/apt/sources.list.d/extrepo_mise.sources
+
+- name: Install mise
+  ansible.builtin.apt:
+    name: mise
+    state: present
+    update_cache: true
+
+# Sandbox allowWrite paths must exist; parents listed first so they're owned by the user
+- name: Create tool and cache directories for {{ sandbox_user }}
+  ansible.builtin.file:
+    path: "/home/{{ sandbox_user }}/{{ item }}"
+    state: directory
+    owner: "{{ sandbox_user }}"
+    group: "{{ sandbox_user }}"
+    mode: "0755"
+  loop:
+    - .cache
+    - .npm
+    - .config
+    - .config/mise
+    - .local
+    - .local/share
+    - .local/share/mise
+    - .local/state
+    - .local/state/mise
