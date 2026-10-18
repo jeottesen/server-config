@@ -12,12 +12,12 @@ sandbox_claude_code_packages:
 # Extra tools for the sandbox user
 sandbox_packages: []
 # Loaded as managed CLAUDE.md, so Claude reads proxy refusals correctly
-sandbox_claude_code_md: |
+sandbox_claude_code_md: |-
   # Network on this machine
-  - Outbound access is limited to an allowlist of hosts.
-  - If the sandbox refuses a host, request it for the command the usual way.
-  - If a host still fails after that, with a proxy error (such as HTTP 403, 502 or 503)
-    or a DNS error, it isn't on the allowlist. Treat that as "not allowed", not as a
-    temporary outage: don't retry it, switch to another host or mirror, or try to get
-    around the restriction. Tell the user which host was blocked so they can decide
-    whether to allow it.
+  This is a local machine, not a cloud environment. The user manages its network allowlist directly; claude.ai environment settings don't apply.
+
+  - A `403` with the header `X-Proxy-Error: blocked-by-allowlist` comes from this session's sandbox. Request the host for the command the usual way.
+  - A `502 Bad Gateway` (or "Tunnel connection failed: 502") after you've requested the host means the machine's allowlist blocks it. Don't retry, switch to another host or mirror, or try to get around it on your own. Tell the user which hosts were blocked, including any download hosts the tool also needs (for example `files.pythonhosted.org` for pip), so they can decide whether to allow them.
+  - Any other proxy error, such as `407`, isn't an allowlist block. Check the tool's proxy settings before reporting it as blocked.
+  - These rules only stop you from working around a block yourself. When the user asks you to run, test or retry something, or says they've changed the allowlist, do it.
+  - Don't install or upgrade system-wide tools yourself (for example `npm install -g` or `pip install` outside a venv). Tell the user what's missing; system tools are installed by the machine's setup.

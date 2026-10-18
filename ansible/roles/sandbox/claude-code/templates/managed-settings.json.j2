@@ -1,4 +1,13 @@
 {
+  "permissions": {
+    "deny": [
+      "Read(//opt/**)",
+      "Read(//etc/squid/**)",
+      "Read(//etc/nftables.conf)",
+      "Read(//etc/nftables.d/**)",
+      "Read(//var/log/**)"
+    ]
+  },
   "sandbox": {
     "enabled": true,
     "failIfUnavailable": true,
@@ -7,6 +16,9 @@
       "files": [
         { "path": "~/.claude/.credentials.json", "mode": "deny" }
       ]
+    },
+    "filesystem": {
+      "allowWrite": ["~/.npm", "~/.cache"]
     },
     "network": {
         "allowedDomains": ["github.com", "*.github.com", "*.githubusercontent.com", "registry.npmjs.org"]

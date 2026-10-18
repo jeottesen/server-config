@@ -30,6 +30,7 @@
     src: "https://github.com/AdguardTeam/AdGuardHome/releases/download/{{ sandbox_adguard_version }}/AdGuardHome_linux_{{ sandbox_adguard_arch }}.tar.gz"
     dest: /opt
     remote_src: true
+    mode: "0700"
     creates: /opt/AdGuardHome/AdGuardHome
 
 - name: Install AdGuard Home service
