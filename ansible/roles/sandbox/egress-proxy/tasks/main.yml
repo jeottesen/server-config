@@ -33,6 +33,17 @@
     mode: "0700"
     creates: /opt/AdGuardHome/AdGuardHome
 
+# Before the service is installed, so the first start skips the setup wizard.
+- name: Configure AdGuard Home
+  ansible.builtin.template:
+    src: AdGuardHome.yaml.j2
+    dest: /opt/AdGuardHome/AdGuardHome.yaml
+    owner: root
+    group: root
+    mode: "0600"
+  no_log: true
+  notify: Restart AdGuard Home
+
 - name: Install AdGuard Home service
   ansible.builtin.command:
     cmd: /opt/AdGuardHome/AdGuardHome -s install
@@ -44,61 +55,3 @@
     name: AdGuardHome
     enabled: true
     state: started
-
-- name: Check whether AdGuard Home is configured
-  ansible.builtin.stat:
-    path: /opt/AdGuardHome/AdGuardHome.yaml
-  register: sandbox_adguard_config
-
-# Runs once. After this the UI owns the settings.
-- name: AdGuard Home first-run setup
-  when: not sandbox_adguard_config.stat.exists
-  block:
-    - name: Wait for the setup wizard
-      ansible.builtin.wait_for:
-        host: 127.0.0.1
-        port: 3000
-        timeout: 30
-
-    - name: Set listen addresses and admin login
-      ansible.builtin.uri:
-        url: http://127.0.0.1:3000/control/install/configure
-        method: POST
-        body_format: json
-        body:
-          web:
-            ip: "{{ sandbox_adguard_ui_ip }}"
-            port: "{{ sandbox_adguard_ui_port | int }}"
-          dns:
-            ip: 127.0.0.1
-            port: 53
-          username: "{{ sandbox_adguard_user }}"
-          password: "{{ sandbox_adguard_password }}"
-      no_log: true
-
-    - name: Set upstream DNS and blocking mode
-      ansible.builtin.uri:
-        url: "http://{{ sandbox_adguard_ui_ip }}:{{ sandbox_adguard_ui_port }}/control/dns_config"
-        method: POST
-        url_username: "{{ sandbox_adguard_user }}"
-        url_password: "{{ sandbox_adguard_password }}"
-        force_basic_auth: true
-        body_format: json
-        body:
-          upstream_dns: "{{ sandbox_adguard_upstream_dns }}"
-          blocking_mode: null_ip
-      register: sandbox_adguard_result
-      until: sandbox_adguard_result.status == 200
-      retries: 10
-      delay: 2
-
-    - name: Seed allowlist rules
-      ansible.builtin.uri:
-        url: "http://{{ sandbox_adguard_ui_ip }}:{{ sandbox_adguard_ui_port }}/control/filtering/set_rules"
-        method: POST
-        url_username: "{{ sandbox_adguard_user }}"
-        url_password: "{{ sandbox_adguard_password }}"
-        force_basic_auth: true
-        body_format: json
-        body:
-          rules: "{{ ['! Block everything', '/.*/'] + ((sandbox_claude_code_hosts + sandbox_allowlist) | map('regex_replace', '^(.+)$', '@@||\\1^') | list) }}"

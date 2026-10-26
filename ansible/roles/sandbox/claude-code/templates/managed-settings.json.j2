@@ -6,7 +6,6 @@
       "Read(//etc/nftables.conf)",
       "Read(//etc/nftables.d/**)",
       "Read(//var/log/**)",
-      "Read(//proc/*/environ)",
       "Read(//etc/claude-code/github.env)"
     ]
   },
@@ -17,13 +16,9 @@
     "credentials": {
       "files": [
         { "path": "~/.claude/.credentials.json", "mode": "deny" }
-      ],
-      "envVars": [
-        { "name": "GH_TOKEN", "mode": "mask", "injectHosts": ["api.github.com", "github.com"] }
       ]
     },
     "filesystem": {
-      "tlsTerminate": {},
       "allowWrite": ["~/.npm", "~/.cache", "~/.config/mise", "~/.local/share/mise", "~/.local/state/mise"]
     },
     "network": {
