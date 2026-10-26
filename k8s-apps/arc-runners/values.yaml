@@ -7,7 +7,7 @@ gha-runner-scale-set:
   runnerScaleSetName: arc-laughing-octo
 
   minRunners: 0
-  maxRunners: 2
+  maxRunners: 3
 
   # Explicit because ArgoCD can't look the controller up at render time
   controllerServiceAccount:
