@@ -15,7 +15,6 @@ sandbox_adguard_upstream_dns:
   - tls://dns.quad9.net
 
 sandbox_adguard_user: "{{ primary_user }}"
-sandbox_adguard_password: "{{ vault_adguard_password }}"
 sandbox_adguard_password_hash: "{{ vault_sandbox_adguard_password_hash }}"
 
 # GitHub access for Claude on devbox (fine-grained PAT, test-bed repo only)
