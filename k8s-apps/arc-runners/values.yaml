@@ -1,0 +1,15 @@
+gha-runner-scale-set:
+  githubConfigUrl: https://github.com/jeottesen/laughing-octo-waffle
+  # Name of the SealedSecret in templates/ (github_app_id, github_app_installation_id, github_app_private_key)
+  githubConfigSecret: github-app-secret
+
+  # What workflows put in runs-on:
+  runnerScaleSetName: arc-laughing-octo
+
+  minRunners: 0
+  maxRunners: 2
+
+  # Explicit because ArgoCD can't look the controller up at render time
+  controllerServiceAccount:
+    namespace: arc-systems
+    name: arc-gha-rs-controller

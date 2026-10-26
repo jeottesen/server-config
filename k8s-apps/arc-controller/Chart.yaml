@@ -1,0 +1,9 @@
+apiVersion: v2
+name: arc-controller
+description: GitHub Actions Runner Controller (manages runner scale sets)
+type: application
+version: 0.1.0
+dependencies:
+  - name: gha-runner-scale-set-controller
+    repository: oci://ghcr.io/actions/actions-runner-controller-charts
+    version: 0.15.1

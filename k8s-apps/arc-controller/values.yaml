@@ -1,0 +1,11 @@
+gha-runner-scale-set-controller:
+  # Fixed name for arc-runners to reference
+  serviceAccount:
+    name: arc-gha-rs-controller
+
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      memory: 256Mi
