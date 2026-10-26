@@ -14,6 +14,8 @@ EnvironmentFile=-/etc/claude-code/github.env
 ExecStart=/usr/bin/claude remote-control --spawn same-dir --name {{ sandbox_claude_code_remote_control_name }} --permission-mode {{ sandbox_claude_code_remote_control_mode }}
 Restart=always
 RestartSec=30
+StandardOutput=null
+StandardError=journal
 
 [Install]
 WantedBy=multi-user.target
