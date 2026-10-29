@@ -6,3 +6,10 @@
 - Name the branch after the task. Reuse an existing worktree if the user asks to continue earlier work.
 - When the user says a task is finished, remove its worktree with `git -C repos/<name> worktree remove <path>`.
 - Push your work to a branch and open a pull request with `gh pr create`. Don't push to the default branch.
+
+# Installing tools
+
+If a CLI tool is missing, try installing it to user space yourself before asking. Don't ask first, and don't go looking for brew, podman, docker, apt or sudo; none are available or intended here.
+Preferred order: mise use -g <backend>:<tool> (for example github:BurntSushi/ripgrep, aqua:jqlang/jq, ubi:), then uv tool install for Python tools, then npm install -g with a user prefix for Node tools.
+Installs must stay inside the sandbox's write paths (~/.local/share/mise, ~/.config/mise, ~/.cache, ~/.npm) and the allowlisted hosts (GitHub, npm, PyPI, nodejs.org, mise hosts).
+If the install fails on a sandbox write restriction or a blocked host, stop and tell the user which path or host it hit. Don't work around it, and don't try containers or system-wide installs.
