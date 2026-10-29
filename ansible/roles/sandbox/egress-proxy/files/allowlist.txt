@@ -10,3 +10,4 @@
 @@||mise-java.jdx.dev^
 @@||pypi.org^
 @@||files.pythonhosted.org^
+@@||tuf-repo-cdn.sigstore.dev^
