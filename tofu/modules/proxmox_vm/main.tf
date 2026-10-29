@@ -16,8 +16,11 @@ resource "proxmox_virtual_environment_vm" "this" {
   bios        = "ovmf"
   on_boot     = var.on_boot
 
-  smbios {
-    serial = "ds=nocloud;h=${var.vm_name}"
+  dynamic "smbios" {
+    for_each = var.smbios_serial != null ? [1] : []
+    content {
+      serial = var.smbios_serial
+    }
   }
 
   agent { enabled = true }
@@ -91,19 +94,20 @@ resource "proxmox_virtual_environment_vm" "this" {
   }
 
   network_device {
-    bridge  = var.bridge
-    model   = "virtio"
-    vlan_id = var.vlan_id
+    bridge      = var.bridge
+    model       = "virtio"
+    vlan_id     = var.vlan_id
+    mac_address = var.mac_address
   }
 
   efi_disk {
     datastore_id      = var.datastore_id
-    pre_enrolled_keys = true
+    pre_enrolled_keys = var.secure_boot_keys
     type              = "4m"
   }
 
   lifecycle {
-    # The image only matters when the VM is first created; after that apt keeps it updated.
+    # The image only matters when the VM is first created; after that the OS updates itself.
     ignore_changes = [disk[0].import_from]
   }
 }

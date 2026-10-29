@@ -48,21 +48,6 @@ Structure: "app of apps" (official ArgoCD term) with one "wrapper chart" per app
 - `argocd/` + `k8s-apps/`: k3s cluster apps (see the ArgoCD / Helm section above).
 - `Reference.md`: command cheat sheet (tofu, argocd, kubectl, helm, kubeseal, resticprofile).
 
-## Hosts (`ansible/hosts.yml`)
-
-- `ansible_host` defaults to `<inventory_hostname>.<local_domain>`, and the user is `primary_user`.
-- Groups:
-  - `hypervisors`: Proxmox nodes `nuk`, `nuk-02`, `pve-dev`.
-  - `k3s_cluster`: `server` / `agent`.
-  - `services`:
-    - `mediaserver`: the main Docker host, a legacy VM on the NAS that also runs the NAS roles.
-    - `media`: Plex LXC.
-    - `rakugo`, `homeassistant`, `dev`.
-  - `external`: `stormfront`, a VPS that uses an older layout under `ansible/templates/stormfront/`.
-- One playbook per host or role: `setup-nas.yml` (mediaserver), `setup-media.yml`,
-  `setup-proxmox.yml`, `setup-k3s.yml`, `setup-stormfront.yml`, plus `setup-common.yml`
-  (user, sudo, ssh keys, ssh hardening, updates), which the others import with `limit_hosts`.
-
 ## Ansible vars and vault
 
 - Variables live in `group_vars/<group>/` and `host_vars/<host>/`, each with:

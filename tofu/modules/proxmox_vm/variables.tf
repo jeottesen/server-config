@@ -11,7 +11,7 @@ variable "target_node" {
 }
 
 variable "image_file_id" {
-  description = "ID of a downloaded Debian cloud image (content type import), e.g. proxmox_download_file.x.id"
+  description = "ID of a downloaded OS image (content type import), e.g. proxmox_download_file.x.id"
   type        = string
 }
 
@@ -31,6 +31,12 @@ variable "description" {
 variable "tags" {
   type    = list(string)
   default = null
+}
+
+variable "smbios_serial" {
+  description = "SMBIOS serial passed to the guest, e.g. a cloud-init datasource hint; null leaves the smbios block out"
+  type        = string
+  default     = null
 }
 
 variable "on_boot" {
@@ -107,6 +113,13 @@ variable "enable_tpm" {
   nullable = false
 }
 
+variable "secure_boot_keys" {
+  description = "Pre-enroll the default Secure Boot keys (Microsoft) in the EFI disk; set false for images that aren't signed with them, e.g. Talos"
+  type        = bool
+  default     = true
+  nullable    = false
+}
+
 variable "vga_type" {
   description = "serial0 for headless (console via qm terminal / xterm.js), std or qxl for a graphical console"
   type        = string
@@ -128,6 +141,12 @@ variable "vlan_id" {
   nullable = false
 }
 
+variable "mac_address" {
+  description = "Fixed MAC address (use a locally administered one, first byte 02, 06, 0A or 0E); null lets Proxmox generate one"
+  type        = string
+  default     = null
+}
+
 variable "ipv4_address" {
   description = "\"dhcp\" or a CIDR address like 192.168.1.30/24"
   type        = string
@@ -144,7 +163,7 @@ variable "ipv4_gateway" {
 # --- Cloud-init ---
 
 variable "user_data_file_id" {
-  type     = string
-  default  = "local:snippets/debian-cloud-config.yml"
-  nullable = false
+  description = "Cloud-init user data snippet; null for images that have none (Talos)"
+  type        = string
+  default     = "local:snippets/debian-cloud-config.yml"
 }
