@@ -102,8 +102,10 @@ sub_domains:
   - home
   - index
   - login
-  - nas
-  - nuk
+  - nas.mgmt
+  - dev.mgmt
+  - mini-01.mgmt
+  - mini-02.mgmt
   - oauth
   - ombi
   - overseerr
