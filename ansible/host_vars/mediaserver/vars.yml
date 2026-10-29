@@ -102,6 +102,7 @@ sub_domains:
   - home
   - index
   - login
+  - mgmt
   - nas.mgmt
   - dev.mgmt
   - mini-01.mgmt
