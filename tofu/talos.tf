@@ -37,17 +37,31 @@ data "talos_machine_configuration" "controlplane" {
   config_patches = [
     # Update the modern unattended installation config with the Factory Image URL
     yamlencode({
-      apiVersion = "v1alpha1"
-      kind       = "UnattendedInstallConfig"
       installer = {
         image = data.talos_image_factory_urls.this.urls.installer
-      }
-      cluster = {
-        allowSchedulingOnControlPlanes = true
       }
       provisioning = {
         diskSelector = {
           match = "system_disk"
+        }
+      }
+      apiVersion = "v1alpha1"
+      kind       = "UnattendedInstallConfig"
+    }),
+
+    # Talos 1.14 generates a KubeNodeConfig with a control-plane NoSchedule taint.
+    # Delete just that taint to make the nodes schedulable. Can't use the legacy
+    # cluster.allowSchedulingOnControlPlanes field, because it conflicts with
+    # KubeNodeConfig ("already set in v1alpha1 config").
+
+    # https://docs.siderolabs.com/talos/v1.14/deploy-and-manage-workloads/workloads-on-controlplane
+    # Make control planes schedulable
+    yamlencode({
+      apiVersion = "v1alpha1"
+      kind       = "KubeNodeConfig"
+      taints = {
+        "node-role.kubernetes.io/control-plane" = {
+          "$patch" = "delete"
         }
       }
     }),

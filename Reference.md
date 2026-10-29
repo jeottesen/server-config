@@ -5,9 +5,14 @@
 - `tofu init`
 - `tofu plan`
 
+### Export k8s and talos configs
+
+- `tofu output -raw kubeconfig > ~/.kube/config`
+- `tofu output -raw talosconfig > ~/.talos/config`
+
 ## Argo CD
 
-- `argocd login <server>:30080`
+- `argocd login k8s-cp-01:30080`
 - `argocd app list`
 - `argocd app sync homelab-app`
 - `argocd app get netbird-operator`
@@ -18,6 +23,11 @@
 - Get Full Sync Details: `kubectl describe application cert-manager -n argocd'`
 - Restart deployment: `kubectl rollout restart deployment netbird-operator -n netbird`
 - Get Logs: `kubectl logs deploy/netbird-operator -n netbird -f`
+- `kubectl get nodes`
+
+## Talos
+
+- `talosctl health -n k8s-cp-01`
 
 ## Helm
 
@@ -44,6 +54,17 @@ kubectl create secret generic netbird-mgmt-api-key \
   --from-literal=NB_API_KEY="$NB_API_KEY" -o yaml \
   | kubeseal --format yaml > netbird-api-key-sealedsecret.yaml
 ```
+
+### Backup
+
+- `kubectl get secret -n kube-system   -l sealedsecrets.bitnami.com/sealed-secrets-key   -o yaml > sealed-secrets-key-backup.yaml`
+
+### Restore
+
+- Remove extra stuff: `yq 'del(.items[].metadata.uid, .items[].metadata.resourceVersion, .items[].metadata.creationTimestamp)' sealed-secrets-key-backup.yaml > sealed-secrets-key-restore.yaml`
+- `kubectl apply -f sealed-secrets-key-restore.yaml`
+
+
 
 ## Resticprofiles backup and restore
 
