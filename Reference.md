@@ -63,8 +63,7 @@ kubectl create secret generic netbird-mgmt-api-key \
 
 - Remove extra stuff: `yq 'del(.items[].metadata.uid, .items[].metadata.resourceVersion, .items[].metadata.creationTimestamp)' sealed-secrets-key-backup.yaml > sealed-secrets-key-restore.yaml`
 - `kubectl apply -f sealed-secrets-key-restore.yaml`
-
-
+- Verify: `kubectl get secret -n kube-system -l sealedsecrets.bitnami.com/sealed-secrets-key`
 
 ## Resticprofiles backup and restore
 
