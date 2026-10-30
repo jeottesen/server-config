@@ -205,8 +205,3 @@ module "k8s_cp_03" {
   secure_boot_keys  = false
   vga_type          = "qxl"
 }
-
-moved {
-  from = proxmox.nuk02
-  to   = proxmox.pve_mini_02
-}
