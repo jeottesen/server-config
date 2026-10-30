@@ -12,10 +12,25 @@
 
 ## Argo CD
 
+### Commands
+
 - `argocd login k8s-cp-01:30080`
 - `argocd app list`
 - `argocd app sync homelab-app`
 - `argocd app get netbird-operator`
+
+### Sync Wave
+
+| wave | what goes there | apps |
+| --- | --- | --- |
+| `-99` | secrets foundation (provides the `SealedSecret` CRD) | sealed-secrets |
+| `-50` | networking and load balancing | metallb (pool objects one wave later, `-49`, or as hooks in the chart) |
+| `-40` | cluster-wide certificates | cert-manager |
+| `-30` | ingress controllers | traefik |
+| `-20` | operators that provide CRDs for other apps | arc-controller, netbird-operator |
+| `-10` | apps that consume those CRDs | arc-runners |
+| `0` (no annotation) | ordinary apps | whoami and anything new |
+
 
 ## Kubernetes
 

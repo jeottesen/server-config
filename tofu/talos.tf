@@ -55,10 +55,14 @@ data "talos_machine_configuration" "controlplane" {
     # KubeNodeConfig ("already set in v1alpha1 config").
 
     # https://docs.siderolabs.com/talos/v1.14/deploy-and-manage-workloads/workloads-on-controlplane
-    # Make control planes schedulable
     yamlencode({
       apiVersion = "v1alpha1"
       kind       = "KubeNodeConfig"
+      labels = {
+        "node.kubernetes.io/exclude-from-external-load-balancers" = {
+          "$patch" = "delete"
+        }
+      }
       taints = {
         "node-role.kubernetes.io/control-plane" = {
           "$patch" = "delete"
