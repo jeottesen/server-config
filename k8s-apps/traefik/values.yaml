@@ -1,8 +1,11 @@
 traefik:
+  service:
+    annotations:
+      lbipam.cilium.io/ips: "192.168.50.220"   # pinned from the pool in k8s-apps/cilium
+
   ports:
     web:
       port: 80
-      nodePort: 30000
       http:
         redirections:
           entryPoint:
@@ -11,7 +14,6 @@ traefik:
             permanent: true
     websecure:
       port: 443
-      nodePort: 30001
 
   api:
     dashboard: true
