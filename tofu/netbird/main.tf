@@ -35,7 +35,7 @@ resource "netbird_group" "k8s_admin_resources" {
 
 # --- DNS ---
 resource "netbird_dns_zone" "admin" {
-  name                = "admin-cobaltcavern"
+  name                = "admin.cobaltcavern.com"
   domain              = "admin.cobaltcavern.com"
   enabled             = true
   distribution_groups = [netbird_group.k8s_admin_peers.id]
