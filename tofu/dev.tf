@@ -23,7 +23,7 @@ module "devbox" {
   smbios_serial = "ds=nocloud;h=devbox"
   description   = "Headless Debian dev environment"
   image_file_id = proxmox_download_file.debian_pve_dev.id
-  cores         = 6
+  cores         = 4
   memory_mb     = 8192
   os_disk_gb    = 64
   
