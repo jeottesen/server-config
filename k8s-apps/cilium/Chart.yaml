@@ -1,0 +1,9 @@
+apiVersion: v2
+name: cilium
+description: CNI, kube-proxy replacement and LoadBalancer for the cluster
+type: application
+version: 0.1.0
+dependencies:
+  - name: cilium
+    repository: https://helm.cilium.io/
+    version: 1.20.4

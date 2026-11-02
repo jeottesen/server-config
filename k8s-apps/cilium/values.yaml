@@ -1,0 +1,48 @@
+cilium:
+  # Talos requirements: https://docs.siderolabs.com/kubernetes-guides/cni/deploying-cilium
+  ipam:
+    mode: kubernetes
+
+  # Replace kube-proxy. KubePrism listens on localhost:7445 on every node, so Cilium
+  # can reach the API server before any Service networking exists.
+  kubeProxyReplacement: true
+  k8sServiceHost: localhost
+  k8sServicePort: 7445
+
+  # Talos mounts cgroup v2 and bpffs itself, and doesn't allow SYS_MODULE
+  cgroup:
+    autoMount:
+      enabled: false
+    hostRoot: /sys/fs/cgroup
+  securityContext:
+    capabilities:
+      ciliumAgent:
+        - CHOWN
+        - KILL
+        - NET_ADMIN
+        - NET_RAW
+        - IPC_LOCK
+        - SYS_ADMIN
+        - SYS_RESOURCE
+        - DAC_OVERRIDE
+        - FOWNER
+        - SETGID
+        - SETUID
+      cleanCiliumState:
+        - NET_ADMIN
+        - SYS_ADMIN
+        - SYS_RESOURCE
+
+  # LoadBalancer IPs on the LAN (Phase B adds the pool and policy)
+  l2announcements:
+    enabled: true
+  # L2 announcements renew a Kubernetes lease per Service, so give the agent more API headroom
+  k8sClientRateLimit:
+    qps: 20
+    burst: 40
+
+  hubble:
+    relay:
+      enabled: true
+    ui:
+      enabled: true

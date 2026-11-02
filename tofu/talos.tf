@@ -78,6 +78,32 @@ data "talos_machine_configuration" "controlplane" {
       link       = "eth0"
     }),
 
+    # Cilium replaces Flannel and kube-proxy. Deleting the Flannel document stops Talos
+    # from deploying it, and disabling kube-proxy lets Cilium handle Services (via KubePrism).
+    # https://docs.siderolabs.com/kubernetes-guides/cni/deploying-cilium
+    yamlencode({
+      apiVersion = "v1alpha1"
+      kind       = "KubeFlannelCNIConfig"
+      "$patch"   = "delete"
+    }),
+
+    yamlencode({
+      apiVersion = "v1alpha1"
+      kind       = "KubeProxyConfig"
+      enabled    = false
+    }),
+
+    # Cilium is applied by Talos at bootstrap, because nodes can't go Ready (and Argo
+    # can't run) without a CNI. Argo CD adopts it afterwards from k8s-apps/cilium.
+    # Talos only creates these objects, it never updates or deletes them.
+    # Rendered with: helm template cilium . -n kube-system > ../../tofu/cilium-manifest.yaml
+    yamlencode({
+      apiVersion = "v1alpha1"
+      kind       = "KubeInlineManifestConfig"
+      name       = "cilium"
+      manifest   = file("${path.module}/cilium-manifest.yaml")
+    }),
+
     # The 100 GB data disk, mounted at /var/mnt/longhorn for Longhorn later
     yamlencode({
       apiVersion = "v1alpha1"
