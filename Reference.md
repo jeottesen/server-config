@@ -24,7 +24,7 @@
 | wave | what goes there | apps |
 | --- | --- | --- |
 | `-99` | secrets foundation (provides the `SealedSecret` CRD) | sealed-secrets |
-| `-50` | networking and load balancing | metallb (pool objects one wave later, `-49`, or as hooks in the chart) |
+| `-50` | networking and load balancing | cillium |
 | `-40` | cluster-wide certificates | cert-manager |
 | `-30` | ingress controllers | traefik |
 | `-20` | operators that provide CRDs for other apps | arc-controller, netbird-operator |

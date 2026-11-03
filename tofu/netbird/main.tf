@@ -64,13 +64,19 @@ resource "netbird_nameserver_group" "k8s_admin_dns" {
 }
 
 # --- Access ---
+locals {
+  access_policy_name        = "k8s-admin-peers to k8s-admin-resources"
+  access_policy_description = "Admin devices can reach the admin resources exposed by the NetBird operator"
+}
+
 resource "netbird_policy" "k8s_admin_access" {
-  name        = "k8s-admin-peers to k8s-admin-resources"
-  description = "Admin devices can reach the admin resources exposed by the NetBird operator"
+  name        = local.access_policy_name
+  description = local.access_policy_description
   enabled     = true
 
   rule {
-    name          = "http"
+    name          = local.access_policy_name
+    description   = local.access_policy_description
     action        = "accept"
     bidirectional = false
     protocol      = "tcp"
