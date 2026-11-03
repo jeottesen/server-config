@@ -1,0 +1,13 @@
+apiVersion: netbird.io/v1alpha1
+kind: NetworkResource
+metadata:
+  name: traefik-internal
+  namespace: traefik
+spec:
+  networkRouterRef:
+    name: admin
+    namespace: netbird
+  serviceRef:
+    name: traefik-internal
+  groups:
+    - name: k8s-admin-resources
