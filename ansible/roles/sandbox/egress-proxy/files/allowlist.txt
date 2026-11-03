@@ -4,10 +4,21 @@
 ! Dev work
 @@||github.com^
 @@||githubusercontent.com^
+@@||githubcopilot.com^
+@@||gitlab.com^
 @@||registry.npmjs.org^
 @@||nodejs.org^
 @@||mise-versions.jdx.dev^
 @@||mise-java.jdx.dev^
+@@||mise.jdx.dev^
 @@||pypi.org^
 @@||files.pythonhosted.org^
 @@||tuf-repo-cdn.sigstore.dev^
+@@||www.talos.dev^
+@@||docs.siderolabs.com^
+@@||docs.docker.com^
+@@||helm.cilium.io^
+@@||docs.cilium.io^
+@@||traefik.github.io^
+@@||docs.netbird.io^
+@@||www.openlb.net^
