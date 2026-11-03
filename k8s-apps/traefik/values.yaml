@@ -2,10 +2,18 @@ traefik:
   service:
     annotations:
       lbipam.cilium.io/ips: "192.168.50.220"   # pinned from the pool in k8s-apps/cilium
+    # ClusterIP Service for NetBird. The operator uses a Service's cluster IP as the
+    # resource address, and names the DNS record traefik-internal.traefik.<zone>.
+    additionalServices:
+      internal:
+        spec:
+          type: ClusterIP
 
   ports:
     web:
       port: 80
+      expose:
+        internal: true
       http:
         redirections:
           entryPoint:
@@ -14,7 +22,14 @@ traefik:
             permanent: true
     websecure:
       port: 443
+      expose:
+        internal: true
 
+  # Default certificate: the wildcard issued by k8s-apps/traefik/templates/wildcard-certificate.yaml
+  tlsStore:
+    default:
+      defaultCertificate:
+        secretName: admin-wildcard-tls
   api:
     dashboard: true
     insecure: false

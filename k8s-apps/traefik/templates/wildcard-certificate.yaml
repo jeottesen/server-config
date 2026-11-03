@@ -1,0 +1,13 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: admin-wildcard
+  namespace: traefik
+spec:
+  # Referenced by tlsStore.default in values.yaml.
+  secretName: admin-wildcard-tls
+  issuerRef:
+    name: letsencrypt-prod-dns
+    kind: ClusterIssuer
+  dnsNames:
+    - "*.admin.cobaltcavern.com"
