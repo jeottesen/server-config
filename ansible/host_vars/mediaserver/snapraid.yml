@@ -41,6 +41,7 @@ snapraid_config_excludes:
   - .fseventsd
   - .Spotlight-V100
   - .TemporaryItems
+  - /.garage
   - .Trashes
   - .AppleDB
   - /Torrents/incomplete/
