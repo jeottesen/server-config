@@ -46,3 +46,9 @@ cilium:
       enabled: true
     ui:
       enabled: true
+
+  # NetBird's routing pods forward client traffic to ClusterIPs. Cilium must not rewrite
+  # them with socket-LB inside pod namespaces, or the tc load balancer on the veth never
+  # sees the ClusterIP. Same requirement as Tailscale's Connector.
+  socketLB:
+    hostNamespaceOnly: true
