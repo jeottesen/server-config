@@ -5,7 +5,7 @@ metadata:
   namespace: traefik
 spec:
   networkRouterRef:
-    name: admin
+    name: admin-internal
     namespace: netbird
   serviceRef:
     name: traefik-internal
