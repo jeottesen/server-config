@@ -97,7 +97,7 @@ resource "netbird_policy" "k8s_admin_access" {
     action        = "accept"
     bidirectional = false
     protocol      = "tcp"
-    ports         = ["80"]
+    ports         = ["80", "443"]
     sources       = [netbird_group.k8s_admin_peers.id]
     destinations  = [netbird_group.k8s_admin_resources.id]
   }
