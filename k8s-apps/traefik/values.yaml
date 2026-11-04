@@ -43,3 +43,11 @@ traefik:
       enabled: true
     kubernetesGateway:
       enabled: false
+
+  ingressRoute:
+    dashboard:
+      enabled: true
+      matchRule: Host(`dashboard.admin.cobaltcavern.com`)
+      entryPoints: ["websecure"]
+      tls:
+        secretName: admin-wildcard-tls

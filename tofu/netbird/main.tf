@@ -34,9 +34,18 @@ resource "netbird_group" "k8s_admin_resources" {
 }
 
 # --- DNS ---
-resource "netbird_dns_zone" "admin" {
-  name                = "admin.cobaltcavern.com"
-  domain              = "admin.cobaltcavern.com"
+
+resource "netbird_dns_record" "admin_wildcard" {
+  zone_id = netbird_dns_zone.admin-internal.id
+  name    = "*.admin.cobaltcavern.com"
+  type    = "CNAME"
+  content = "traefik-internal.traefik.netbird.internal"
+  ttl     = 300
+}
+
+resource "netbird_dns_zone" "admin-internal" {
+  name                = "admin.netbird.internal"
+  domain              = "admin.netbird.internal"
   enabled             = true
   distribution_groups = [netbird_group.k8s_admin_peers.id]
 }

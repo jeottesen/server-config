@@ -36,10 +36,13 @@ kind: Ingress
 metadata:
   name: whoami
   namespace: traefik
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.tls: "true"
 spec:
   ingressClassName: traefik
   rules:
-    - host: whoami.samurai
+    - host: whoami.admin.netbird.internal
       http:
         paths:
           - path: /
@@ -49,17 +52,3 @@ spec:
                 name: whoami
                 port:
                   number: 80
----
-apiVersion: netbird.io/v1alpha1
-kind: NetworkResource
-metadata:
-  name: whoami
-  namespace: traefik
-spec:
-  networkRouterRef:
-    name: admin
-    namespace: netbird
-  serviceRef:
-    name: whoami
-  groups:
-    - name: k8s-admin-resources
