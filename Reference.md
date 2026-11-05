@@ -15,6 +15,7 @@
 ### Commands
 
 - `argocd login k8s-cp-01:30080`
+- `argocd login argocd.admin.cobaltcavern.com --grpc-web`
 - `argocd app list`
 - `argocd app sync homelab-app`
 - `argocd app get netbird-operator`

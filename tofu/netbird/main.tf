@@ -80,6 +80,23 @@ resource "netbird_nameserver_group" "k8s_admin_dns" {
   ]
 }
 
+resource "netbird_nameserver_group" "home_dns" {
+  name                   = "home-dns"
+  description            = "Home domain goes to local DNS."
+  enabled                = true
+  primary                = false
+  domains                = var.home_local_domains
+  search_domains_enabled = false
+  groups                 = [netbird_group.k8s_admin_peers.id]
+  nameservers = [
+    {
+      ip      = var.home_dns_server
+      ns_type = "udp"
+      port    = 53
+    }
+  ]
+}
+
 # --- Access ---
 locals {
   access_policy_name        = "k8s-admin-peers to k8s-admin-resources"
