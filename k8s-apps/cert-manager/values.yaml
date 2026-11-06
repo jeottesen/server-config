@@ -38,4 +38,4 @@ cert-manager:
   # doesn't forward cobaltcavern.com names, so it never sees _acme-challenge.
   extraArgs:
     - --dns01-recursive-nameservers-only
-    - --dns01-recursive-nameservers=1.1.1.1:53,8.8.8.8:53
+    - --dns01-recursive-nameservers=1.1.1.1:53,1.0.0.1:53
