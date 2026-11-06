@@ -64,7 +64,7 @@
 
 - name: Save API Token to local OpenTofu variables file
   ansible.builtin.copy:
-    dest: "./proxmox_credentials.auto.tfvars"
+    dest: "./{{ proxmox_api_host }}_credentials.auto.tfvars"
     content: |
       proxmox_api_token_id = "{{ proxmox_tofu_user }}!{{ proxmox_tofu_token_name }}"
       proxmox_api_token_secret = "{{ (proxmox_token_add.stdout | from_json).value }}"
