@@ -6,12 +6,12 @@
     rclone:garage:cobalt-plex           Plex databases + Preferences.xml, Tautulli   (Garage)
     rclone:b2:cobalt-plex               same, offsite                                (B2)
     rclone:garage:cobalt-plex-metadata  artwork, thumbnails, the rest of Plex        (Garage only)
-
-  Restore by hand (no automation; this LXC is temporary):
-    systemctl stop plexmediaserver tautulli
-    resticprofile plex-garage.restore latest --target /root/restore
-    copy the files back from /root/restore/<original path>, keep owners (cp -a)
-    systemctl start plexmediaserver tautulli
+  Backup:
+    resticprofile plex-garage.backup latest
+  Check:
+    resticprofile plex-garage.check latest
+  Restore:
+    resticprofile plex-garage.restore latest
 #}
 {# resticprofile's own template variable for the running profile's name; Ansible outputs it as literal text #}
 {% set profile = '{{ .Profile.Name }}' %}
@@ -71,6 +71,11 @@ plex:
     tag:
       - plex
   restore:
+    target: /
+    run-before:
+      - systemctl stop plexmediaserver
+    run-finally:
+      - systemctl start plexmediaserver
     tag:
       - plex
   backup:
@@ -94,6 +99,11 @@ tautulli:
     tag:
       - tautulli
   restore:
+    target: /
+    run-before:
+      - systemctl stop tautulli
+    run-finally:
+      - systemctl start tautulli
     tag:
       - tautulli
   backup:
@@ -146,6 +156,14 @@ tautulli-b2:
 plex-metadata-garage:
   inherit: base
   repository: "rclone:garage:cobalt-plex-metadata"
+  restore:
+    target: /
+    run-before:
+      - systemctl stop plexmediaserver
+    run-finally:
+      - systemctl start plexmediaserver
+    tag:
+      - plex
   backup:
     schedule: "04:30"
     source:
