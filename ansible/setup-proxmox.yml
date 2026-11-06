@@ -38,6 +38,13 @@
     - role: grog.package
       tags: packages
 
+- name: Setup PCI passthrough
+  hosts: hypervisors
+  become: true
+  tags: pci-passthrough
+  roles:
+    - role: proxmox/pci-passthrough # noqa: role-name[path]
+
 - name: Setup OpenTofu Account and Cloud Init Files
   hosts: hypervisors
   become: true

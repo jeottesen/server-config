@@ -1,2 +1,9 @@
 ---
 proxmox_token_value: "{{ vault_proxmox_token_value }}"
+
+# Found with these commands:
+# `lspci -nnk | grep -A 3 -i "VGA\|3D controller"`
+# `lspci -nn | grep -E "01:00"`
+proxmox_vfio_passthrough_ids: ["10de:1b82", "10de:10f0"]
+proxmox_vfio_passthrough_softdeps: [nouveau, snd_hda_intel]
+proxmox_vfio_passthrough_blacklist: [nouveau]

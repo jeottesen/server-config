@@ -1,0 +1,20 @@
+---
+- name: Skip hosts without drop-in support
+  ansible.builtin.debug:
+    msg: >-
+      {{ inventory_hostname }} skipped: release={{ ansible_distribution_release }}
+      (need trixie). PVE 8 hosts and lower do not support drop in files and aren't managed here.
+  when: &skip ansible_distribution_release != 'trixie'
+
+- name: End play for unsupported hosts
+  ansible.builtin.meta: end_host
+  when: *skip
+
+- name: PCIe passthrough (IOMMU and vfio)
+  ansible.builtin.import_tasks: pcie_passthrough.yml
+
+- name: Intel iGPU passthrough (GVT-g)
+  ansible.builtin.import_tasks: igpu_passthrough.yml
+
+- name: Bind listed PCI devices to vfio-pci
+  ansible.builtin.import_tasks: vfio_passthrough.yml

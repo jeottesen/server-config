@@ -1,0 +1,16 @@
+---
+proxmox_pcie_passthrough_enabled: true
+proxmox_pcie_passthrough_kernel_params: [iommu=pt]
+proxmox_pcie_passthrough_intel_kernel_params: [intel_iommu=on]
+proxmox_pcie_passthrough_modules: [vfio, vfio_iommu_type1, vfio_pci]
+proxmox_igpu_passthrough_enabled: true
+# Host i915 loads HuC (what Plex/Jellyfin guides call enable_guc=2); set true on the Plex LXC host
+proxmox_igpu_passthrough_huc_enabled: false
+# Skylake, Kaby Lake, Coffee Lake, Comet Lake: default is off, so it needs setting
+proxmox_igpu_passthrough_huc_device_regex: "^0x(19|59|3e|9b)[0-9a-f]{2}$"
+proxmox_igpu_passthrough_guc_param: 2
+
+# Set per host in host_vars; empty means skip
+proxmox_vfio_passthrough_ids: []
+proxmox_vfio_passthrough_softdeps: []
+proxmox_vfio_passthrough_blacklist: []

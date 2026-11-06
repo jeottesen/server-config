@@ -1,0 +1,59 @@
+---
+- name: Read iGPU vendor and device ID
+  ansible.builtin.command: >-
+    cat /sys/bus/pci/devices/0000:00:02.0/vendor
+    /sys/bus/pci/devices/0000:00:02.0/device
+  register: proxmox_igpu_passthrough_ids
+  changed_when: false
+  failed_when: false
+  check_mode: false
+
+- name: Decide whether HuC loading applies
+  ansible.builtin.set_fact:
+    proxmox_igpu_passthrough_huc_apply: >-
+      {{ proxmox_igpu_passthrough_enabled and proxmox_igpu_passthrough_huc_enabled and
+         proxmox_igpu_passthrough_ids.rc == 0 and
+         proxmox_igpu_passthrough_ids.stdout_lines[0] == '0x8086' and
+         proxmox_igpu_passthrough_ids.stdout_lines[1] is match(proxmox_igpu_passthrough_huc_device_regex) }}
+
+- name: Report HuC decision
+  ansible.builtin.debug:
+    msg: "iGPU {{ proxmox_igpu_passthrough_ids.stdout_lines | default([]) | join(' ') or 'not found' }}: HuC loading {{ 'applied' if proxmox_igpu_passthrough_huc_apply
+      else 'skipped' }}"
+
+- name: Refuse HuC loading when the iGPU is bound to vfio-pci
+  ansible.builtin.assert:
+    that: ('8086:' ~ proxmox_igpu_passthrough_ids.stdout_lines[1][2:]) not in proxmox_vfio_passthrough_ids
+    fail_msg: "The iGPU is listed in proxmox_vfio_passthrough_ids, so the host i915 can't use it. Set proxmox_igpu_passthrough_huc_enabled to false."
+    quiet: true
+  when: proxmox_igpu_passthrough_huc_apply
+
+- name: Enable HuC loading for the host i915
+  ansible.builtin.template:
+    src: igpu-modprobe.conf.j2
+    dest: /etc/modprobe.d/igpu-passthrough.conf
+    owner: root
+    group: root
+    mode: "0644"
+  when: proxmox_igpu_passthrough_huc_apply
+  notify: Update initramfs
+
+- name: Remove HuC option when not applicable
+  ansible.builtin.file:
+    path: /etc/modprobe.d/igpu-passthrough.conf
+    state: absent
+  when: not proxmox_igpu_passthrough_huc_apply
+  notify: Update initramfs
+
+# Retired GVT-g drop-ins. Delete these two tasks once every host has been through a run.
+- name: Remove retired GVT-g kernel parameters
+  ansible.builtin.file:
+    path: /etc/default/grub.d/igpu-passthrough.cfg
+    state: absent
+  notify: Update grub
+
+- name: Remove retired kvmgt module load
+  ansible.builtin.file:
+    path: /etc/modules-load.d/igpu-passthrough.conf
+    state: absent
+  notify: Update initramfs

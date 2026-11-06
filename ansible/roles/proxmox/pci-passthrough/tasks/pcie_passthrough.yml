@@ -1,0 +1,28 @@
+---
+- name: Configure IOMMU and vfio
+  when: proxmox_pcie_passthrough_enabled
+  block:
+    - name: Add IOMMU kernel parameters to GRUB
+      ansible.builtin.template:
+        src: grub-dropin.cfg.j2
+        dest: /etc/default/grub.d/pcie-passthrough.cfg
+        owner: root
+        group: root
+        mode: "0644"
+      vars:
+        dropin_params: >-
+          {{ proxmox_pcie_passthrough_kernel_params +
+             (proxmox_pcie_passthrough_intel_kernel_params
+              if 'GenuineIntel' in ansible_facts['processor'] else []) }}
+      notify: Update grub
+
+    - name: Load vfio modules at boot
+      ansible.builtin.template:
+        src: modules-load.conf.j2
+        dest: /etc/modules-load.d/pcie-passthrough.conf
+        owner: root
+        group: root
+        mode: "0644"
+      vars:
+        dropin_modules: "{{ proxmox_pcie_passthrough_modules }}"
+      notify: Update initramfs

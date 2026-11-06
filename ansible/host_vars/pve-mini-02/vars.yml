@@ -1,2 +1,10 @@
 ---
 proxmox_token_value: "{{ vault_proxmox_token_value }}"
+
+# When it's time to retire the plex LXC disable huc and enable
+# the vfio passthrough of the iGPU. Use serial as a backup.
+proxmox_igpu_passthrough_huc_enabled: true
+
+# Get the ID from `lspci -nn -s 00:02.0`
+#proxmox_vfio_passthrough_ids: ["8086:3e91"]
+#proxmox_vfio_passthrough_softdeps: [i915]

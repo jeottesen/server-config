@@ -1,0 +1,41 @@
+---
+- name: Check device IDs are well formed
+  ansible.builtin.assert:
+    that: proxmox_vfio_passthrough_ids | reject('match', '^[0-9a-f]{4}:[0-9a-f]{4}$') | list | length == 0
+    fail_msg: "proxmox_vfio_passthrough_ids must be vvvv:dddd, got {{ proxmox_vfio_passthrough_ids }}"
+    quiet: true
+
+- name: Check which listed devices are present
+  ansible.builtin.command: lspci -n -d {{ item }}
+  loop: "{{ proxmox_vfio_passthrough_ids }}"
+  register: proxmox_vfio_passthrough_lspci
+  changed_when: false
+  check_mode: false
+
+- name: Keep only IDs present on this host
+  ansible.builtin.set_fact:
+    proxmox_vfio_passthrough_present: >-
+      {{ proxmox_vfio_passthrough_lspci.results
+         | rejectattr('stdout', 'equalto', '')
+         | map(attribute='item') | list }}
+
+- name: Report vfio decision
+  ansible.builtin.debug:
+    msg: "vfio IDs listed={{ proxmox_vfio_passthrough_ids }}, present={{ proxmox_vfio_passthrough_present }}"
+
+- name: Bind devices to vfio-pci
+  ansible.builtin.template:
+    src: vfio-modprobe.conf.j2
+    dest: /etc/modprobe.d/vfio-passthrough.conf
+    owner: root
+    group: root
+    mode: "0644"
+  when: proxmox_vfio_passthrough_present | length > 0
+  notify: Update initramfs
+
+- name: Remove vfio binding when no device is present
+  ansible.builtin.file:
+    path: /etc/modprobe.d/vfio-passthrough.conf
+    state: absent
+  when: proxmox_vfio_passthrough_present | length == 0
+  notify: Update initramfs
