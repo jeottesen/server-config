@@ -1,5 +1,3 @@
-# --- nuk-01 (Default Provider) Variables ---
-
 variable "pve_mini_01_api_url" {
   description = "The API URL for the first Proxmox node"
   type        = string
@@ -16,8 +14,6 @@ variable "pve_mini_01_api_token_secret" {
   sensitive   = true
 }
 
-# --- nuk-02 (Aliased Provider) Variables ---
-
 variable "pve_mini_02_api_url" {
   description = "The API URL for the second Proxmox node"
   type        = string
@@ -33,8 +29,6 @@ variable "pve_mini_02_api_token_secret" {
   type        = string
   sensitive   = true
 }
-
-# --- nuk-02 (Aliased Provider) Variables ---
 
 variable "pve_dev_api_url" {
   description = "The API URL for the second Proxmox node"

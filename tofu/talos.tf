@@ -5,6 +5,7 @@ locals {
   cluster_vip        = "192.168.50.214"
   kubernetes_version = "v1.37.1"
 
+  talos_installer    = data.talos_image_factory_urls.this.urls.installer_secureboot
   talos_nodes = {
     "k8s-cp-01" = "192.168.50.215"
     "k8s-cp-02" = "192.168.50.216"
@@ -38,7 +39,7 @@ data "talos_machine_configuration" "controlplane" {
     # Update the modern unattended installation config with the Factory Image URL
     yamlencode({
       installer = {
-        image = data.talos_image_factory_urls.this.urls.installer
+        image = local.talos_installer
       }
       provisioning = {
         diskSelector = {
@@ -158,7 +159,7 @@ resource "talos_machine" "cp_01" {
   node                  = local.talos_nodes["k8s-cp-01"]
   client_configuration  = talos_machine_secrets.this.client_configuration
   machine_configuration = data.talos_machine_configuration.controlplane.machine_configuration
-  image                 = data.talos_image_factory_urls.this.urls.installer
+  image                 = local.talos_installer
   kubeconfig_wo         = ephemeral.talos_cluster_kubeconfig.this.kubeconfig_raw
 
   ignore_kubernetes_upgrade_drift = true
@@ -170,7 +171,7 @@ resource "talos_machine" "cp_02" {
   node                  = local.talos_nodes["k8s-cp-02"]
   client_configuration  = talos_machine_secrets.this.client_configuration
   machine_configuration = data.talos_machine_configuration.controlplane.machine_configuration
-  image                 = data.talos_image_factory_urls.this.urls.installer
+  image                 = local.talos_installer
   kubeconfig_wo         = ephemeral.talos_cluster_kubeconfig.this.kubeconfig_raw
 
   ignore_kubernetes_upgrade_drift = true
@@ -182,7 +183,7 @@ resource "talos_machine" "cp_03" {
   node                  = local.talos_nodes["k8s-cp-03"]
   client_configuration  = talos_machine_secrets.this.client_configuration
   machine_configuration = data.talos_machine_configuration.controlplane.machine_configuration
-  image                 = data.talos_image_factory_urls.this.urls.installer
+  image                 = local.talos_installer
   kubeconfig_wo         = ephemeral.talos_cluster_kubeconfig.this.kubeconfig_raw
 
   ignore_kubernetes_upgrade_drift = true
