@@ -1,0 +1,7 @@
+options vfio-pci ids={{ proxmox_vfio_passthrough_present | join(',') }}
+{% for d in proxmox_vfio_passthrough_softdeps %}
+softdep {{ d }} pre: vfio-pci
+{% endfor %}
+{% for d in proxmox_vfio_passthrough_blacklist %}
+blacklist {{ d }}
+{% endfor %}
