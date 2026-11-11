@@ -31,6 +31,17 @@
         - "{{ primary_user }}"
         - "{{ sandbox_user }}"
 
+    - name: Add users to video and render groups for GPU /dev access
+      ansible.builtin.user:
+        name: "{{ item }}"
+        groups:
+          - video
+          - render
+        append: true
+      loop:
+        - "{{ primary_user }}"
+        - "{{ sandbox_user }}"
+
 - name: Sandbox egress
   hosts: sandboxes
   become: true
