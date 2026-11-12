@@ -21,7 +21,7 @@ Run them in sibling containers (`CONTAINER_HOST` is the host user's rootless `po
 - Short jobs (minutes): synchronous `podman run --rm ...`.
 - Long jobs: not Bash `run_in_background` or `nohup` (2-hour tool timeout). Start `podman run -d --name <job>` with output to `/home/claude/workspace/<job>.log`, then a `podman wait` trigger that resumes the session:
   ```bash
-  ( code=$(podman wait <job>); oom=$(podman inspect <job> --format '{{.State.OOMKilled}}'); podman rm -f <job> >/dev/null 2>&1
+  ( code=$(podman wait <job>); oom=$(podman inspect <job> --format {% raw %}'{{.State.OOMKilled}}'{% endraw %}); podman rm -f <job> >/dev/null 2>&1
     cd /home/claude/workspace && claude --continue -p "Container <job> finished (exit=$code, oom_killed=$oom). Read /home/claude/workspace/<job>.log and report." ) >/dev/null 2>&1 &
   ```
   Check the log shows progress before telling the user the job is healthy.

@@ -77,6 +77,7 @@
     - .config/mise
     - .config/containers
     - .config/containers/systemd
+    - .config/systemd/user/podman.service.d
     - .local
     - .local/share
     - .local/share/mise
@@ -131,6 +132,20 @@
     name: podman.socket
     enabled: true
     state: started
+
+- name: Give the rootless podman.service the egress proxy (image pulls run there)
+  ansible.builtin.copy:
+    dest: "/home/{{ sandbox_user }}/.config/systemd/user/podman.service.d/proxy.conf"
+    owner: "{{ sandbox_user }}"
+    group: "{{ sandbox_user }}"
+    mode: "0644"
+    content: |
+      [Service]
+      Environment=HTTP_PROXY=http://127.0.0.1:{{ sandbox_proxy_port }}
+      Environment=HTTPS_PROXY=http://127.0.0.1:{{ sandbox_proxy_port }}
+      Environment=NO_PROXY=localhost,127.0.0.1,::1
+  register: sandbox_podman_service_proxy
+  notify: Restart podman.service
 
 - name: Install Remote Control Quadlet container unit
   ansible.builtin.template:
