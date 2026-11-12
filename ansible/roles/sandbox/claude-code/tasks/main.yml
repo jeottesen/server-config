@@ -2,16 +2,6 @@
 - name: Podman NVIDIA passthrough
   ansible.builtin.import_tasks: nvidia_podman.yml
 
-- name: Ensure user exists with video and render groups for GPU access
-  ansible.builtin.user:
-    name: "{{ sandbox_user }}"
-    groups:
-      - video
-      - render
-    append: true
-    state: present
-  register: sandbox_user_info
-
 - name: Delegate cpu, cpuset, io, memory, and pids controllers to user slices
   ansible.builtin.file:
     path: /etc/systemd/system/user@.service.d
@@ -29,7 +19,7 @@
     content: |
       [Service]
       Delegate=cpu cpuset io memory pids
-  register: delegation_conf
+  register: sandbox_delegation_conf
 
 - name: Enable systemd lingering for {{ sandbox_user }}
   ansible.builtin.command:
@@ -40,7 +30,7 @@
   ansible.builtin.systemd_service:
     name: "user@{{ sandbox_user_info.uid }}.service"
     daemon_reload: true
-    state: "{{ 'restarted' if delegation_conf.changed else 'started' }}"
+    state: "{{ 'restarted' if sandbox_delegation_conf.changed else 'started' }}"
 
 - name: Install host Podman, GPU container tools, and systemd-oomd
   ansible.builtin.apt:
