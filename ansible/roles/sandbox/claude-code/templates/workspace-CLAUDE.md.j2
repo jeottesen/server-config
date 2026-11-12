@@ -9,10 +9,9 @@
 
 # Installing tools
 
-- If a CLI tool is missing, try installing it to user space yourself before asking. Don't ask first, and don't go looking for brew, podman, docker, apt or sudo; none are available or intended here.
-- Preferred order: `mise use -g <backend>:<tool>` (for example `github:BurntSushi/ripgrep`, `aqua:jqlang/jq`, `ubi:`), then `uv tool install` for Python tools, then `npm install -g` with a user prefix for Node tools.
-- Installs must stay inside the sandbox's write paths (`~/.local/share/mise`, `~/.config/mise`, `~/.cache`, `~/.npm`) and the allowlisted hosts (GitHub, npm, PyPI, nodejs.org, mise hosts).
-- If the install fails on a sandbox write restriction or a blocked host, stop and tell the user which path or host it hit. Don't work around it, and don't try containers or system-wide installs.
+- A missing CLI tool or runtime: install it to user space yourself before asking (no `brew`, `apt` or `sudo`). Order: `mise use -g <backend>:<tool>` (`github:`, `aqua:`, `ubi:`), then `uv tool install`, then `npm install -g` with the `~/.npm` prefix.
+- Heavy native, CAD/CFD or CUDA stacks go in sibling Podman containers; limits and recipes are in `/etc/claude-code/CLAUDE.md`.
+- Installs stay inside the write paths (`~/.local/share/mise`, `~/.config/mise`, `~/.cache`, `~/.npm`, Podman images). If one fails on a blocked host, stop and name the host.
 
 # Sharing artifacts with the user
 
@@ -22,3 +21,4 @@
 - After filling it, leave one comment anchored on a passage you wrote that asks the user to confirm an assumption or choose between two options: load the tool with `ToolSearch` (`select:mcp__claude_ai_Claude_Docs__create`), then `create` an `utterance` with the anchor `{kind: "find", text: "...", nth: 1}` (a phrase that occurs twice needs `nth`). Leave no other unprompted comments.
 - Keep editing the same doc for follow-ups; don't make a new one. Don't edit a doc the user says they are still reading until they are done, unless they ask.
 - `SendUserFile` and other attachments do not work in this session (no thread to receive them). A local HTML file under `/home/claude/workspace/` is only a desktop fallback; say so if you use one.
+

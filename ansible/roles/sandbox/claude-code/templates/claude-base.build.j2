@@ -1,0 +1,13 @@
+[Unit]
+Description=Build self-contained Claude Code & mise image
+
+[Build]
+ImageTag=localhost/claude-base:latest
+File=/home/{{ sandbox_user }}/.config/containers/systemd/Containerfile
+SetWorkingDirectory=/home/{{ sandbox_user }}/.config/containers/systemd
+PodmanArgs=--net=pasta:-T,{{ sandbox_proxy_port }} --http-proxy=true
+
+[Service]
+Environment=HTTP_PROXY=http://127.0.0.1:{{ sandbox_proxy_port }}
+Environment=HTTPS_PROXY=http://127.0.0.1:{{ sandbox_proxy_port }}
+TimeoutStartSec=600

@@ -1,0 +1,42 @@
+FROM debian:trixie-slim
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+ARG CLAUDE_CHANNEL="{{ sandbox_claude_code_channel }}"
+ARG CLAUDE_KEY_FP="{{ sandbox_claude_code_key_fingerprint }}"
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates curl gnupg extrepo podman \
+    {{ (sandbox_claude_code_packages + sandbox_packages) | reject('equalto', 'python3') | join(' ') }} && \
+    rm -rf /var/lib/apt/lists/*
+
+# Add and verify Claude Code APT repository
+RUN install -d -m 0755 /etc/apt/keyrings && \
+    curl -fsSL https://downloads.claude.ai/keys/claude-code.asc \
+    -o /etc/apt/keyrings/claude-code.asc && \
+    chmod 0644 /etc/apt/keyrings/claude-code.asc && \
+    gpg --show-keys --with-colons /etc/apt/keyrings/claude-code.asc | grep -q "${CLAUDE_KEY_FP}" && \
+    echo "deb [signed-by=/etc/apt/keyrings/claude-code.asc] https://downloads.claude.ai/claude-code/apt/{{ sandbox_claude_code_channel }} {{ sandbox_claude_code_channel }} main" \
+      > /etc/apt/sources.list.d/claude-code.list
+
+# Enable mise via extrepo and install both claude-code and mise
+RUN extrepo enable mise && \
+    apt-get update && \
+    apt-get install -y --no-install-recommends claude-code mise && \
+    apt-get purge -y --auto-remove extrepo && \
+    rm -rf /var/lib/apt/lists/*
+
+# Bake in root-owned managed Claude policies and system gitconfig (immutable to claude user)
+RUN install -d -m 0755 /etc/claude-code
+COPY managed-CLAUDE.md /etc/claude-code/CLAUDE.md
+COPY managed-settings.json /etc/claude-code/managed-settings.json
+COPY gitconfig /etc/gitconfig
+RUN chmod 0644 /etc/claude-code/CLAUDE.md /etc/claude-code/managed-settings.json /etc/gitconfig
+
+# Create non-root user matching host UID/GID
+RUN groupadd -g {{ sandbox_user_gid | default(1001) }} {{ sandbox_user }} && \
+    useradd -m -u {{ sandbox_user_uid | default(1001) }} -g {{ sandbox_user_gid | default(1001) }} -s /bin/bash {{ sandbox_user }}
+
+USER {{ sandbox_user }}
+ENV PATH="/home/{{ sandbox_user }}/.local/share/mise/shims:/usr/local/bin:/usr/bin:/bin"
+WORKDIR {{ sandbox_claude_code_workspace }}

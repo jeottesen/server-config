@@ -1,97 +1,68 @@
 ---
-- name: Install Claude Code dependencies and sandbox tools
-  ansible.builtin.apt:
-    name: "{{ sandbox_claude_code_packages + sandbox_packages }}"
-    state: present
+- name: Podman NVIDIA passthrough
+  ansible.builtin.import_tasks: nvidia_podman.yml
 
-- name: Create /etc/apt/keyrings
+- name: Ensure user exists with video and render groups for GPU access
+  ansible.builtin.user:
+    name: "{{ sandbox_user }}"
+    groups:
+      - video
+      - render
+    append: true
+    state: present
+  register: sandbox_user_info
+
+- name: Delegate cpu, cpuset, io, memory, and pids controllers to user slices
   ansible.builtin.file:
-    path: /etc/apt/keyrings
+    path: /etc/systemd/system/user@.service.d
     state: directory
     owner: root
     group: root
     mode: "0755"
 
-- name: Add Claude Code signing key
-  ansible.builtin.get_url:
-    url: https://downloads.claude.ai/keys/claude-code.asc
-    dest: /etc/apt/keyrings/claude-code.asc
+- name: Write cgroup delegation config
+  ansible.builtin.copy:
+    dest: /etc/systemd/system/user@.service.d/delegate.conf
     owner: root
     group: root
     mode: "0644"
+    content: |
+      [Service]
+      Delegate=cpu cpuset io memory pids
+  register: delegation_conf
 
-- name: Verify Claude Code signing key fingerprint
+- name: Enable systemd lingering for {{ sandbox_user }}
   ansible.builtin.command:
-    cmd: gpg --show-keys --with-colons /etc/apt/keyrings/claude-code.asc
-  register: sandbox_claude_code_key
-  changed_when: false
-  failed_when: sandbox_claude_code_key_fingerprint not in sandbox_claude_code_key.stdout
+    cmd: "loginctl enable-linger {{ sandbox_user }}"
+    creates: "/var/lib/systemd/linger/{{ sandbox_user }}"
 
-- name: Add Claude Code apt repo ({{ sandbox_claude_code_channel }})
-  ansible.builtin.apt_repository:
-    repo: >-
-      deb [signed-by=/etc/apt/keyrings/claude-code.asc]
-      https://downloads.claude.ai/claude-code/apt/{{ sandbox_claude_code_channel }}
-      {{ sandbox_claude_code_channel }} main
-    filename: claude-code
-    state: present
+- name: Ensure user systemd manager is started and picks up cgroup delegation
+  ansible.builtin.systemd_service:
+    name: "user@{{ sandbox_user_info.uid }}.service"
+    daemon_reload: true
+    state: "{{ 'restarted' if delegation_conf.changed else 'started' }}"
 
-- name: Install Claude Code
-  ansible.builtin.apt:
-    name: claude-code
-    state: present
-
-- name: Create /etc/claude-code
-  ansible.builtin.file:
-    path: /etc/claude-code
-    state: directory
-    owner: root
-    group: root
-    mode: "0755"
-
-- name: Install managed CLAUDE.md
-  ansible.builtin.template:
-    src: managed-CLAUDE.md.j2
-    dest: "/etc/claude-code/CLAUDE.md"
-    owner: "root"
-    group: "root"
-    mode: "0644"
-
-- name: Install managed settings
-  ansible.builtin.template:
-    src: managed-settings.json.j2
-    dest: /etc/claude-code/managed-settings.json
-    owner: root
-    group: root
-    mode: "0644"
-    validate: python3 -m json.tool %s
-  notify: Restart Remote Control
-
-- name: Remove Debian's nodejs and npm (mise provides Node)
+- name: Install host Podman, GPU container tools, and systemd-oomd
   ansible.builtin.apt:
     name:
-      - npm
-      - nodejs
-    state: absent
-
-- name: Install extrepo
-  ansible.builtin.apt:
-    name: extrepo
-    state: present
-
-- name: Enable the mise apt repository
-  ansible.builtin.command:
-    cmd: extrepo enable mise
-    creates: /etc/apt/sources.list.d/extrepo_mise.sources
-
-- name: Install mise
-  ansible.builtin.apt:
-    name: mise
+      - podman
+      - passt
+      - fuse-overlayfs
+      - uidmap
+      - systemd-oomd
     state: present
     update_cache: true
 
-# Sandbox allowWrite paths must exist; parents listed first so they're owned by the user
-- name: Create tool and cache directories for {{ sandbox_user }}
+- name: Enable and start systemd-oomd and nvidia-persistenced
+  ansible.builtin.systemd_service:
+    name: "{{ item }}"
+    enabled: true
+    state: started
+  loop:
+    - systemd-oomd
+    - nvidia-persistenced
+
+- name: Create tool, cache, and Quadlet directories for {{ sandbox_user }}
   ansible.builtin.file:
     path: "/home/{{ sandbox_user }}/{{ item }}"
     state: directory
@@ -99,10 +70,13 @@
     group: "{{ sandbox_user }}"
     mode: "0755"
   loop:
+    - .claude
     - .cache
     - .npm
     - .config
     - .config/mise
+    - .config/containers
+    - .config/containers/systemd
     - .local
     - .local/share
     - .local/share/mise
@@ -129,39 +103,54 @@
     group: "{{ sandbox_user }}"
     mode: "0644"
 
-- name: Install GitHub token for Remote Control
-  ansible.builtin.copy:
-    dest: /etc/claude-code/github.env
-    content: "GH_TOKEN={{ sandbox_github_token }}\n"
-    owner: root
-    group: root
-    mode: "0600"
+- name: Podman create sandbox
+  ansible.builtin.import_tasks: build_container.yml
+
+- name: Store GitHub token as a rootless Podman secret
+  become: true
+  become_user: "{{ sandbox_user }}"
+  environment:
+    XDG_RUNTIME_DIR: "/run/user/{{ sandbox_user_info.uid }}"
+    DBUS_SESSION_BUS_ADDRESS: "unix:path=/run/user/{{ sandbox_user_info.uid }}/bus"
+  containers.podman.podman_secret:
+    name: github_token
+    data: "{{ sandbox_github_token }}"
+    state: present
   no_log: true
   when: sandbox_github_token | length > 0
   notify: Restart Remote Control
 
-- name: Install system git config (identity and gh credential helper)
-  ansible.builtin.template:
-    src: gitconfig.j2
-    dest: /etc/gitconfig
-    owner: root
-    group: root
-    mode: "0644"
+- name: Enable and start rootless podman.socket for {{ sandbox_user }}
+  become: true
+  become_user: "{{ sandbox_user }}"
+  environment:
+    XDG_RUNTIME_DIR: "/run/user/{{ sandbox_user_info.uid }}"
+    DBUS_SESSION_BUS_ADDRESS: "unix:path=/run/user/{{ sandbox_user_info.uid }}/bus"
+  ansible.builtin.systemd_service:
+    scope: user
+    name: podman.socket
+    enabled: true
+    state: started
 
-- name: Install Remote Control service
+- name: Install Remote Control Quadlet container unit
   ansible.builtin.template:
-    src: claude-remote-control.service.j2
-    dest: /etc/systemd/system/claude-remote-control.service
-    owner: root
-    group: root
+    src: claude-remote-control-podman.container.j2
+    dest: "/home/{{ sandbox_user }}/.config/containers/systemd/claude-remote-control-podman.container"
+    owner: "{{ sandbox_user }}"
+    group: "{{ sandbox_user }}"
     mode: "0644"
   when: sandbox_claude_code_remote_control
   notify: Restart Remote Control
 
-- name: Enable and start Remote Control
+- name: Enable and start Remote Control Quadlet service
+  become: true
+  become_user: "{{ sandbox_user }}"
+  environment:
+    XDG_RUNTIME_DIR: "/run/user/{{ sandbox_user_info.uid }}"
+    DBUS_SESSION_BUS_ADDRESS: "unix:path=/run/user/{{ sandbox_user_info.uid }}/bus"
   ansible.builtin.systemd_service:
-    name: claude-remote-control
-    enabled: true
-    state: started
+    scope: user
+    name: claude-remote-control-podman
     daemon_reload: true
+    state: started
   when: sandbox_claude_code_remote_control

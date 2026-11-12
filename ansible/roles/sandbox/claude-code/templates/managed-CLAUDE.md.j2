@@ -1,12 +1,33 @@
-# Network on this machine
+# Environment
 
-This is a local machine, not a cloud environment. The user manages its network allowlist directly; claude.ai environment settings don't apply.
+Local Debian VM; Claude Code runs in a rootless Podman container (`claude-remote-control-podman`, 1 GB RAM, 1.5 cores). Hardware: 4 cores, 6 GB RAM (about 5.8 usable), NVIDIA GTX 1070 Ti (8 GB VRAM, compute capability 6.1, CUDA 12.4 driver). Outbound traffic goes through a local Squid proxy (`http://127.0.0.1:3128`) behind an AdGuard Home DNS allowlist. claude.ai cloud sandbox settings do not apply.
 
-- A `403` with the header `X-Proxy-Error: blocked-by-allowlist` comes from this session's sandbox. Request the host for the command the usual way.
-- A `502 Bad Gateway` (or "Tunnel connection failed: 502") on your **first** request to a host after approving it in the sandbox means the machine's upstream allowlist (AdGuard) is blocking it. Don't retry, switch to another host or mirror, or try to get around it on your own. Report all blocked hosts—including secondary CDN/download hosts the tool needs (e.g., `files.pythonhosted.org` for pip)—so the user can decide whether to allow them.
-- If a host **already succeeded earlier in the session** and later starts returning `502`, `503`, `429`, or connection resets, it is **not** an allowlist block—it is upstream rate-limiting or a transient server error. Stop sending requests immediately, back off, and report that the target server is throttling or temporarily unavailable rather than asking the user to whitelist the domain.
-- When scraping or making bulk requests to a host, pace requests conservatively (e.g., 1–2 seconds between calls with a descriptive `User-Agent`) to avoid triggering upstream rate limits.
-- Any other proxy error, such as `407`, isn't an allowlist block. Check the tool's proxy settings before reporting it as blocked.
-- These rules only stop you from working around a block yourself. When the user asks you to run, test or retry something, or says they've changed the allowlist, do it.
-- Don't install or upgrade system-wide tools yourself (for example `npm install -g` or `pip install` outside a venv). Tell the user what's missing; system tools are installed by the machine's setup.
-- Use mise for language runtimes and their versions (for example `mise use node@22` in the project). Don't install runtimes another way.
+## Network
+- `403` from Squid, or `502` / "Tunnel connection failed" on a host's first request: not on the allowlist. Do not retry, switch mirrors or work around it. Report every blocked host, including secondary download/CDN hosts (for example `files.pythonhosted.org`), so the user can decide.
+- `502`, `503`, `429` or resets on a host that already worked this session: upstream throttling or an outage, not a block. Stop, back off, report.
+- `407`: check `HTTP_PROXY` / `HTTPS_PROXY` before calling it a block.
+- Bulk requests: 1-2 s between calls, descriptive `User-Agent`.
+- When the user says they changed the allowlist or asks you to retry, do it.
+
+## Tools
+- Language runtimes and light CLIs: `mise` (never global `pip` / `npm` outside a venv or uv environment).
+- Heavy native stacks (CAD/mesh, slicers, CFD, CUDA: CadQuery, OpenCascade, manifold3d, OpenLB, Numba, PyTorch): sibling Podman containers. Don't modify `/etc` or system packages in the Claude container.
+
+## Heavy jobs
+Run them in sibling containers (`CONTAINER_HOST` is the host user's rootless `podman.socket`; use `--userns=keep-id`, mount `/home/claude/workspace` at the same path). Never use `ulimit -v`.
+
+- Every job gets `--memory` with an equal `--memory-swap`, `--cpuset-cpus`, a time limit, and `--network=none` unless it needs the network. Size them for the job: measure first (`podman stats --no-stream`, `OOMKilled` in `podman inspect`) and set the next limit from the peak. Total across containers stays well inside RAM and 4 cores; at most two CPU solver jobs, on separate core pairs (`0,1` and `2,3`); no build alongside two solver jobs.
+- Needs the network: replace `--network=none` with `--network=pasta:-T,3128 -e HTTP_PROXY=http://127.0.0.1:3128 -e HTTPS_PROXY=http://127.0.0.1:3128 -e NO_PROXY=localhost,127.0.0.1,::1`.
+- Short jobs (minutes): synchronous `podman run --rm ...`.
+- Long jobs: not Bash `run_in_background` or `nohup` (2-hour tool timeout). Start `podman run -d --name <job>` with output to `/home/claude/workspace/<job>.log`, then a `podman wait` trigger that resumes the session:
+  ```bash
+  ( code=$(podman wait <job>); oom=$(podman inspect <job> --format '{{.State.OOMKilled}}'); podman rm -f <job> >/dev/null 2>&1
+    cd /home/claude/workspace && claude --continue -p "Container <job> finished (exit=$code, oom_killed=$oom). Read /home/claude/workspace/<job>.log and report." ) >/dev/null 2>&1 &
+  ```
+  Check the log shows progress before telling the user the job is healthy.
+- Images: `podman pull` / `podman build -t <name> .` (proxied); reuse tagged images.
+
+## GPU
+- Only from a sibling container: `--device nvidia.com/gpu=all --security-opt=label=disable`. Quick check: `podman run --rm --device nvidia.com/gpu=all --security-opt=label=disable debian:trixie-slim nvidia-smi`.
+- One GPU container at a time. Check free VRAM first and size the problem to fit.
+- Pascal: build for `sm_61` (`CUDA_ARCH=61`), CUDA 12.x only (13 dropped Pascal), prefer float.

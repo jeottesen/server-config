@@ -22,3 +22,9 @@
 @@||traefik.github.io^
 @@||docs.netbird.io^
 @@||www.openlb.net^
+@@||docker.io^
+@@||registry-1.docker.io^
+@@||auth.docker.io^
+@@||://docker.com^
+@@||://cloudflarestorage.com^
+@@||production.cloudfront.docker.com^

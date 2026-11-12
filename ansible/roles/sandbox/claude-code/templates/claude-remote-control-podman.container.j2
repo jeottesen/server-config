@@ -1,0 +1,52 @@
+[Unit]
+Description=Claude Code Remote Control server (Podman Quadlet)
+Wants=network-online.target podman.socket
+After=network-online.target podman.socket
+
+[Container]
+Image=localhost/claude-base:latest
+ContainerName=claude-remote-control-podman
+HostName=devbox
+UserNS=keep-id
+SecurityLabelDisable=true
+Network=pasta:-T,{{ sandbox_proxy_port }}
+
+
+# Mount workspace, user Claude config, account state, mise/config trees, and podman socket
+Volume={{ sandbox_claude_code_workspace }}:{{ sandbox_claude_code_workspace }}
+Volume=/home/{{ sandbox_user }}/.claude:/home/{{ sandbox_user }}/.claude
+Volume=/home/{{ sandbox_user }}/.claude.json:/home/{{ sandbox_user }}/.claude.json
+Volume=/home/{{ sandbox_user }}/.cache:/home/{{ sandbox_user }}/.cache
+Volume=/home/{{ sandbox_user }}/.npm:/home/{{ sandbox_user }}/.npm
+Volume=/home/{{ sandbox_user }}/.config:/home/{{ sandbox_user }}/.config
+Volume=/home/{{ sandbox_user }}/.local:/home/{{ sandbox_user }}/.local
+Volume=/run/user/{{ sandbox_user_info.uid }}/podman/podman.sock:/run/user/{{ sandbox_user_info.uid }}/podman/podman.sock
+
+
+{% if sandbox_github_token | length > 0 %}
+Secret=github_token,type=env,target=GH_TOKEN
+Secret=github_token,type=env,target=GITHUB_TOKEN
+{% endif %}
+
+Environment=PATH=/home/{{ sandbox_user }}/.local/share/mise/shims:/usr/local/bin:/usr/bin:/bin
+Environment=CONTAINER_HOST=unix:///run/user/{{ sandbox_user_info.uid }}/podman/podman.sock
+Environment=HTTP_PROXY=http://127.0.0.1:{{ sandbox_proxy_port }}
+Environment=HTTPS_PROXY=http://127.0.0.1:{{ sandbox_proxy_port }}
+Environment=NO_PROXY=localhost,127.0.0.1,::1
+Environment=DISABLE_TELEMETRY=1
+Environment=CLAUDE_CODE_SUBAGENT_MODEL=sonnet
+
+WorkingDir={{ sandbox_claude_code_workspace }}
+Exec=/usr/bin/claude remote-control --spawn same-dir --name devbox --permission-mode auto
+
+[Service]
+Restart=always
+RestartSec=30
+OOMPolicy=continue
+StandardOutput=null
+StandardError=journal
+MemoryMax=1000M
+CPUQuota=150%
+
+[Install]
+WantedBy=default.target
