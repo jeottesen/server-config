@@ -1,7 +1,10 @@
 ! Sandbox allowlist: AdGuard DNS allowlist, also read by Ansible for the Claude sandbox.
 ! One rule per line: @@||host^ (also allows subdomains). Lines starting with ! are comments.
-! Claude Code's own hosts are not here; they live in sandbox_claude_code_hosts.
-! Dev work
+@@||api.anthropic.com^
+@@||mcp-proxy.anthropic.com^
+@@||claude.ai^
+@@||claude.com^
+@@||frame.claudeusercontent.com^
 @@||github.com^
 @@||githubusercontent.com^
 @@||githubcopilot.com^
