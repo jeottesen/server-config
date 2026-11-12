@@ -24,9 +24,14 @@ module "devbox" {
   description   = "Headless Debian dev environment"
   image_file_id = proxmox_download_file.debian_pve_dev.id
   cores         = 4
-  memory_mb     = 8192
-  os_disk_gb    = 64
+  memory_mb     = 6144
+  os_disk_gb    = 128
   
   vga_type   = "qxl"
   ssd_tuning = false
+
+  pci_devices = [{
+    mapping = "nvidia-gtx1070"
+    xvga    = true 
+  }]
 }

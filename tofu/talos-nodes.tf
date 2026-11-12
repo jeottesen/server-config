@@ -77,8 +77,8 @@ module "k8s_cp_01" {
   mac_address   = "02:4B:38:53:00:01"
 
   cores        = 4
-  memory_mb    = 4096
-  data_disks = [{ size_gb = 100 }, { size_gb = 5 }]
+  memory_mb    = 8192
+  data_disks = [{ size_gb = 256 }, { size_gb = 5 }]
   ssd_tuning   = false
 
   user_data_file_id = null
@@ -99,8 +99,8 @@ module "k8s_cp_02" {
   mac_address   = "02:4B:38:53:00:02"
 
   cores        = 4
-  memory_mb    = 4096
-  data_disks = [{ size_gb = 100 }, { size_gb = 5 }]
+  memory_mb    = 8192
+  data_disks = [{ size_gb = 256 }, { size_gb = 5 }]
   ssd_tuning   = false
 
   user_data_file_id = null
@@ -121,8 +121,8 @@ module "k8s_cp_03" {
   mac_address   = "02:4B:38:53:00:03"
 
   cores      = 4
-  memory_mb  = 4096
-  data_disks = [{ size_gb = 100 }, { size_gb = 5 }]
+  memory_mb  = 8192
+  data_disks = [{ size_gb = 256 }, { size_gb = 5 }]
 
   user_data_file_id = null
   secure_boot_keys  = false

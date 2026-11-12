@@ -32,7 +32,7 @@ resource "proxmox_virtual_environment_vm" "this" {
 
   memory {
     dedicated = var.memory_mb
-    floating  = coalesce(var.floating_memory_mb, var.memory_mb)
+    floating  = coalesce(var.floating_memory_mb, 0)
   }
 
   scsi_hardware = "virtio-scsi-single"
@@ -109,5 +109,17 @@ resource "proxmox_virtual_environment_vm" "this" {
   lifecycle {
     # The image only matters when the VM is first created; after that the OS updates itself.
     ignore_changes = [disk[0].import_from]
+  }
+
+  dynamic "hostpci" {
+    for_each = var.pci_devices
+    content {
+      device  = "hostpci${hostpci.key}"
+      id      = hostpci.value.id
+      mapping = hostpci.value.mapping
+      pcie    = hostpci.value.pcie
+      rombar  = hostpci.value.rombar
+      xvga    = hostpci.value.xvga
+    }
   }
 }

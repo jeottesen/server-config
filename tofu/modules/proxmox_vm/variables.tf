@@ -92,6 +92,18 @@ variable "data_disks" {
   }
 }
 
+variable "pci_devices" {
+  description = "List of PCI devices or resource mappings to pass through to the VM"
+  type = list(object({
+    id      = optional(string) # Direct PCI address, e.g., "0000:01:00.0" (requires root@pam)
+    mapping = optional(string) # Cluster-wide resource mapping name, e.g., "gpu"
+    pcie    = optional(bool, true)
+    rombar  = optional(bool, true)
+    xvga    = optional(bool, false)
+  }))
+  default = []
+}
+      
 # --- Storage / hardware ---
 
 variable "datastore_id" {
