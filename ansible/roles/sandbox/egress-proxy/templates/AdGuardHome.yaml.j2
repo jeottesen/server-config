@@ -127,10 +127,6 @@ whitelist_filters:
 user_rules:
   - '! Block everything'
   - /.*/
-  - '! Claude Code'
-{% for host in sandbox_claude_code_hosts %}
-  - '@@||{{ host }}^'
-{% endfor %}
 dhcp:
   enabled: false
   interface_name: ""

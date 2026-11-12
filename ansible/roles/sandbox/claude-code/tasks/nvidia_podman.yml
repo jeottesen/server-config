@@ -1,4 +1,14 @@
 ---
+- name: Ensure user exists with video and render groups for GPU access
+  ansible.builtin.user:
+    name: "{{ sandbox_user }}"
+    groups:
+      - video
+      - render
+    append: true
+    state: present
+  register: sandbox_user_info
+
 - name: Install prerequisites for NVIDIA Container Toolkit repository
   ansible.builtin.apt:
     name:
@@ -19,39 +29,39 @@
 - name: Check if NVIDIA Container Toolkit keyring already exists
   ansible.builtin.stat:
     path: /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg
-  register: nvidia_keyring_stat
+  register: sandbox_nvidia_keyring_stat
 
 - name: Download NVIDIA Container Toolkit GPG key
   ansible.builtin.get_url:
     url: https://nvidia.github.io/libnvidia-container/gpgkey
     dest: /tmp/nvidia-container-toolkit.asc
     mode: "0644"
-  when: not nvidia_keyring_stat.stat.exists
+  when: not sandbox_nvidia_keyring_stat.stat.exists
 
 - name: Verify NVIDIA Container Toolkit GPG key fingerprint
   ansible.builtin.command:
     cmd: gpg --show-keys --with-colons /tmp/nvidia-container-toolkit.asc
-  register: nvidia_toolkit_key
+  register: sandbox_nvidia_toolkit_key
   changed_when: false
-  when: not nvidia_keyring_stat.stat.exists
+  when: not sandbox_nvidia_keyring_stat.stat.exists
 
 - name: Dearmor NVIDIA Container Toolkit GPG key to keyring
   ansible.builtin.command:
     cmd: gpg --dearmor -o /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg /tmp/nvidia-container-toolkit.asc
     creates: /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg
-  when: not nvidia_keyring_stat.stat.exists
+  when: not sandbox_nvidia_keyring_stat.stat.exists
 
 - name: Remove temporary NVIDIA GPG key file
   ansible.builtin.file:
     path: /tmp/nvidia-container-toolkit.asc
     state: absent
-  when: not nvidia_keyring_stat.stat.exists
+  when: not sandbox_nvidia_keyring_stat.stat.exists
 
 - name: Fetch NVIDIA Container Toolkit repository list
   ansible.builtin.uri:
     url: https://nvidia.github.io/libnvidia-container/stable/deb/nvidia-container-toolkit.list
     return_content: true
-  register: nvidia_repo_list
+  register: sandbox_nvidia_repo_list
 
 - name: Write signed NVIDIA Container Toolkit repository list
   ansible.builtin.copy:
@@ -60,7 +70,7 @@
     group: root
     mode: "0644"
     content: >-
-      {{ nvidia_repo_list.content | regex_replace('deb https://', 'deb [signed-by=/usr/share/keyrings/nvidia-container-toolkit-keyring.gpg] https://') }}
+      {{ sandbox_nvidia_repo_list.content | regex_replace('deb https://', 'deb [signed-by=/usr/share/keyrings/nvidia-container-toolkit-keyring.gpg] https://') }}
 
 
 - name: Install NVIDIA Container Toolkit packages ({{ nvidia_container_toolkit_version | default('1.20.2-1') }})
