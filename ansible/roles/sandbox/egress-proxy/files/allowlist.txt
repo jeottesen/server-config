@@ -25,6 +25,6 @@
 @@||docker.io^
 @@||registry-1.docker.io^
 @@||auth.docker.io^
-@@||://docker.com^
-@@||://cloudflarestorage.com^
+@@||docker.com^
+@@||cloudflarestorage.com^
 @@||production.cloudfront.docker.com^
