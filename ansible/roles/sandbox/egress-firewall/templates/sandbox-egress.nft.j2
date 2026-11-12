@@ -10,8 +10,9 @@ table inet sandbox_egress {
   chain output {
     type filter hook output priority filter; policy accept;
 
-    # Everyone except the sandbox user is untouched
-    meta skuid != "{{ sandbox_user }}" accept
+    # Everyone except the sandbox user is untouched. Its rootless containers
+    # run as sub-UIDs, so those are covered too.
+    meta skuid != { {{ sandbox_uid }}, {{ sandbox_subuid_start }}-{{ sandbox_subuid_end }} } accept
 
     # The egress proxy
     ip daddr {{ sandbox_proxy_host }} tcp dport {{ sandbox_proxy_port }} accept

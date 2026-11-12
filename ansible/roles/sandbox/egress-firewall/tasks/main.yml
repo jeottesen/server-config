@@ -12,6 +12,23 @@
     group: root
     mode: "0755"
 
+- name: Look up the UID of {{ sandbox_user }}
+  ansible.builtin.getent:
+    database: passwd
+    key: "{{ sandbox_user }}"
+
+- name: Read the sub-UID range of {{ sandbox_user }}
+  ansible.builtin.command:
+    cmd: "grep -m1 '^{{ sandbox_user }}:' /etc/subuid"
+  register: sandbox_subuid
+  changed_when: false
+
+- name: Set UID facts for the egress rules
+  ansible.builtin.set_fact:
+    sandbox_uid: "{{ getent_passwd[sandbox_user][1] }}"
+    sandbox_subuid_start: "{{ sandbox_subuid.stdout.split(':')[1] | int }}"
+    sandbox_subuid_end: "{{ sandbox_subuid.stdout.split(':')[1] | int + sandbox_subuid.stdout.split(':')[2] | int - 1 }}"
+
 - name: Install sandbox egress rules
   ansible.builtin.template:
     src: sandbox-egress.nft.j2
