@@ -3,11 +3,33 @@
   "permissions": {
     "defaultMode": "auto"
   },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit|NotebookEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/etc/claude-code/hooks/post-edit.sh",
+            "timeout": 120
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/etc/claude-code/hooks/stop-check.sh",
+            "timeout": 600
+          }
+        ]
+      }
+    ]
+  },
   "isolatePeerMachines": true,
   "env": {
-    "HTTPS_PROXY": "http://{{ sandbox_proxy_host }}:{{ sandbox_proxy_port }}",
-    "HTTP_PROXY": "http://{{ sandbox_proxy_host }}:{{ sandbox_proxy_port }}",
-    "NO_PROXY": "localhost,127.0.0.1,::1",
     "DISABLE_TELEMETRY": "1",
     "CLAUDE_CODE_SUBAGENT_MODEL": "sonnet"
   }

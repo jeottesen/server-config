@@ -26,12 +26,14 @@ RUN extrepo enable mise && \
     apt-get purge -y --auto-remove extrepo && \
     rm -rf /var/lib/apt/lists/*
 
-# Bake in root-owned managed Claude policies and system gitconfig (immutable to claude user)
-RUN install -d -m 0755 /etc/claude-code
+# Bake in managed Claude policies and system gitconfig
+RUN install -d -m 0755 /etc/claude-code /etc/claude-code/hooks
 COPY managed-CLAUDE.md /etc/claude-code/CLAUDE.md
 COPY managed-settings.json /etc/claude-code/managed-settings.json
+COPY post-edit.sh stop-check.sh /etc/claude-code/hooks/
 COPY gitconfig /etc/gitconfig
-RUN chmod 0644 /etc/claude-code/CLAUDE.md /etc/claude-code/managed-settings.json /etc/gitconfig
+RUN chmod 0644 /etc/claude-code/CLAUDE.md /etc/claude-code/managed-settings.json /etc/gitconfig && \
+    chmod 0755 /etc/claude-code/hooks/post-edit.sh /etc/claude-code/hooks/stop-check.sh
 
 # Create non-root user matching host UID/GID
 RUN groupadd -g {{ sandbox_user_gid | default(1001) }} {{ sandbox_user }} && \

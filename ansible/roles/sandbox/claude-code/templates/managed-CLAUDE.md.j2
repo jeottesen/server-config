@@ -31,3 +31,5 @@ Run them in sibling containers (`CONTAINER_HOST` is the host user's rootless `po
 - Only from a sibling container: `--device nvidia.com/gpu=all --security-opt=label=disable`. Quick check: `podman run --rm --device nvidia.com/gpu=all --security-opt=label=disable debian:trixie-slim nvidia-smi`.
 - One GPU container at a time. Check free VRAM first and size the problem to fit.
 - Pascal: build for `sm_61` (`CUDA_ARCH=61`), CUDA 12.x only (13 dropped Pascal), prefer float.
+
+{% include 'engineering-standards.md.j2' %}

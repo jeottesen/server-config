@@ -17,20 +17,22 @@
   loop:
     - { src: "Containerfile.j2", dest: "Containerfile" }
     - { src: "managed-CLAUDE.md.j2", dest: "managed-CLAUDE.md" }
+    - { src: "post-edit.sh.j2", dest: "post-edit.sh" }
+    - { src: "stop-check.sh.j2", dest: "stop-check.sh" }
     - { src: "managed-settings.json.j2", dest: "managed-settings.json" }
     - { src: "gitconfig.j2", dest: "gitconfig" }
-  register: claude_build_context
+  register: sandbox_claude_build_context
 
 - name: Build localhost/claude-base:latest in system Podman storage
   containers.podman.podman_image:
     name: localhost/claude-base
     tag: latest
     path: /etc/claude-code/build
-    force: "{{ claude_build_context.changed }}"
+    force: "{{ sandbox_claude_build_context.changed }}"
     state: present
-  register: root_claude_image
+  register: sandbox_root_claude_image
 
-- name: Check if localhost/claude-base:latest exists in {{ sandbox_user }} storage
+- name: Check if localhost/claude-base:latest exists in users storage
   become: true
   become_user: "{{ sandbox_user }}"
   environment:
@@ -39,15 +41,15 @@
     chdir: /tmp
   ansible.builtin.command:
     cmd: podman image exists localhost/claude-base:latest
-  register: user_image_exists
+  register: sandbox_user_image_exists
   changed_when: false
   failed_when: false
 
-- name: Transfer localhost/claude-base:latest to {{ sandbox_user }} rootless Podman storage
+- name: Transfer localhost/claude-base:latest to users rootless Podman storage
   args:
     chdir: /tmp
   ansible.builtin.shell: |
     set -euo pipefail
     podman save localhost/claude-base:latest | sudo -u {{ sandbox_user }} XDG_RUNTIME_DIR=/run/user/{{ sandbox_user_info.uid }} podman load
-  when: root_claude_image.changed or user_image_exists.rc != 0
+  when: sandbox_root_claude_image.changed or sandbox_user_image_exists.rc != 0
   notify: Restart Remote Control

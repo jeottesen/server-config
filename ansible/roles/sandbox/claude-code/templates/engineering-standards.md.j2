@@ -1,0 +1,52 @@
+## Engineering Standards
+
+Write code a senior engineer in that language would approve in review: clean, readable, typed, tested, and enforced by tools rather than memory. Tool configs are the source of truth; change them (including thresholds) only with my OK.
+
+### 1. Before writing code: look first
+- **Search before you build**, scaled to the change: check the code, the generated docs (`mise run docs` if stale), and `git log` for an existing solution, helper, or prior attempt. Agents forget; the repo doesn't.
+- **Reach for a library before rolling your own** (parsing, dates, retries, HTTP, CLI args, validation, config, serialization, crypto, concurrency). Hand-roll only if trivial or no good library exists, and say why in a comment. Prefer what's already in the dependency tree.
+
+### 2. Existing code: leave it better than you found it
+Real codebases are imperfect, and so are the people and agents who wrote them. Work within the project's existing tools, conventions, and structure; don't force these standards on it wholesale.
+- Code you write meets these standards, even when the surrounding code doesn't.
+- Refactor freely within the code you're touching (rename, extract, simplify, add types and tests) when it makes your change cleaner.
+- Bigger refactors (across modules, public APIs, restructuring, new tooling) need my OK. Suggest one briefly, with its payoff, only when it would really help.
+
+### 3. Definition of done
+`mise run check` passes (or, if it was already failing, you made it no worse and told me), docs regenerate cleanly if public APIs changed, and the *why* behind any non-obvious choice is in an inline comment or the commit message.
+
+### 4. Enforcement hooks (Claude Code)
+- After each file edit, a hook runs `fmt` and `lint` on that file and feeds errors back. Fix them, except errors expected from an unfinished multi-file change, which may wait until it's complete. Pre-existing errors in a touched file: fix those within your change; report the rest instead of rewriting the file.
+- Before you finish a turn in which files changed, a hook runs `check` and sends you back if it fails.
+- Treat hook failures as real. Don't edit or disable the hooks without asking.
+
+### 5. When tools are missing
+If a tool this project's tasks require, or a library you'd otherwise hand-roll, is unavailable or can't be installed, stop and tell me what you need and why. Don't substitute or skip. Otherwise use what the project already uses.
+
+### 6. Project setup
+New projects: set this up before feature work. Existing projects missing pieces: suggest the setup (see §2); don't retrofit it unasked.
+- Pin runtimes and tools with `mise` (`mise.toml`); declare dependencies in the ecosystem's standard manifest with a lockfile.
+- Formatter; linter enforcing **type safety, naming, and complexity** (cyclomatic/cognitive complexity, function length, nesting); type checker at its strictest practical setting (e.g. `pyright strict`, C# nullable + warnings as errors); test runner with coverage; doc generator writing to gitignored `docs/api/`; dependency audit and secret scanning.
+- `mise` tasks, the contract the hooks rely on:
+  - `fmt [paths]`, `lint [paths]`: operate on the given files (all if none); exit 0 on files they don't handle.
+  - `check`: fmt, lint, type check, tests. Fast and offline.
+  - `test`, `docs`, `audit` (network; runs in pre-commit, not `check`).
+- Pre-commit hooks run `check` and `audit`: the local CI. When real CI exists, it runs the same tasks.
+- Gitignore `.scratch/` for throwaway scripts.
+
+### 7. Language and design
+Follow the language's community style guide and idioms, in its paradigm: don't force OOP onto functional code or vice versa. Use patterns and abstractions only when they fit; simpler wins ties.
+
+### 8. Code quality
+- Self-documenting code: precise names, small focused functions, low coupling, explicit types at boundaries, no magic values.
+- Three layers, one job each: **doc comments say *what*** (public APIs, standard format for the doc generator, concise so generated docs stay searchable); **inline comments say *why*** (intent, constraints, what was tried and rejected); **code says *how***.
+- No separate notes or decision docs; they rot. Reasoning lives in inline comments and commit messages that explain *why*. Recover it with `rg`, `git log -S`, `git blame`.
+- Make illegal states unrepresentable where the type system allows. Avoid `Any`/`dynamic`/unchecked casts; if unavoidable, isolate and justify.
+- Handle errors explicitly; never swallow them. Validate input at system boundaries.
+- Watch for smells (duplication, long parameter lists, deep nesting, god modules, dead code). Handle them per §2.
+- **Never silence a tool to pass.** No blanket `noqa`/`type: ignore`/`eslint-disable`/`#pragma warning disable`; a suppression must be targeted and commented.
+
+### 9. Testing
+- Test-first where practical. Every behavior change gets tests; every bug fix gets a regression test first.
+- Tests are code: same standards. Test behavior, not implementation.
+- Scripts count too: held to these standards unless truly throwaway, in which case they go into your scratchpad.

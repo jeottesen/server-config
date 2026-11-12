@@ -62,7 +62,7 @@
     - systemd-oomd
     - nvidia-persistenced
 
-- name: Create tool, cache, and Quadlet directories for {{ sandbox_user }}
+- name: Create Claude config, cache, and Quadlet directories for {{ sandbox_user }}
   ansible.builtin.file:
     path: "/home/{{ sandbox_user }}/{{ item }}"
     state: directory
@@ -72,17 +72,10 @@
   loop:
     - .claude
     - .cache
-    - .npm
     - .config
-    - .config/mise
     - .config/containers
     - .config/containers/systemd
     - .config/systemd/user/podman.service.d
-    - .local
-    - .local/share
-    - .local/share/mise
-    - .local/state
-    - .local/state/mise
 
 - name: Create workspace directories
   ansible.builtin.file:

@@ -12,13 +12,10 @@ SecurityLabelDisable=true
 Network=pasta:-T,{{ sandbox_proxy_port }}
 
 
-# Mount workspace, user Claude config, account state, mise/config trees, and podman socket
+# Mount workspace, Claude config, download cache, and podman socket
 Volume={{ sandbox_claude_code_workspace }}:{{ sandbox_claude_code_workspace }}
 Volume=/home/{{ sandbox_user }}/.claude:/home/{{ sandbox_user }}/.claude
 Volume=/home/{{ sandbox_user }}/.cache:/home/{{ sandbox_user }}/.cache
-Volume=/home/{{ sandbox_user }}/.npm:/home/{{ sandbox_user }}/.npm
-Volume=/home/{{ sandbox_user }}/.config:/home/{{ sandbox_user }}/.config
-Volume=/home/{{ sandbox_user }}/.local:/home/{{ sandbox_user }}/.local
 Volume=/run/user/{{ sandbox_user_info.uid }}/podman/podman.sock:/run/user/{{ sandbox_user_info.uid }}/podman/podman.sock
 
 
@@ -32,6 +29,7 @@ Environment=HTTP_PROXY=http://127.0.0.1:{{ sandbox_proxy_port }}
 Environment=HTTPS_PROXY=http://127.0.0.1:{{ sandbox_proxy_port }}
 Environment=NO_PROXY=localhost,127.0.0.1,::1
 Environment=CLAUDE_CONFIG_DIR=/home/{{ sandbox_user }}/.claude
+Environment=MISE_TRUSTED_CONFIG_PATHS={{ sandbox_claude_code_workspace }}/worktrees
 
 Exec=/usr/bin/claude remote-control --spawn same-dir --name {{ sandbox_claude_code_remote_control_name }}
 

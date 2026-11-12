@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+# PostToolUse: mark the session dirty, then format + lint the edited file.
+# Exit 2 sends stderr back to Claude so it fixes problems immediately.
+set -uo pipefail
+
+input=$(cat)
+file=$(jq -r '.tool_input.file_path // .tool_input.notebook_path // empty' <<<"$input")
+session=$(jq -r '.session_id // "default"' <<<"$input")
+
+# Tell the Stop hook this turn changed files.
+[[ -z "$file" || ! -f "$file" ]] && exit 0
+
+# Sessions start in the workspace, not in a repo: find the repo the file belongs to.
+root=$(git -C "$(dirname "$file")" rev-parse --show-toplevel 2>/dev/null) || exit 0
+
+# Tell the Stop hook which repo this turn changed.
+echo "$root" >> "${TMPDIR:-/tmp}/claude-dirty-$session"
+
+cd "$root" || exit 0
+command -v mise >/dev/null 2>&1 || exit 0
+
+has_task() { mise tasks info "$1" >/dev/null 2>&1; }
+
+# Formatting is auto-applied; failures here are not fatal.
+has_task fmt && mise run fmt -- "$file" >/dev/null 2>&1
+
+if has_task lint; then
+  if ! out=$(mise run lint -- "$file" 2>&1); then
+    {
+      echo "Lint/type errors in $file. Fix the code; do not suppress the rules."
+      echo "(Errors expected from an unfinished multi-file change may wait until it's complete.)"
+      echo "$out" | tail -n 60
+    } >&2
+    exit 2
+  fi
+fi
+exit 0

@@ -1,24 +1,23 @@
 # Workspace
 
-- Repositories live in `repos/<name>/`. If the user asks for a repository that isn't there, clone it into `repos/` with `git clone`. (`add_repo` is for cloud sessions and does nothing here.)
-- Don't edit files in `repos/<name>/` directly. For each task, create a worktree and work only there:
-  `git -C repos/<name> worktree add ../../worktrees/<name>-<branch> -b <branch>`
-- Name the branch after the task. Reuse an existing worktree if the user asks to continue earlier work.
-- When the user says a task is finished, remove its worktree with `git -C repos/<name> worktree remove <path>`.
-- Push your work to a branch and open a pull request with `gh pr create`. Don't push to the default branch.
+This is a Remote Control session on the user's own VM, not a cloud session. Cloud-only tools (`add_repo`, `SendUserFile`, Projects, the cloud sandbox) don't exist here.
+
+- Repositories live in `repos/<name>/`. If one isn't there, `git clone` it into `repos/`.
+- Don't edit `repos/<name>/` directly. For each task, work in a worktree named after it: `git -C repos/<name> worktree add ../../worktrees/<name>-<branch> -b <branch>`. Reuse an existing worktree to continue earlier work, and remove it when the user says the task is finished.
+- Keep repos current with `git -C repos/<name> pull --ff-only`: the first time you touch a repo in a session, and again whenever the user says something changed upstream (pushed, merged, a PR landed). New worktrees branch from the updated default branch. If it can't fast-forward, say so.
+- Push to a branch and open a pull request with `gh pr create`. Never push to the default branch.
+- Code you only want to read or try (third-party repos, untrusted downloads) goes in your scratchpad directory, never in `repos/` or `worktrees/`. Only `worktrees/` is trusted for `mise` tasks and the quality hooks, and the scratchpad is cleared when the container resets.
 
 # Installing tools
 
-- A missing CLI tool or runtime: install it to user space yourself before asking (no `brew`, `apt` or `sudo`). Order: `mise use -g <backend>:<tool>` (`github:`, `aqua:`, `ubi:`), then `uv tool install`, then `npm install -g` with the `~/.npm` prefix.
-- Heavy native, CAD/CFD or CUDA stacks go in sibling Podman containers; limits and recipes are in `/etc/claude-code/CLAUDE.md`.
-- Installs stay inside the write paths (`~/.local/share/mise`, `~/.config/mise`, `~/.cache`, `~/.npm`, Podman images). If one fails on a blocked host, stop and name the host.
+- A missing CLI tool or runtime: install it to user space yourself before asking (no `brew`, `apt` or `sudo`). Prefer `mise` (`github:`, `aqua:`, `ubi:` backends), then `uv` or `npm` inside the project (venv, `node_modules`), not globally.
+- Only the workspace and `~/.claude` survive a container restart. Record tools in the project's `mise.toml` with `mise use <tool>` in the project directory (not `-g`). If a tool you expect is missing, run `mise install` there first.
+- Heavy native, CAD/CFD or CUDA stacks go in sibling Podman containers (limits and recipes: `/etc/claude-code/CLAUDE.md`).
+- If an install fails on a blocked host, stop and name the host.
 
-# Sharing artifacts with the user
+# Sharing with the user
 
-- Share a report, review page or any document for the user to look at as a **Claude Doc**, not a file path: a path only opens on web or desktop, and a doc also opens in the Claude app on mobile. Use the `mcp__claude_ai_Claude_Docs__*` tools.
-- Make the doc first: the turn's first doc call is `batch` with `container: {kind: "project", create: {name, doc: {blocks, markdown}}}` and `batch: []`. The markdown is the title, the byline `<?claude block asof?> · <?claude block me?>` (an as-of date chip and a mention of the user) and one `pending` block per section. Open it for the user with the `Artifact` tool's `open` action and the link the birth reply gives (`https://claude.ai/artifact/...`), in your next message, and give the link once. Then fill one section per `update` (`replace` the pending block with `## heading` and the body, `as: "markdown"`), reading `guide(items=["topic.index"])` once first.
-- Content that works: prose, pipe tables, bullet and task lists, and links. Link drawings and pages to GitHub (`https://github.com/jeottesen/<repo>/blob/main/...`) so they open from a phone. **Images work** (confirmed 2026-11-11, 12 images in one doc). A doc only takes images uploaded to it, and an image from a web address is refused (`unsupported_construct`). Do it last, after every section has its text and no `pending` block is left: (1) upload the local files with the `Artifact` tool: `action: "publish"`, `asset: true`, `url` = the doc's link, `file_paths` = up to 25 absolute paths; each result gives an asset id (32 hex); (2) one `batch` on the doc with a member per image `{"$lid": "b1", "verb": "create", "object": "blob", "engine": "blob", "payload": {"asset": "<asset id>"}}`; the reply's `lids` map each `$lid` to the blob id; (3) one `update` of the prose body with `insert` ops, `side: "after"` the caption paragraph, `source: {from: {kind: "inline", content: "![alt](blob/<blob id>)"}, as: "markdown"}`. Read `guide(items=["topic.uploads"])` first.
-- After filling it, leave one comment anchored on a passage you wrote that asks the user to confirm an assumption or choose between two options: load the tool with `ToolSearch` (`select:mcp__claude_ai_Claude_Docs__create`), then `create` an `utterance` with the anchor `{kind: "find", text: "...", nth: 1}` (a phrase that occurs twice needs `nth`). Leave no other unprompted comments.
-- Keep editing the same doc for follow-ups; don't make a new one. Don't edit a doc the user says they are still reading until they are done, unless they ask.
-- `SendUserFile` and other attachments do not work in this session (no thread to receive them). A local HTML file under `/home/claude/workspace/` is only a desktop fallback; say so if you use one.
+Share reports, reviews and any document for the user to read as a **Claude Doc** (`mcp__claude_ai_Claude_Docs__*`), and give them the doc's link in your reply. A doc opens on desktop and mobile, while a file path only opens on desktop. The Docs tools' own instructions and `guide` cover how to build one. Docs here are standalone. claude.ai Projects (the chat-view feature with project knowledge and memory) aren't reachable from this session, so never try to add a doc to one or to its memory, and don't use `SendUserFile` or attachments. A `"kind":"project"` in a Docs tool call is just the doc itself, not a claude.ai Project.
 
+- Images work. A doc takes only images uploaded to it. An image from a web address is refused (`unsupported_construct`), but that refusal doesn't mean images aren't supported. Add them last, once every section has its text and no pending block is left: (1) upload the local files with the `Artifact` tool (`action: "publish"`, `asset: true`, `url` = the doc's link, `file_paths` = absolute paths), which returns an asset id (32 hex, not the url); (2) create a blob in the doc for each asset id; (3) insert `![alt](blob/<blob id>)` after the caption paragraph. If a blob is rejected (`no blob with that id`, `not_minted`), the upload went to the wrong link: upload again to this doc's link. Read `guide(items=["topic.uploads"])` first.
+- After filling a doc, leave one comment anchored on a passage you wrote, asking the user to confirm an assumption or choose between two options. No other unprompted comments.
