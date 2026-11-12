@@ -149,8 +149,8 @@
 
 - name: Install Remote Control Quadlet container unit
   ansible.builtin.template:
-    src: claude-remote-control-podman.container.j2
-    dest: "/home/{{ sandbox_user }}/.config/containers/systemd/claude-remote-control-podman.container"
+    src: claude-remote-control.container.j2
+    dest: "/home/{{ sandbox_user }}/.config/containers/systemd/claude-remote-control.container"
     owner: "{{ sandbox_user }}"
     group: "{{ sandbox_user }}"
     mode: "0644"
@@ -165,7 +165,7 @@
     DBUS_SESSION_BUS_ADDRESS: "unix:path=/run/user/{{ sandbox_user_info.uid }}/bus"
   ansible.builtin.systemd_service:
     scope: user
-    name: claude-remote-control-podman
+    name: claude-remote-control
     daemon_reload: true
     state: started
   when: sandbox_claude_code_remote_control

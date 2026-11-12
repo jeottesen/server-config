@@ -23,4 +23,3 @@ sandbox_claude_code_workspace: "/home/{{ sandbox_user }}/{{ sandbox_claude_code_
 # Run `claude remote-control` as a systemd service
 sandbox_claude_code_remote_control: false
 sandbox_claude_code_remote_control_name: "{{ inventory_hostname }}"
-sandbox_claude_code_remote_control_mode: auto

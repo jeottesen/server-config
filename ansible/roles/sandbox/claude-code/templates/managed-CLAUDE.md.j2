@@ -1,6 +1,6 @@
 # Environment
 
-Local Debian VM; Claude Code runs in a rootless Podman container (`claude-remote-control-podman`, 1 GB RAM, 1.5 cores). Hardware: 4 cores, 6 GB RAM (about 5.8 usable), NVIDIA GTX 1070 Ti (8 GB VRAM, compute capability 6.1, CUDA 12.4 driver). Outbound traffic goes through a local Squid proxy (`http://127.0.0.1:3128`) behind an AdGuard Home DNS allowlist. claude.ai cloud sandbox settings do not apply.
+Local Debian VM; Claude Code runs in a rootless Podman container (`claude-remote-control`, 1 GB RAM, 1.5 cores). Hardware: 4 cores, 6 GB RAM (about 5.8 usable), NVIDIA GTX 1070 Ti (8 GB VRAM, compute capability 6.1, CUDA 12.4 driver). Outbound traffic goes through a local Squid proxy (`http://127.0.0.1:3128`) behind an AdGuard Home DNS allowlist. claude.ai cloud sandbox settings do not apply.
 
 ## Network
 - `403` from Squid, or `502` / "Tunnel connection failed" on a host's first request: not on the allowlist. Do not retry, switch mirrors or work around it. Report every blocked host, including secondary download/CDN hosts (for example `files.pythonhosted.org`), so the user can decide.

@@ -1,20 +1,4 @@
 ---
-- name: Rebuild and restart Remote Control
-  become: true
-  become_user: "{{ sandbox_user }}"
-  environment:
-    XDG_RUNTIME_DIR: "/run/user/{{ sandbox_user_info.uid }}"
-    DBUS_SESSION_BUS_ADDRESS: "unix:path=/run/user/{{ sandbox_user_info.uid }}/bus"
-  ansible.builtin.systemd_service:
-    scope: user
-    name: "{{ item }}"
-    daemon_reload: true
-    state: restarted
-  loop:
-    - claude-base-build.service
-    - claude-remote-control-podman.service
-  when: sandbox_claude_code_remote_control
-
 - name: Restart Remote Control
   become: true
   become_user: "{{ sandbox_user }}"
@@ -23,7 +7,7 @@
     DBUS_SESSION_BUS_ADDRESS: "unix:path=/run/user/{{ sandbox_user_info.uid }}/bus"
   ansible.builtin.systemd_service:
     scope: user
-    name: claude-remote-control-podman.service
+    name: claude-remote-control.service
     daemon_reload: true
     state: restarted
   when: sandbox_claude_code_remote_control
