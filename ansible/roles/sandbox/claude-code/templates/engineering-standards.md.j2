@@ -32,7 +32,6 @@ New projects: set this up before feature work. Existing projects missing pieces:
   - `check`: fmt, lint, type check, tests. Fast and offline.
   - `test`, `docs`, `audit` (network; runs in pre-commit, not `check`).
 - Pre-commit hooks run `check` and `audit`: the local CI. When real CI exists, it runs the same tasks.
-- Gitignore `.scratch/` for throwaway scripts.
 
 ### 7. Language and design
 Follow the language's community style guide and idioms, in its paradigm: don't force OOP onto functional code or vice versa. Use patterns and abstractions only when they fit; simpler wins ties.

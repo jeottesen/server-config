@@ -10,7 +10,8 @@ HostName={{ sandbox_claude_code_remote_control_name }}
 UserNS=keep-id
 SecurityLabelDisable=true
 Network=pasta:-T,{{ sandbox_proxy_port }}
-
+DropCapability=all
+NoNewPrivileges=true
 
 # Mount workspace, Claude config, download cache, and podman socket
 Volume={{ sandbox_claude_code_workspace }}:{{ sandbox_claude_code_workspace }}

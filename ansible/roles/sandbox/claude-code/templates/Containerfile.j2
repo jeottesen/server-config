@@ -1,43 +1,35 @@
 FROM debian:trixie-slim
 
-ENV DEBIAN_FRONTEND=noninteractive
-
-ARG CLAUDE_CHANNEL="{{ sandbox_claude_code_channel }}"
+ARG DEBIAN_FRONTEND=noninteractive
+# Optional rollback pin: an apt version string (see `apt-cache madison claude-code`)
+ARG CLAUDE_CODE_VERSION=""
 ARG CLAUDE_KEY_FP="{{ sandbox_claude_code_key_fingerprint }}"
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    ca-certificates curl gnupg extrepo podman \
-    {{ (sandbox_claude_code_packages + sandbox_packages) | reject('equalto', 'python3') | join(' ') }} && \
-    rm -rf /var/lib/apt/lists/*
-
-# Add and verify Claude Code APT repository
-RUN install -d -m 0755 /etc/apt/keyrings && \
-    curl -fsSL https://downloads.claude.ai/keys/claude-code.asc \
-    -o /etc/apt/keyrings/claude-code.asc && \
-    chmod 0644 /etc/apt/keyrings/claude-code.asc && \
+# Add the signed Claude Code and mise apt repos, then install everything in one layer.
+# gnupg is only needed to check the Claude key fingerprint, so it is purged in the same layer.
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates curl gnupg && \
+    install -d -m 0755 /etc/apt/keyrings && \
+    curl -fsSL https://downloads.claude.ai/keys/claude-code.asc -o /etc/apt/keyrings/claude-code.asc && \
     gpg --show-keys --with-colons /etc/apt/keyrings/claude-code.asc | grep -q "${CLAUDE_KEY_FP}" && \
-    echo "deb [signed-by=/etc/apt/keyrings/claude-code.asc] https://downloads.claude.ai/claude-code/apt/{{ sandbox_claude_code_channel }} {{ sandbox_claude_code_channel }} main" \
-      > /etc/apt/sources.list.d/claude-code.list
-
-# Enable mise via extrepo and install both claude-code and mise
-RUN extrepo enable mise && \
-    apt-get update && \
-    apt-get install -y --no-install-recommends claude-code mise && \
-    apt-get purge -y --auto-remove extrepo && \
+    curl -fsSL https://mise.jdx.dev/gpg-key.pub -o /etc/apt/keyrings/mise.asc && \
+    echo "deb [signed-by=/etc/apt/keyrings/claude-code.asc] https://downloads.claude.ai/claude-code/apt/{{ sandbox_claude_code_channel }} {{ sandbox_claude_code_channel }} main" > /etc/apt/sources.list.d/claude-code.list && \
+    echo "deb [signed-by=/etc/apt/keyrings/mise.asc] https://mise.jdx.dev/deb stable main" > /etc/apt/sources.list.d/mise.list && \
+    apt-get purge -y --auto-remove gnupg && \
+    apt-get update && apt-get install -y --no-install-recommends \
+      "claude-code${CLAUDE_CODE_VERSION:+=$CLAUDE_CODE_VERSION}" mise podman-remote \
+      {{ (sandbox_claude_code_packages + sandbox_packages) | reject('equalto', 'python3') | join(' ') }} && \
+    ln -s /usr/bin/podman-remote /usr/local/bin/podman && \
     rm -rf /var/lib/apt/lists/*
-
-# Bake in managed Claude policies and system gitconfig
-RUN install -d -m 0755 /etc/claude-code /etc/claude-code/hooks
-COPY managed-CLAUDE.md /etc/claude-code/CLAUDE.md
-COPY managed-settings.json /etc/claude-code/managed-settings.json
-COPY post-edit.sh stop-check.sh /etc/claude-code/hooks/
-COPY gitconfig /etc/gitconfig
-RUN chmod 0644 /etc/claude-code/CLAUDE.md /etc/claude-code/managed-settings.json /etc/gitconfig && \
-    chmod 0755 /etc/claude-code/hooks/post-edit.sh /etc/claude-code/hooks/stop-check.sh
 
 # Create non-root user matching host UID/GID
 RUN groupadd -g {{ sandbox_user_gid | default(1001) }} {{ sandbox_user }} && \
     useradd -m -u {{ sandbox_user_uid | default(1001) }} -g {{ sandbox_user_gid | default(1001) }} -s /bin/bash {{ sandbox_user }}
+
+# Bake in managed Claude policies, hooks and system gitconfig
+COPY --chmod=0644 managed-CLAUDE.md /etc/claude-code/CLAUDE.md
+COPY --chmod=0644 managed-settings.json /etc/claude-code/managed-settings.json
+COPY --chmod=0755 post-edit.sh stop-check.sh /etc/claude-code/hooks/
+COPY --chmod=0644 gitconfig /etc/gitconfig
 
 USER {{ sandbox_user }}
 ENV PATH="/home/{{ sandbox_user }}/.local/share/mise/shims:/usr/local/bin:/usr/bin:/bin"
