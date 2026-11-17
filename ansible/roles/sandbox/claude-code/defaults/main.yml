@@ -3,10 +3,8 @@
 sandbox_claude_code_channel: stable
 sandbox_claude_code_key_fingerprint: 31DDDE24DDFAB679F42D7BD2BAA929FF1A7ECACE
 
-# Needed by Claude Code itself: the sandbox (bubblewrap, socat) and the key check (gnupg)
-sandbox_claude_code_packages:
-  - gnupg
-
+# Extra apt packages Claude Code itself needs (the key check's gnupg is handled in the Containerfile)
+sandbox_claude_code_packages: []
 # Extra tools for the sandbox user
 sandbox_packages: []
 # GitHub access for the sandbox user; the GitHub tasks are skipped when the token is empty
