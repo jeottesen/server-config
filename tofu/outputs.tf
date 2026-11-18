@@ -6,13 +6,3 @@ output "vm_ips" {
     "k8s-cp-03"     = module.k8s_cp_03.ipv4_address
   }
 }
-
-output "kubeconfig" {
-  value     = talos_cluster_kubeconfig.this.kubeconfig_raw
-  sensitive = true
-}
-
-output "talosconfig" {
-  value     = data.talos_client_configuration.this.talos_config
-  sensitive = true
-}

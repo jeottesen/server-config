@@ -51,7 +51,7 @@ override.tf.json
 .terraformrc
 terraform.rc
 
-tofu/cilium-manifest.yaml
+cilium-manifest.yaml
 
 *.lock
 *.tgz

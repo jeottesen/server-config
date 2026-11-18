@@ -1,11 +1,14 @@
 # --- Talos cluster: secrets, shared control-plane config, nodes, bootstrap, kubeconfig ---
+module "talos_image" {
+  source = "../modules/talos_image"
+}
 
 locals {
   cluster_name       = "samurai-cluster"
   cluster_vip        = "192.168.50.214"
   kubernetes_version = "v1.37.1"
 
-  talos_installer    = data.talos_image_factory_urls.this.urls.installer_secureboot
+  talos_installer = module.talos_image.installer
   talos_nodes = {
     "k8s-cp-01" = "192.168.50.215"
     "k8s-cp-02" = "192.168.50.216"
@@ -14,7 +17,7 @@ locals {
 }
 
 resource "talos_machine_secrets" "this" {
-  talos_version = local.talos_version
+  talos_version = module.talos_image.talos_version
 }
 
 data "talos_client_configuration" "this" {
@@ -31,7 +34,7 @@ data "talos_machine_configuration" "controlplane" {
   cluster_endpoint   = "https://${local.cluster_vip}:6443"
   machine_type       = "controlplane"
   machine_secrets    = talos_machine_secrets.this.machine_secrets
-  talos_version      = local.talos_version
+  talos_version      = module.talos_image.talos_version
   
   kubernetes_version = local.kubernetes_version
 
@@ -97,7 +100,7 @@ data "talos_machine_configuration" "controlplane" {
     # Cilium is applied by Talos at bootstrap, because nodes can't go Ready (and Argo
     # can't run) without a CNI. Argo CD adopts it afterwards from k8s-apps/cilium.
     # Talos only creates these objects, it never updates or deletes them.
-    # Rendered with: helm template cilium . -n kube-system > ../../tofu/cilium-manifest.yaml
+    # Rendered with: helm template cilium . -n kube-system > ../../tofu/talos/cilium-manifest.yaml
     yamlencode({
       apiVersion = "v1alpha1"
       kind       = "KubeInlineManifestConfig"
@@ -154,8 +157,6 @@ ephemeral "talos_cluster_kubeconfig" "this" {
 
 # One resource per node, chained so upgrades go one node at a time and etcd keeps quorum
 resource "talos_machine" "cp_01" {
-  depends_on = [module.k8s_cp_01]
-
   node                  = local.talos_nodes["k8s-cp-01"]
   client_configuration  = talos_machine_secrets.this.client_configuration
   machine_configuration = data.talos_machine_configuration.controlplane.machine_configuration
@@ -166,7 +167,7 @@ resource "talos_machine" "cp_01" {
 }
 
 resource "talos_machine" "cp_02" {
-  depends_on = [module.k8s_cp_02, talos_machine.cp_01]
+  depends_on = [talos_machine.cp_01]
 
   node                  = local.talos_nodes["k8s-cp-02"]
   client_configuration  = talos_machine_secrets.this.client_configuration
@@ -178,7 +179,7 @@ resource "talos_machine" "cp_02" {
 }
 
 resource "talos_machine" "cp_03" {
-  depends_on = [module.k8s_cp_03, talos_machine.cp_02]
+  depends_on = [talos_machine.cp_02]
 
   node                  = local.talos_nodes["k8s-cp-03"]
   client_configuration  = talos_machine_secrets.this.client_configuration

@@ -1,47 +1,20 @@
 # --- Talos image, built by the Image Factory and downloaded per Proxmox host ---
-locals {
-  talos_version      = "v1.14.5"
+module "talos_image" {
+  source = "./modules/talos_image"
 }
 
-data "talos_image_factory_extensions_versions" "this" {
-  talos_version = local.talos_version
-  filters = {
-    names = [
-      "qemu-guest-agent",
-      "iscsi-tools",
-      "util-linux-tools",
-      "i915",
-      "netbird",
-      "nvidia-open-gpu-kernel-modules-lts",
-      "nvidia-container-toolkit-lts",
-    ]
-  }
-}
-
-
-resource "talos_image_factory_schematic" "this" {
-  schematic = yamlencode({
-    customization = {
-      systemExtensions = {
-        officialExtensions = data.talos_image_factory_extensions_versions.this.extensions_info[*].name
-      }
-    }
-  })
-}
-
-data "talos_image_factory_urls" "this" {
-  talos_version     = local.talos_version
-  schematic_id      = talos_image_factory_schematic.this.id
-  platform          = "nocloud"
-  disk_image_format = "qcow2"
+# The schematic used to live in this root; keep its state entry.
+moved {
+  from = talos_image_factory_schematic.this
+  to   = module.talos_image.talos_image_factory_schematic.this
 }
 
 resource "proxmox_download_file" "talos_pve_mini_01" {
   content_type = "import"
   datastore_id = "local"
   node_name    = "pve-mini-01"
-  url          = data.talos_image_factory_urls.this.urls.disk_image_secureboot
-  file_name    = "talos-${local.talos_version}-nocloud-amd64-secureboot.qcow2"
+  url       = module.talos_image.disk_image_url
+  file_name = "talos-${module.talos_image.talos_version}-nocloud-amd64-secureboot.qcow2"
 }
 
 resource "proxmox_download_file" "talos_pve_mini_02" {
@@ -49,8 +22,8 @@ resource "proxmox_download_file" "talos_pve_mini_02" {
   content_type = "import"
   datastore_id = "local"
   node_name    = "pve-mini-02"
-  url          = data.talos_image_factory_urls.this.urls.disk_image_secureboot
-  file_name    = "talos-${local.talos_version}-nocloud-amd64-secureboot.qcow2"
+  url       = module.talos_image.disk_image_url
+  file_name = "talos-${module.talos_image.talos_version}-nocloud-amd64-secureboot.qcow2"
 }
 
 resource "proxmox_download_file" "talos_pve_dev" {
@@ -58,8 +31,8 @@ resource "proxmox_download_file" "talos_pve_dev" {
   content_type = "import"
   datastore_id = "local"
   node_name    = "pve-dev"
-  url          = data.talos_image_factory_urls.this.urls.disk_image_secureboot
-  file_name    = "talos-${local.talos_version}-nocloud-amd64-secureboot.qcow2"
+  url       = module.talos_image.disk_image_url
+  file_name = "talos-${module.talos_image.talos_version}-nocloud-amd64-secureboot.qcow2"
 }
 
 
