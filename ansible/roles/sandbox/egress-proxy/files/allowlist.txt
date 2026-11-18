@@ -31,3 +31,12 @@
 @@||docker.com^
 @@||cloudflarestorage.com^
 @@||production.cloudfront.docker.com^
+@@||deb.debian.org^
+@@||repo.prefix.dev^
+@@||conda.anaconda.org^
+@@||conda-mapping.prefix.dev^
+@@||archive.ubuntu.com^
+@@||downloads.sourceforge.net^
+@@||ghcr.io^
+@@||sourceforge.net^
+@@||dl.openfoam.org^
