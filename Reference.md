@@ -2,13 +2,31 @@
 
 ## Tofu
 
-- `tofu init`
+Three separate roots, each with its own state. Apply in this order: `tofu/` (Proxmox VMs
+and images), then `tofu/talos/` (cluster), `tofu/netbird/` is independent.
+
+- `cd tofu && tofu init -backend-config=garage.s3.tfbackend`
+- `cd tofu/talos && tofu init -backend-config=../garage.s3.tfbackend`
+- `cd tofu/netbird && tofu init -backend-config=../garage.s3.tfbackend`
 - `tofu plan`
+
+The Talos version and image schematic live in `tofu/modules/talos_image`, used by both
+`tofu/` and `tofu/talos/`. To upgrade Talos: change the version there, apply `tofu/`
+(downloads the new image), then apply `tofu/talos/` (rolls the nodes one at a time).
 
 ### Export k8s and talos configs
 
+Run these in `tofu/talos/`:
+
 - `tofu output -raw kubeconfig > ~/.kube/config`
 - `tofu output -raw talosconfig > ~/.talos/config`
+
+### Cilium manifest
+
+Talos applies Cilium at bootstrap from `tofu/talos/cilium-manifest.yaml` (gitignored).
+Re-render it from `k8s-apps/cilium`:
+
+- `helm template cilium . -n kube-system > ../../tofu/talos/cilium-manifest.yaml`
 
 ## Argo CD
 
