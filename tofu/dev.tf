@@ -32,7 +32,7 @@ module "devbox" {
 
   pci_devices = [{
     mapping = "nvidia-gtx1070"
-    pcie    = false
+    pcie    = true
     xvga    = true 
   }]
 }

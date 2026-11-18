@@ -12,6 +12,7 @@ resource "proxmox_virtual_environment_vm" "this" {
   description = var.description
   node_name   = var.target_node
   vm_id       = var.vm_id
+  machine     = "q35"
   tags        = var.tags
   bios        = "ovmf"
   on_boot     = var.on_boot
@@ -32,7 +33,7 @@ resource "proxmox_virtual_environment_vm" "this" {
 
   memory {
     dedicated = var.memory_mb
-    floating  = coalesce(var.floating_memory_mb, 0)
+    floating  = coalesce(var.floating_memory_mb, var.memory_mb)
   }
 
   scsi_hardware = "virtio-scsi-single"
