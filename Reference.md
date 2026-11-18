@@ -2,17 +2,17 @@
 
 ## Tofu
 
-Three separate roots, each with its own state. Apply in this order: `tofu/` (Proxmox VMs
-and images), then `tofu/talos/` (cluster), `tofu/netbird/` is independent.
+Three separate roots, each with its own state. Apply in this order:
 
-- `cd tofu && tofu init -backend-config=garage.s3.tfbackend`
-- `cd tofu/talos && tofu init -backend-config=../garage.s3.tfbackend`
-- `cd tofu/netbird && tofu init -backend-config=../garage.s3.tfbackend`
+  1. `tofu/proxmox`
+  2. `tofu/talos/`
+  3. `tofu/netbird/`
+
+- inside each tofu folder: `tofu init -backend-config=garage.s3.tfbackend`
 - `tofu plan`
 
 The Talos version and image schematic live in `tofu/modules/talos_image`, used by both
-`tofu/proxmox` and `tofu/talos/`. To upgrade Talos: change the version there, apply `tofu/proxmox`
-(downloads the new image), then apply `tofu/talos/` (rolls the nodes one at a time).
+`tofu/proxmox` and `tofu/talos/`. To upgrade Talos: change the version therethen follow apply order for proxmox and talos
 
 ### Export k8s and talos configs
 
