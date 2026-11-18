@@ -10,7 +10,7 @@ terraform {
     }
   }
    # Run this to init. Only needed on first run or when changed.
-  # `tofu init -backend-config=garage.s3.tfbackend`
+  # `tofu init -backend-config=../garage.s3.tfbackend`
   backend "s3" {
     key = "proxmox/terraform.tfstate"
   }

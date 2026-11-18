@@ -44,7 +44,7 @@ Structure: "app of apps" (official ArgoCD term) with one "wrapper chart" per app
 
 - `ansible/`: provisioning and config of all hosts (run playbooks from this folder).
 - `tofu/`: OpenTofu, split into roots with separate encrypted state (`bpg/proxmox` + `siderolabs/talos`
-  providers). `tofu/` holds the Proxmox VMs (one provider alias per node, `modules/proxmox_vm`),
+  providers). `tofu/proxmox` holds the Proxmox VMs (one provider alias per node, `modules/proxmox_vm`),
   `tofu/talos/` the Talos cluster, `tofu/netbird/` NetBird config. `modules/talos_image` is shared by
   the first two. Secrets, including the state encryption passphrase, are in gitignored `*.tfvars`.
 - `argocd/` + `k8s-apps/`: k3s cluster apps (see the ArgoCD / Helm section above).

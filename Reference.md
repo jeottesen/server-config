@@ -11,7 +11,7 @@ and images), then `tofu/talos/` (cluster), `tofu/netbird/` is independent.
 - `tofu plan`
 
 The Talos version and image schematic live in `tofu/modules/talos_image`, used by both
-`tofu/` and `tofu/talos/`. To upgrade Talos: change the version there, apply `tofu/`
+`tofu/proxmox` and `tofu/talos/`. To upgrade Talos: change the version there, apply `tofu/proxmox`
 (downloads the new image), then apply `tofu/talos/` (rolls the nodes one at a time).
 
 ### Export k8s and talos configs

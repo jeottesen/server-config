@@ -13,7 +13,7 @@ resource "proxmox_download_file" "debian_pve_dev" {
 
 # --- Headless sandboxed dev environment on pve-dev ---
 module "devbox" {
-  source    = "./modules/proxmox_vm"
+  source    = "../modules/proxmox_vm"
   providers = {
     proxmox = proxmox.pve_dev
   }

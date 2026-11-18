@@ -1,6 +1,6 @@
 # --- Talos image, built by the Image Factory and downloaded per Proxmox host ---
 module "talos_image" {
-  source = "./modules/talos_image"
+  source = "../modules/talos_image"
 }
 
 # The schematic used to live in this root; keep its state entry.
@@ -13,8 +13,8 @@ resource "proxmox_download_file" "talos_pve_mini_01" {
   content_type = "import"
   datastore_id = "local"
   node_name    = "pve-mini-01"
-  url       = module.talos_image.disk_image_url
-  file_name = "talos-${module.talos_image.talos_version}-nocloud-amd64-secureboot.qcow2"
+  url          = module.talos_image.disk_image_url
+  file_name    = "talos-${module.talos_image.talos_version}-nocloud-amd64-secureboot.qcow2"
 }
 
 resource "proxmox_download_file" "talos_pve_mini_02" {
@@ -22,8 +22,8 @@ resource "proxmox_download_file" "talos_pve_mini_02" {
   content_type = "import"
   datastore_id = "local"
   node_name    = "pve-mini-02"
-  url       = module.talos_image.disk_image_url
-  file_name = "talos-${module.talos_image.talos_version}-nocloud-amd64-secureboot.qcow2"
+  url          = module.talos_image.disk_image_url
+  file_name    = "talos-${module.talos_image.talos_version}-nocloud-amd64-secureboot.qcow2"
 }
 
 resource "proxmox_download_file" "talos_pve_dev" {
@@ -31,14 +31,14 @@ resource "proxmox_download_file" "talos_pve_dev" {
   content_type = "import"
   datastore_id = "local"
   node_name    = "pve-dev"
-  url       = module.talos_image.disk_image_url
-  file_name = "talos-${module.talos_image.talos_version}-nocloud-amd64-secureboot.qcow2"
+  url          = module.talos_image.disk_image_url
+  file_name    = "talos-${module.talos_image.talos_version}-nocloud-amd64-secureboot.qcow2"
 }
 
 
 # --- Talos control plane  ---
 module "k8s_cp_01" {
-  source = "./modules/proxmox_vm"
+  source = "../modules/proxmox_vm"
   providers = {
     proxmox = proxmox
   }
@@ -60,7 +60,7 @@ module "k8s_cp_01" {
 }
 
 module "k8s_cp_02" {
-  source = "./modules/proxmox_vm"
+  source = "../modules/proxmox_vm"
   providers = {
     proxmox = proxmox.pve_mini_02
   }
@@ -82,7 +82,7 @@ module "k8s_cp_02" {
 }
 
 module "k8s_cp_03" {
-  source = "./modules/proxmox_vm"
+  source = "../modules/proxmox_vm"
   providers = {
     proxmox = proxmox.pve_dev
   }
